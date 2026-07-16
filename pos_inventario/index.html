@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Móvil & Inventario</title>
+    <!-- Tailwind CSS CDN para una interfaz móvil moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Librería para escanear códigos de barras con la cámara -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Encabezado -->
+    <header class="bg-blue-600 text-white text-center py-4 shadow-md">
+        <h1 class="text-xl font-bold">POS & Control de Inventario</h1>
+    </header>
+
+    <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
+        
+        <!-- Sección del Escáner de Cámara -->
+        <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
+            <h2 class="text-lg font-semibold text-gray-700">Escanear Producto</h2>
+            <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
+            <div class="flex gap-2">
+                <button id="start-btn" class="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium shadow hover:bg-green-600 transition">Encender Cámara</button>
+                <button id="stop-btn" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-medium shadow hover:bg-red-600 transition hidden">Apagar Cámara</button>
+            </div>
+        </div>
+
+        <!-- Entrada Manual (Útil para PC o escáner USB a futuro) -->
+        <div class="bg-white p-4 rounded-xl shadow-md flex gap-2">
+            <input id="manual-code" type="text" placeholder="Código de barras manual" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
+        </div>
+
+        <!-- Carrito de Compras -->
+        <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
+            <h2 class="text-lg font-semibold text-gray-700">Detalle de la Venta</h2>
+            <div id="cart-items" class="space-y-2 divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                <p class="text-gray-400 text-center py-4">No hay productos en la lista</p>
+            </div>
+            <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                <span class="text-lg font-bold text-gray-800">Total:</span>
+                <span id="cart-total" class="text-2xl font-bold text-blue-600">Q0.00</span>
+            </div>
+            <button id="checkout-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Confirmar Venta y Cobrar
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Esta es la dirección de tu servidor local que ya tienes corriendo
+        const API_URL = "http://127.0.0.1:8000/api"; 
+        let cart = [];
+        let html5QrcodeScanner = null;
+
+        const cartItemsContainer = document.getElementById("cart-items");
+        const cartTotalElement = document.getElementById("cart-total");
+        const checkoutBtn = document.getElementById("checkout-btn");
+        const startBtn = document.getElementById("start-btn");
+        const stopBtn = document.getElementById("stop-btn");
+        const manualInput = document.getElementById("manual-code");
+        const addManualBtn = document.getElementById("add-manual-btn");
+
+        async function fetchProduct(code) {
+            try {
+                const response = await fetch(`${API_URL}/productos/${code}`);
+                if (!response.ok) {
+                    const errData = await response.json();
+                    alert(errData.detail || "Error al buscar el producto.");
+                    return;
+                }
+                const product = await response.json();
+                addToCart(product);
+            } catch (error) {
+                console.error("Error al conectar con la API:", error);
+                alert("No se pudo conectar con el servidor.");
+            }
+        }
+
+        function addToCart(product) {
+            const existingItem = cart.find(item => item.codigo === product.codigo);
+            if (existingItem) {
+                if (existingItem.cantidad < product.stock) {
+                    existingItem.cantidad++;
+                } else {
+                    alert(`No puedes agregar más. Stock máximo disponible: ${product.stock}`);
+                    return;
+                }
+            } else {
+                cart.push({ ...product, cantidad: 1 });
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">No hay productos en la lista</p>`;
+                cartTotalElement.innerText = "Q0.00";
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            cartItemsContainer.innerHTML = cart.map((item, index) => `
+                <div class="flex justify-between items-center py-2">
+                    <div>
+                        <p class="font-medium text-gray-800">${item.nombre}</p>
+                        <p class="text-sm text-gray-500">Q${item.precio.toFixed(2)} x ${item.cantidad}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-700">Q${(item.precio * item.cantidad).toFixed(2)}</span>
+                        <button onclick="removeFromCart(${index})" class="text-red-500 font-bold px-2 hover:bg-red-50 rounded">✕</button>
+                    </div>
+                </div>
+            `).join("");
+
+            const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            cartTotalElement.innerText = `Q${total.toFixed(2)}`;
+            checkoutBtn.disabled = false;
+        }
+
+        window.removeFromCart = function(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        };
+
+        checkoutBtn.addEventListener("click", async () => {
+            if (cart.length === 0) return;
+
+            const payload = {
+                items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad }))
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/ventas`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert("¡Venta procesada con éxito! El inventario se ha actualizado.");
+                    cart = [];
+                    updateCartUI();
+                } else {
+                    alert(`Error: ${data.detail}`);
+                }
+            } catch (error) {
+                alert("Error de comunicación al procesar la venta.");
+            }
+        });
+
+        addManualBtn.addEventListener("click", () => {
+            const code = manualInput.value.trim();
+            if (code) {
+                fetchProduct(code);
+                manualInput.value = "";
+            }
+        });
+
+        manualInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                addManualBtn.click();
+            }
+        });
+
+        startBtn.addEventListener("click", () => {
+            startBtn.classList.add("hidden");
+            stopBtn.classList.remove("hidden");
+
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "user" }, 
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 150 } 
+                },
+                (decodedText) => {
+                    navigator.vibrate?.(100); 
+                    fetchProduct(decodedText);
+                },
+                (errorMessage) => {
+                    // Ignorar errores continuos de lectura
+                }
+            ).catch(err => {
+                alert("No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+                stopScanning();
+            });
+        });
+
+        function stopScanning() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    startBtn.classList.remove("hidden");
+                    stopBtn.classList.add("hidden");
+                }).catch(err => console.error(err));
+            }
+        }
+
+        stopBtn.addEventListener("click", stopScanning);
+    </script>
+</body>
+</html>
