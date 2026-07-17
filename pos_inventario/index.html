@@ -21,19 +21,16 @@
             <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
             
             <div class="grid grid-cols-2 gap-2">
-                <!-- Botón de Cámara en Vivo -->
                 <button id="start-btn" class="bg-green-500 text-white py-2 rounded-lg font-medium shadow hover:bg-green-600 transition">📷 Cámara Vivo</button>
-                <button id="stop-btn" class="bg-red-500 text-white py-2 rounded-lg font-medium shadow hover:bg-red-600 transition hidden">Apagar Cámara</button>
+                <button id="stop-btn" class="bg-red-500 text-white py-2 rounded-lg font-medium shadow hover:bg-red-600 transition hidden col-span-2">Apagar Cámara</button>
                 
-                <!-- Botón de Foto Nativa -->
-                <button type="button" onclick="document.getElementById('native-cam-input').click()" class="bg-purple-600 text-white py-2 rounded-lg font-medium shadow hover:bg-purple-700 transition">📷 Tomar Foto</button>
+                <button type="button" onclick="document.getElementById('native-cam-input').click()" class="bg-purple-600 text-white py-2 rounded-lg font-medium shadow hover:bg-purple-700 transition">📸 Tomar Foto</button>
             </div>
-            <!-- Input invisible para la cámara nativa -->
             <input type="file" id="native-cam-input" accept="image/*" capture="environment" style="display:none">
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-md flex gap-2">
-            <input id="manual-code" type="text" placeholder="Código de barras manual" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input id="manual-code" type="text" placeholder="Código de barras manual / Lector Físico" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
         </div>
 
@@ -57,34 +54,49 @@
         let cart = [];
         let html5QrcodeScanner = null;
 
+        const cartItemsContainer = document.getElementById("cart-items");
+        const cartTotalElement = document.getElementById("cart-total");
+        const checkoutBtn = document.getElementById("checkout-btn");
+        const startBtn = document.getElementById("start-btn");
+        const stopBtn = document.getElementById("stop-btn");
+        const manualInput = document.getElementById("manual-code");
+        const addManualBtn = document.getElementById("add-manual-btn");
+
+        // --- MAGIA PARA EL LECTOR DE CÓDIGO DE BARRAS FÍSICO ---
+        // Hace que siempre esté seleccionado el input para que el lector trabaje de inmediato
+        document.body.addEventListener("click", (e) => {
+            if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                manualInput.focus();
+            }
+        });
+        manualInput.focus();
+
         // --- LÓGICA DE ESCANEO POR FOTO NATIVA ---
         const nativeInput = document.getElementById("native-cam-input");
         nativeInput.addEventListener("change", e => {
             if (e.target.files.length == 0) return;
             const imageFile = e.target.files[0];
-            
-            // Creamos instancia temporal solo para procesar la foto
             const scanner = new Html5Qrcode("reader");
             scanner.scanFile(imageFile, true)
-                .then(decodedText => {
-                    fetchProduct(decodedText);
-                })
-                .catch(err => {
-                    Swal.fire({ icon: 'error', title: 'Ups', text: 'No se detectó código. Asegúrate de enfocar bien las líneas del código.' });
-                });
+                .then(decodedText => { fetchProduct(decodedText); })
+                .catch(err => { Swal.fire({ icon: 'error', title: 'Ups', text: 'No se detectó código. Intenta centrarlo mejor.' }); });
         });
 
-        // --- FUNCIONES DEL SISTEMA ---
+        // --- FUNCIONES DEL SISTEMA Y CARRITO ---
         async function fetchProduct(code) {
             try {
                 const response = await fetch(`${API_URL}/productos/${code}`);
                 if (!response.ok) {
                     const errData = await response.json();
                     Swal.fire({ icon: 'error', title: 'Oops...', text: errData.detail || "Error al buscar el producto." });
+                    manualInput.value = "";
+                    manualInput.focus();
                     return;
                 }
                 const product = await response.json();
                 addToCart(product);
+                manualInput.value = "";
+                manualInput.focus();
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Sin conexión', text: 'No se pudo conectar con el servidor.' });
             }
@@ -96,7 +108,7 @@
                 if (existingItem.cantidad < product.stock) {
                     existingItem.cantidad++;
                 } else {
-                    Swal.fire({ icon: 'warning', title: 'Límite de Stock', text: `Solo hay ${product.stock} unidades.` });
+                    Swal.fire({ icon: 'warning', title: 'Límite de Stock', text: `Solo hay ${product.stock} unidades de ${product.nombre} en bodega.` });
                     return;
                 }
             } else {
@@ -112,23 +124,114 @@
                 checkoutBtn.disabled = true;
                 return;
             }
-            cartItemsContainer.innerHTML = cart.map((item, index) => `
-                <div class="flex justify-between items-center py-2 border-b">
-                    <div><p class="font-medium">${item.nombre}</p><p class="text-xs text-gray-500">Q${item.precio}</p></div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="removeFromCart(${index})" class="text-red-500 font-bold">✕</button>
-                        <span class="font-bold">${item.cantidad}</span>
+
+            cartItemsContainer.innerHTML = cart.map((item, index) => {
+                const stockRestante = item.stock - item.cantidad; 
+                return `
+                <div class="flex flex-col py-3 border-b border-gray-100 last:border-0">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-medium text-gray-800 leading-tight">${item.nombre}</p>
+                            <p class="text-xs text-blue-500 font-semibold mt-1">En bodega: ${stockRestante} unidades</p>
+                        </div>
+                        <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 rounded">✕</button>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
+                            <button onclick="decreaseQuantity(${index})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 font-bold text-lg transition active:bg-gray-300">-</button>
+                            <span class="px-4 py-1 font-bold text-gray-800 border-x border-gray-300 w-12 text-center">${item.cantidad}</span>
+                            <button onclick="increaseQuantity(${index})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 font-bold text-lg transition active:bg-gray-300" ${stockRestante === 0 ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-400">Q${item.precio.toFixed(2)} c/u</p>
+                            <p class="font-bold text-gray-800 text-lg">Q${(item.precio * item.cantidad).toFixed(2)}</p>
+                        </div>
                     </div>
                 </div>
-            `).join("");
+            `}).join("");
+
             const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
             cartTotalElement.innerText = `Q${total.toFixed(2)}`;
             checkoutBtn.disabled = false;
         }
 
-        function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
+        window.increaseQuantity = function(index) {
+            if (cart[index].cantidad < cart[index].stock) {
+                cart[index].cantidad++;
+                updateCartUI();
+            }
+        };
 
-        // --- SISTEMA DE CÁMARA (VIVO) ---
+        window.decreaseQuantity = function(index) {
+            if (cart[index].cantidad > 1) {
+                cart[index].cantidad--;
+                updateCartUI();
+            } else {
+                removeFromCart(index);
+            }
+        };
+
+        window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); };
+
+        // --- SISTEMA DE CHECKOUT Y TICKET ---
+        checkoutBtn.addEventListener("click", async () => {
+            if (cart.length === 0) return;
+            const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
+            const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            const cartCopia = [...cart];
+
+            try {
+                const response = await fetch(`${API_URL}/ventas`, {
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    cart = [];
+                    updateCartUI();
+                    Swal.fire({
+                        title: '¡Venta Exitosa!', text: `Total cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success',
+                        showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#6b7280',
+                        confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar'
+                    }).then((result) => {
+                        if (result.isConfirmed) imprimirTicket(cartCopia, totalVenta);
+                    });
+                } else {
+                    const data = await response.json();
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error al procesar la venta.' });
+            }
+        });
+
+        function imprimirTicket(items, total) {
+            let ventana = window.open('', 'PRINT', 'height=600,width=400');
+            let fecha = new Date().toLocaleString();
+            let html = `
+                <html><head><style>
+                    body { font-family: monospace; font-size: 14px; width: 300px; margin: 0; padding: 10px; color: #000; }
+                    h2 { text-align: center; margin: 0 0 10px 0; font-size: 18px; }
+                    p { text-align: center; margin: 5px 0; font-size: 12px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { text-align: left; padding: 4px 0; border-bottom: 1px dashed #000; }
+                    .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; }
+                    .footer { text-align: center; margin-top: 20px; font-size: 12px; }
+                </style></head><body>
+                    <h2>MI TIENDA</h2><p>Recibo de Compra</p><p>${fecha}</p>
+                    <table><tr><th>Cant</th><th>Artículo</th><th style="text-align:right">Sub</th></tr>
+                        ${items.map(item => `<tr><td>${item.cantidad}</td><td>${item.nombre.substring(0, 15)}</td><td style="text-align:right">Q${(item.precio * item.cantidad).toFixed(2)}</td></tr>`).join('')}
+                    </table>
+                    <div class="total">TOTAL: Q${total.toFixed(2)}</div>
+                    <div class="footer">¡Gracias por su compra!</div>
+                </body></html>
+            `;
+            ventana.document.write(html);
+            ventana.document.close();
+            ventana.focus();
+            setTimeout(() => { ventana.print(); ventana.close(); }, 500);
+        }
+
+        // --- SISTEMA DE CÁMARA VIVO ---
         function stopScanning() {
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop().catch(err => console.log(err));
@@ -137,9 +240,6 @@
             }
         }
 
-        const startBtn = document.getElementById("start-btn");
-        const stopBtn = document.getElementById("stop-btn");
-        
         startBtn.addEventListener("click", () => {
             startBtn.classList.add("hidden");
             stopBtn.classList.remove("hidden");
@@ -148,21 +248,26 @@
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: 250, height: 150 } },
                 (decodedText) => {
+                    if (navigator.vibrate) navigator.vibrate(100);
                     fetchProduct(decodedText);
                     stopScanning();
                 }
             ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'Error al iniciar.' });
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
                 stopScanning();
             });
         });
 
         stopBtn.addEventListener("click", stopScanning);
-        
-        // --- MANUAL ---
-        document.getElementById("add-manual-btn").addEventListener("click", () => {
-            const code = document.getElementById("manual-code").value.trim();
-            if (code) { fetchProduct(code); document.getElementById("manual-code").value = ""; }
+
+        // --- MANUAL / LECTOR FÍSICO ---
+        addManualBtn.addEventListener("click", () => {
+            const code = manualInput.value.trim();
+            if (code) fetchProduct(code);
+        });
+
+        manualInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") addManualBtn.click();
         });
 
     </script>
