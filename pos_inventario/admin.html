@@ -8,7 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Librería para la gráfica -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
@@ -108,22 +107,23 @@
                 </div>
             </div>
             
-            <!-- TABLA DE HISTORIAL MEJORADA CON FOOTER -->
+            <!-- TABLA DE HISTORIAL MEJORADA CON 4 COLUMNAS -->
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-50 text-gray-600">
                         <tr>
-                            <th class="p-4 border-b w-1/4">Fecha y Hora</th>
-                            <th class="p-4 border-b w-2/4">Detalle de Artículos</th>
-                            <th class="p-4 border-b w-1/4 text-right">Total</th>
+                            <th class="p-4 border-b whitespace-nowrap">Fecha y Hora</th>
+                            <th class="p-4 border-b text-center">Cantidad</th>
+                            <th class="p-4 border-b w-1/2">Producto</th>
+                            <th class="p-4 border-b text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
                     
-                    <!-- ESTE ES EL NUEVO TOTAL AL FINAL DE LA TABLA -->
                     <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                         <tr>
-                            <td colspan="2" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide">Total Generado (Período Seleccionado):</td>
+                            <!-- Colspan 3 porque ahora hay 4 columnas en total -->
+                            <td colspan="3" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide">Total Generado (Período Seleccionado):</td>
                             <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td>
                         </tr>
                     </tfoot>
@@ -296,22 +296,34 @@
             
             const sumaTotal = ventas.reduce((acc, v) => acc + v.total, 0);
             
-            // EL TOTAL SE ACTUALIZA EN AMBOS LADOS (ARRIBA Y ABAJO)
             granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`;
             if(tablaTotalFooter) tablaTotalFooter.innerText = `Q${sumaTotal.toFixed(2)}`;
 
             if(ventas.length === 0) {
-                list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
+                list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
             } else {
                 list.innerHTML = ventas.map(v => {
-                    // SEPARAMOS LOS ARTÍCULOS EN ETIQUETAS VISUALES
                     let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
-                    let articulosFormateados = items.map(i => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200 mb-1 mr-1">${i.trim()}</span>`).join("");
+                    let cantHtml = "";
+                    let prodHtml = "";
+                    
+                    // Separamos el número de la X del nombre del producto
+                    items.forEach(i => {
+                        let match = i.trim().match(/^(\d+)x\s*(.*)/);
+                        if (match) {
+                            cantHtml += `<div class="py-1 font-bold text-gray-700">${match[1]}</div>`;
+                            prodHtml += `<div class="py-1 text-gray-600">${match[2]}</div>`;
+                        } else {
+                            cantHtml += `<div class="py-1 font-bold text-gray-700">-</div>`;
+                            prodHtml += `<div class="py-1 text-gray-600">${i}</div>`;
+                        }
+                    });
 
                     return `
                     <tr class="hover:bg-gray-50 border-b">
                         <td class="p-4 text-sm font-medium text-gray-600 align-top">${v.fecha}</td>
-                        <td class="p-4 align-top flex flex-wrap gap-1">${articulosFormateados}</td>
+                        <td class="p-4 text-sm align-top text-center">${cantHtml}</td>
+                        <td class="p-4 text-sm align-top">${prodHtml}</td>
                         <td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td>
                     </tr>
                 `}).join("");
