@@ -8,24 +8,19 @@
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Librería para la gráfica -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
     
-    <!-- PANTALLA DE LOGIN -->
+    <!-- LOGIN -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso al Sistema 🔒</h2>
-            <p class="text-gray-500 mb-6 text-sm">Ingresa tus credenciales para continuar</p>
             <div class="space-y-4 text-left">
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1 font-bold">Usuario</label>
-                    <input type="text" id="user-input" class="w-full border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="admin">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1 font-bold">Contraseña</label>
-                    <input type="password" id="pass-input" class="w-full border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="••••••••">
-                </div>
-                <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mt-2 shadow-md">Iniciar Sesión</button>
+                <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="admin"></div>
+                <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
+                <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
         </div>
     </div>
@@ -33,9 +28,9 @@
     <nav class="bg-gray-800 text-white p-4 shadow-md flex justify-between items-center">
         <h1 class="text-xl font-bold">Panel de Control</h1>
         <div class="flex gap-2">
-            <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition">📦 Inventario</button>
-            <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-medium transition">📈 Ventas</button>
-            <a href="index.html" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm font-medium transition ml-4">Salir al POS</a>
+            <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded">📦 Inventario</button>
+            <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded">📈 Ventas</button>
+            <a href="index.html" class="bg-red-600 px-4 py-2 rounded ml-4">Salir</a>
         </div>
     </nav>
 
@@ -44,88 +39,101 @@
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">Registrar Nuevo Producto</h2>
+                <h2 class="text-lg font-bold mb-4">Registrar Nuevo Producto</h2>
                 
-                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div id="admin-reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50 max-w-sm mx-auto"></div>
-                    <div class="text-center mt-3">
-                        <button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded shadow hover:bg-red-600 font-bold">Apagar Cámara</button>
-                    </div>
+                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border">
+                    <div id="admin-reader" class="max-w-sm mx-auto"></div>
+                    <div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div>
                 </div>
+                
+                <!-- Lector oculto Admin -->
+                <div id="lector-oculto-admin" style="display:none;"></div>
 
                 <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-600 mb-1">Código de Barras</label>
+                        <label class="block text-sm mb-1">Código de Barras</label>
                         <div class="flex gap-2">
-                            <input type="text" id="add-codigo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <button type="button" id="start-admin-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded shadow font-bold text-lg transition" title="Escanear en Vivo">📷</button>
-                            <button type="button" onclick="document.getElementById('native-admin-input').click()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 rounded shadow font-bold text-lg transition" title="Tomar Foto">📸</button>
+                            <input type="text" id="add-codigo" required class="w-full border p-2 rounded">
+                            <button type="button" id="start-admin-btn" class="bg-green-500 text-white px-3 rounded">📷</button>
+                            <button type="button" onclick="document.getElementById('native-admin-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button>
                         </div>
                         <input type="file" id="native-admin-input" accept="image/*" capture="environment" style="display:none">
                     </div>
-                    <div><label class="block text-sm text-gray-600 mb-1">Nombre</label><input type="text" id="add-nombre" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                    <div><label class="block text-sm text-gray-600 mb-1">Precio (Q)</label><input type="number" step="0.01" id="add-precio" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                    <div><label class="block text-sm text-gray-600 mb-1">Stock Inicial</label><input type="number" id="add-stock" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                    <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 shadow-md">Guardar Producto</button></div>
+                    <div><label class="block text-sm mb-1">Nombre</label><input type="text" id="add-nombre" required class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm mb-1">Precio (Q)</label><input type="number" step="0.01" id="add-precio" required class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm mb-1">Stock Inicial</label><input type="number" id="add-stock" required class="w-full border p-2 rounded"></div>
+                    <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Guardar Producto</button></div>
                 </form>
             </section>
 
-            <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:border-blue-500 outline-none shadow-sm mb-4">
+            <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl mb-4">
 
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 text-gray-600">
-                        <tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr>
-                    </thead>
+                    <thead class="bg-gray-50"><tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr></thead>
                     <tbody id="inventory-list" class="divide-y divide-gray-100"></tbody>
                 </table>
             </section>
         </div>
 
-        <!-- PESTAÑA: VENTAS -->
+        <!-- PESTAÑA: VENTAS Y ESTADÍSTICAS -->
         <div id="tab-ventas" class="hidden space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center border-l-4 border-green-500">
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800">Historial</h2>
-                        <p class="text-gray-500 text-sm">Últimas ventas</p>
-                    </div>
-                    <button onclick="fetchVentas()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded font-bold hover:bg-blue-200 transition shadow-sm">🔄 Actualizar</button>
+            
+            <!-- Controles de Filtro -->
+            <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Filtrar Ventas Por:</label>
+                    <select id="filtro-fecha" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
+                        <option value="hoy">📅 Hoy</option>
+                        <option value="semana">📅 Últimos 7 Días</option>
+                        <option value="quincena">📅 Últimos 14 Días</option>
+                        <option value="mes">📅 Este Mes</option>
+                        <option value="todas" selected>📚 Todas las ventas</option>
+                        <option value="manual">⚙️ Rango Manual...</option>
+                    </select>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-center items-end border-l-4 border-blue-600">
-                    <p class="text-gray-500 text-sm font-bold uppercase tracking-wide">Total Ingresos</p>
-                    <h3 id="gran-total-ventas" class="text-3xl font-black text-blue-600">Q0.00</h3>
+                
+                <div id="controles-manuales" class="hidden flex gap-2 items-end">
+                    <div><label class="block text-sm text-gray-500 mb-1">Desde</label><input type="date" id="fecha-inicio" class="border rounded p-2"></div>
+                    <div><label class="block text-sm text-gray-500 mb-1">Hasta</label><input type="date" id="fecha-fin" class="border rounded p-2"></div>
+                    <button onclick="aplicarFiltros()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Buscar</button>
+                </div>
+            </div>
+
+            <!-- Gráfica -->
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-bold text-gray-800">Tendencia de Ingresos</h2>
+                    <h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="ventasChart"></canvas>
                 </div>
             </div>
             
+            <!-- Tabla Historial -->
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 text-gray-600">
-                        <tr>
-                            <th class="p-4 border-b w-1/4">Fecha y Hora</th>
-                            <th class="p-4 border-b w-2/4">Artículos Vendidos</th>
-                            <th class="p-4 border-b w-1/4 text-right">Total Ingreso</th>
-                        </tr>
-                    </thead>
+                    <thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b w-1/4">Fecha</th><th class="p-4 border-b w-2/4">Artículos</th><th class="p-4 border-b w-1/4 text-right">Total</th></tr></thead>
                     <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
                 </table>
             </section>
         </div>
     </main>
 
-    <!-- Modal Editar -->
+    <!-- Modal Editar (Se mantiene igual) -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
             <form id="edit-form" class="space-y-4">
-                <div><label class="block text-sm text-gray-600 mb-1">Nombre</label><input type="text" id="edit-nombre" required class="w-full border rounded p-2 outline-none"></div>
+                <div><label class="block text-sm">Nombre</label><input type="text" id="edit-nombre" required class="w-full border rounded p-2 outline-none"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm text-gray-600 mb-1">Precio (Q)</label><input type="number" step="0.01" id="edit-precio" required class="w-full border rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-blue-600 mb-1">Stock</label><input type="number" id="edit-stock" required class="w-full border-2 border-blue-300 rounded p-2 outline-none"></div>
+                    <div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" id="edit-precio" required class="w-full border rounded p-2"></div>
+                    <div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required class="w-full border-2 border-blue-300 rounded p-2"></div>
                 </div>
                 <div class="flex justify-end gap-2 mt-6">
-                    <button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded text-gray-800 hover:bg-gray-400">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">Actualizar</button>
+                    <button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Actualizar</button>
                 </div>
             </form>
         </div>
@@ -133,229 +141,209 @@
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
-        const USUARIO_SECRETO = "admin";
-        const PASS_SECRETA = "1234";
+        const USUARIO_SECRETO = "admin"; const PASS_SECRETA = "1234";
+        let miGrafico = null;
+        let todasLasVentas = []; // Aquí guardamos todas las ventas para no saturar el servidor al filtrar
         
-        // --- SISTEMA DE LOGIN ---
-        if(sessionStorage.getItem("adminAuth") === "true") {
-            document.getElementById("login-overlay").style.display = "none";
-        }
-
+        // --- LOGIN ---
+        if(sessionStorage.getItem("adminAuth") === "true") { document.getElementById("login-overlay").style.display = "none"; }
         function verificarLogin() {
-            const user = document.getElementById("user-input").value.trim();
-            const pass = document.getElementById("pass-input").value;
-            if(user === USUARIO_SECRETO && pass === PASS_SECRETA) {
-                sessionStorage.setItem("adminAuth", "true");
-                document.getElementById("login-overlay").style.display = "none";
-                fetchInventory();
-                fetchVentas();
-            } else {
-                Swal.fire('Acceso Denegado', 'Usuario o contraseña incorrectos', 'error');
-                document.getElementById("pass-input").value = "";
-            }
+            if(document.getElementById("user-input").value === USUARIO_SECRETO && document.getElementById("pass-input").value === PASS_SECRETA) {
+                sessionStorage.setItem("adminAuth", "true"); document.getElementById("login-overlay").style.display = "none";
+                fetchInventory(); fetchVentas();
+            } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
         }
-        
-        document.getElementById("pass-input").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") verificarLogin();
-        });
+        document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
-        // --- SISTEMA DE PESTAÑAS ---
+        // --- PESTAÑAS ---
         function switchTab(tab) {
-            if(tab === 'inventario') {
-                document.getElementById('tab-inventario').classList.remove('hidden');
-                document.getElementById('tab-ventas').classList.add('hidden');
-                document.getElementById('btn-inv').className = "bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition";
-                document.getElementById('btn-ven').className = "bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-medium transition";
-            } else {
-                document.getElementById('tab-inventario').classList.add('hidden');
-                document.getElementById('tab-ventas').classList.remove('hidden');
-                document.getElementById('btn-ven').className = "bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition";
-                document.getElementById('btn-inv').className = "bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-medium transition";
-                fetchVentas();
-            }
+            document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
+            document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
+            document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            if(tab === 'ventas') { fetchVentas(); }
         }
 
-        // --- SISTEMA DE CÁMARA (NATIVO FOTO) ---
-        const nativeAdminInput = document.getElementById("native-admin-input");
-        nativeAdminInput.addEventListener("change", e => {
+        // --- CÁMARA (FOTO) - FIX ESPACIO BLANCO ---
+        document.getElementById("native-admin-input").addEventListener("change", e => {
             if (e.target.files.length == 0) return;
-            const imageFile = e.target.files[0];
-            const scanner = new Html5Qrcode("admin-reader");
-            scanner.scanFile(imageFile, true)
-                .then(decodedText => {
-                    document.getElementById("add-codigo").value = decodedText;
-                    document.getElementById("add-nombre").focus();
-                })
-                .catch(err => {
-                    Swal.fire({ icon: 'error', title: 'Ups', text: 'No se detectó código.' });
-                });
+            const scanner = new Html5Qrcode("lector-oculto-admin");
+            scanner.scanFile(e.target.files[0], true)
+                .then(t => { document.getElementById("add-codigo").value = t; document.getElementById("add-nombre").focus(); })
+                .catch(err => Swal.fire('Ups', 'No se detectó código', 'error'))
+                .finally(() => scanner.clear());
         });
 
-        // --- SISTEMA DE CÁMARA (EN VIVO) ---
+        // --- CÁMARA VIVO ---
         let adminScanner = null;
-        const startAdminBtn = document.getElementById("start-admin-btn");
-        const stopAdminBtn = document.getElementById("stop-admin-btn");
-        const adminScannerContainer = document.getElementById("admin-scanner-container");
-        const addCodigoInput = document.getElementById("add-codigo");
-
-        function stopAdminScanning() {
-            if (adminScanner) {
-                adminScanner.stop().catch(err => console.log(err));
-                adminScannerContainer.classList.add("hidden");
-            }
-        }
-
-        startAdminBtn.addEventListener("click", () => {
-            adminScannerContainer.classList.remove("hidden");
+        document.getElementById("start-admin-btn").addEventListener("click", () => {
+            document.getElementById("admin-scanner-container").classList.remove("hidden");
             adminScanner = new Html5Qrcode("admin-reader");
-            adminScanner.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    if (navigator.vibrate) navigator.vibrate(100);
-                    addCodigoInput.value = decodedText;
-                    stopAdminScanning();
-                    document.getElementById("add-nombre").focus();
-                }
-            ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'Error al abrir la cámara.' });
-                stopAdminScanning();
-            });
+            adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => {
+                document.getElementById("add-codigo").value = t;
+                stopAdminScanning(); document.getElementById("add-nombre").focus();
+            }).catch(e => stopAdminScanning());
         });
+        function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
+        document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
 
-        stopAdminBtn.addEventListener("click", stopAdminScanning);
-
-        // --- LÓGICA DE INVENTARIO (CRUD) ---
-        let allProducts = [];
-        let fuse = null;
-        let currentEditCode = null;
-
+        // --- INVENTARIO CRUD ---
+        let allProducts = []; let fuse = null; let currentEditCode = null;
         async function fetchInventory() {
             try {
-                const res = await fetch(`${API_URL}/productos`);
-                allProducts = await res.json();
-                fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 });
-                renderTable(allProducts);
-            } catch (error) {}
+                const res = await fetch(`${API_URL}/productos`); allProducts = await res.json();
+                fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts);
+            } catch (e) {}
         }
-
         function renderTable(products) {
             const list = document.getElementById("inventory-list");
-            if (products.length === 0) {
-                list.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay productos.</td></tr>`;
-                return;
-            }
+            if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center">No hay productos.</td></tr>`;
             list.innerHTML = products.map(p => `
                 <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 font-mono text-gray-500">${p.codigo}</td>
-                    <td class="p-4 font-medium text-gray-800">${p.nombre}</td>
-                    <td class="p-4 text-gray-600">Q${p.precio.toFixed(2)}</td>
-                    <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : 'text-gray-800'}">${p.stock}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded text-sm mr-2 font-bold shadow hover:bg-yellow-500">✎</button>
-                        <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold shadow hover:bg-red-600">✕</button>
-                    </td>
-                </tr>
-            `).join("");
+                    <td class="p-4 font-mono">${p.codigo}</td><td class="p-4 font-medium">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td>
+                    <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : ''}">${p.stock}</td>
+                    <td class="p-4 text-center"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td>
+                </tr>`).join("");
         }
-
-        document.getElementById("search-input").addEventListener("input", (e) => {
-            const term = e.target.value.trim();
-            if (!term) return renderTable(allProducts);
-            renderTable(fuse.search(term).map(r => r.item));
-        });
-
+        document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
+        
         document.getElementById("add-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const product = {
-                codigo: document.getElementById("add-codigo").value,
-                nombre: document.getElementById("add-nombre").value,
-                precio: parseFloat(document.getElementById("add-precio").value),
-                stock: parseInt(document.getElementById("add-stock").value)
-            };
-            try {
-                const response = await fetch(`${API_URL}/productos`, { 
-                    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) 
-                });
-                if (response.ok) {
-                    document.getElementById("add-form").reset();
-                    fetchInventory();
-                    Swal.fire({icon: 'success', title: 'Producto Guardado', timer: 1500, showConfirmButton: false});
-                } else {
-                    const data = await response.json();
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
-                }
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Fallo', text: 'No se pudo guardar el producto.' });
-            }
+            const product = { codigo: document.getElementById("add-codigo").value, nombre: document.getElementById("add-nombre").value, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) };
+            const response = await fetch(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
+            if (response.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire({icon:'success',title:'Guardado',timer:1000}); }
         });
-
-        function openEditModal(codigo) {
-            const p = allProducts.find(x => x.codigo === codigo);
-            currentEditCode = codigo;
-            document.getElementById("edit-nombre").value = p.nombre;
-            document.getElementById("edit-precio").value = p.precio;
-            document.getElementById("edit-stock").value = p.stock;
-            document.getElementById("edit-modal").classList.remove("hidden");
-        }
+        
+        function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
         function closeEditModal() { document.getElementById("edit-modal").classList.add("hidden"); }
-
+        
         document.getElementById("edit-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const product = {
-                codigo: currentEditCode,
-                nombre: document.getElementById("edit-nombre").value,
-                precio: parseFloat(document.getElementById("edit-precio").value),
-                stock: parseInt(document.getElementById("edit-stock").value)
-            };
+            const product = { codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) };
             await fetch(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-            closeEditModal();
-            fetchInventory();
-            Swal.fire({icon: 'success', title: 'Actualizado', timer: 1000, showConfirmButton: false});
+            closeEditModal(); fetchInventory(); Swal.fire({icon:'success',title:'Actualizado',timer:1000});
         });
+        window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetch(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        window.deleteProduct = function(codigo) {
-            Swal.fire({
-                title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    await fetch(`${API_URL}/productos/${codigo}`, { method: "DELETE" });
-                    fetchInventory();
-                }
-            });
-        };
+        // --- SISTEMA DE VENTAS, FILTROS Y GRÁFICAS ---
+        function parseFecha(fechaStr) {
+            // Intenta convertir la fecha del servidor a un objeto Date real
+            let d = new Date(fechaStr);
+            if (!isNaN(d.getTime())) return d;
+            const partes = fechaStr.split(/[\s,/]+/);
+            if(partes.length >= 3) {
+                d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`); // Formato DD/MM/YYYY
+                if (!isNaN(d.getTime())) return d;
+            }
+            return new Date();
+        }
 
-        // --- LÓGICA DE REPORTE DE VENTAS ---
         async function fetchVentas() {
             try {
                 const res = await fetch(`${API_URL}/ventas`);
-                const ventas = await res.json();
-                const list = document.getElementById("ventas-list");
-                const granTotalElement = document.getElementById("gran-total-ventas");
-                
-                if(ventas.length === 0) {
-                    list.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Aún no hay ventas registradas.</td></tr>`;
-                    granTotalElement.innerText = "Q0.00";
-                    return;
+                todasLasVentas = await res.json();
+                aplicarFiltros(); // Al cargar, aplicamos el filtro por defecto
+            } catch (e) { console.error(e); }
+        }
+
+        function aplicarFiltros() {
+            const filtro = document.getElementById("filtro-fecha").value;
+            const divManual = document.getElementById("controles-manuales");
+            divManual.classList.toggle("hidden", filtro !== "manual");
+
+            let ventasFiltradas = todasLasVentas;
+            const ahora = new Date();
+            const getInicioDia = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+            if (filtro === "hoy") {
+                const hoy = getInicioDia(ahora);
+                ventasFiltradas = todasLasVentas.filter(v => getInicioDia(parseFecha(v.fecha)) === hoy);
+            } else if (filtro === "semana") {
+                const hace7 = ahora.getTime() - (7 * 24 * 60 * 60 * 1000);
+                ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace7);
+            } else if (filtro === "quincena") {
+                const hace14 = ahora.getTime() - (14 * 24 * 60 * 60 * 1000);
+                ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace14);
+            } else if (filtro === "mes") {
+                ventasFiltradas = todasLasVentas.filter(v => {
+                    const d = parseFecha(v.fecha);
+                    return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear();
+                });
+            } else if (filtro === "manual") {
+                const fInicio = document.getElementById("fecha-inicio").value;
+                const fFin = document.getElementById("fecha-fin").value;
+                if (fInicio && fFin) {
+                    const tInicio = new Date(fInicio + "T00:00:00").getTime();
+                    const tFin = new Date(fFin + "T23:59:59").getTime();
+                    ventasFiltradas = todasLasVentas.filter(v => {
+                        const t = parseFecha(v.fecha).getTime();
+                        return t >= tInicio && t <= tFin;
+                    });
                 }
+            }
 
-                const sumaTotal = ventas.reduce((acumulador, venta) => acumulador + venta.total, 0);
-                granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`;
+            actualizarVistaVentas(ventasFiltradas);
+        }
 
+        function actualizarVistaVentas(ventas) {
+            const list = document.getElementById("ventas-list");
+            const granTotalElement = document.getElementById("gran-total-ventas");
+            
+            const sumaTotal = ventas.reduce((acc, v) => acc + v.total, 0);
+            granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`;
+
+            if(ventas.length === 0) {
+                list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
+            } else {
                 list.innerHTML = ventas.map(v => `
-                    <tr class="hover:bg-gray-50 transition border-b">
-                        <td class="p-4 text-sm font-medium text-gray-700">${v.fecha}</td>
-                        <td class="p-4 text-sm text-gray-600">${v.articulos}</td>
-                        <td class="p-4 font-bold text-green-600 text-right text-lg">Q${v.total.toFixed(2)}</td>
+                    <tr class="hover:bg-gray-50 border-b">
+                        <td class="p-4 text-sm">${v.fecha}</td><td class="p-4 text-sm">${v.articulos}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td>
                     </tr>
                 `).join("");
-            } catch (error) { console.error(error); }
+            }
+            dibujarGrafica(ventas);
         }
 
-        if(sessionStorage.getItem("adminAuth") === "true") {
-            fetchInventory();
-            fetchVentas();
+        function dibujarGrafica(ventas) {
+            const ctx = document.getElementById('ventasChart').getContext('2d');
+            
+            // Agrupamos las ventas por día para la gráfica
+            const agrupado = {};
+            ventas.forEach(v => {
+                // Sacamos solo el "DD/MM/YYYY" de la fecha cortando la hora
+                const fechaCorta = parseFecha(v.fecha).toLocaleDateString();
+                agrupado[fechaCorta] = (agrupado[fechaCorta] || 0) + v.total;
+            });
+
+            const etiquetas = Object.keys(agrupado).reverse(); // Fechas
+            const datos = Object.values(agrupado).reverse();   // Dinero
+
+            if(miGrafico) miGrafico.destroy(); // Borramos la gráfica anterior
+
+            miGrafico = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: etiquetas.length ? etiquetas : ['Sin datos'],
+                    datasets: [{
+                        label: 'Ingresos Diarios (Q)',
+                        data: datos.length ? datos : [0],
+                        borderColor: '#2563eb', // Azul Tailwind
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#2563eb',
+                        tension: 0.3, // Curvas suaves
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
+
+        if(sessionStorage.getItem("adminAuth") === "true") { fetchInventory(); fetchVentas(); }
     </script>
 </body>
 </html>
