@@ -151,12 +151,12 @@
             updateCartUI();
         };
 
-        // --- REEMPLAZA TU EVENT LISTENER DEL CHECKOUT POR ESTE ---
+        // --- SISTEMA DE CHECKOUT Y TICKET ---
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
             const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
             const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            const cartCopia = [...cart]; // Guardamos copia para el ticket
+            const cartCopia = [...cart];
 
             try {
                 const response = await fetch(`${API_URL}/ventas`, {
@@ -188,11 +188,10 @@
                     Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
                 }
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error al procesar.' });
+                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error al procesar la venta.' });
             }
         });
 
-        // NUEVA FUNCIÓN PARA EL TICKET
         function imprimirTicket(items, total) {
             let ventana = window.open('', 'PRINT', 'height=600,width=400');
             
@@ -234,12 +233,56 @@
             ventana.document.close();
             ventana.focus();
             
-            // Pausa de medio segundo para que renderice y luego imprime
             setTimeout(() => {
                 ventana.print();
                 ventana.close();
             }, 500);
         }
+
+        // --- SISTEMA DE CÁMARA Y CÓDIGO MANUAL (RESTURADO) ---
+        addManualBtn.addEventListener("click", () => {
+            const code = manualInput.value.trim();
+            if (code) {
+                fetchProduct(code);
+                manualInput.value = "";
+            }
+        });
+
+        manualInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") addManualBtn.click();
+        });
+
+        startBtn.addEventListener("click", () => {
+            startBtn.classList.add("hidden");
+            stopBtn.classList.remove("hidden");
+
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    if (navigator.vibrate) navigator.vibrate(100);
+                    fetchProduct(decodedText);
+                    stopScanning();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
+                stopScanning();
+            });
+        });
+
+        function stopScanning() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    startBtn.classList.remove("hidden");
+                    stopBtn.classList.add("hidden");
+                }).catch(err => console.error(err));
+            }
+        }
+
+        stopBtn.addEventListener("click", stopScanning);
     </script>
 </body>
 </html>
