@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Inventario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Librería para el buscador inteligente (Fuzzy Search) -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+    
+    <!-- Navegación -->
+    <nav class="bg-gray-800 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-xl font-bold">Gestión de Inventario</h1>
+        <a href="index.html" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition">Ir al POS (Caja)</a>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-4 space-y-6 mt-4">
+        
+        <!-- Crear Nuevo Producto -->
+        <section class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Registrar Nuevo Producto</h2>
+            <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Código de Barras</label>
+                    <input type="text" id="add-codigo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Nombre</label>
+                    <input type="text" id="add-nombre" required placeholder="Ej: Tortrix Limón" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Precio (Q)</label>
+                    <input type="number" step="0.01" id="add-precio" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Stock Inicial</label>
+                    <input type="number" id="add-stock" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="md:col-span-4 flex justify-end">
+                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 transition">Guardar Producto</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Buscador Inteligente -->
+        <section>
+            <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente (ej. 'Totris', 'gaseos')..." 
+                   class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:border-blue-500 outline-none shadow-sm">
+        </section>
+
+        <!-- Lista de Productos -->
+        <section class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th class="p-4 border-b">Código</th>
+                            <th class="p-4 border-b">Nombre</th>
+                            <th class="p-4 border-b">Precio</th>
+                            <th class="p-4 border-b">Stock</th>
+                            <th class="p-4 border-b text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-list" class="divide-y divide-gray-100">
+                        <!-- Los productos se inyectarán aquí desde JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal para Editar Producto -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
+            <form id="edit-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Nombre</label>
+                    <input type="text" id="edit-nombre" required class="w-full border rounded p-2 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Precio (Q)</label>
+                        <input type="number" step="0.01" id="edit-precio" required class="w-full border rounded p-2 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-blue-600 mb-1">Nuevo Stock Total</label>
+                        <input type="number" id="edit-stock" required class="w-full border-2 border-blue-300 rounded p-2 outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded text-gray-800 hover:bg-gray-400">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://backend-pos-tienda.onrender.com/api";
+        let allProducts = [];
+        let fuse = null; // Variable para el buscador inteligente
+        let currentEditCode = null;
+
+        // Referencias del DOM
+        const inventoryList = document.getElementById("inventory-list");
+        const searchInput = document.getElementById("search-input");
+        const addForm = document.getElementById("add-form");
+        const editForm = document.getElementById("edit-form");
+        const editModal = document.getElementById("edit-modal");
+
+        // Cargar todos los productos al inicio
+        async function fetchInventory() {
+            try {
+                const response = await fetch(`${API_URL}/productos`);
+                allProducts = await response.json();
+                
+                // Configurar Fuse.js para buscar fallas ortográficas leves en el nombre o código
+                fuse = new Fuse(allProducts, {
+                    keys: ['nombre', 'codigo'],
+                    threshold: 0.4, // 0.0 es coincidencia exacta, 1.0 es coincidencia muy libre
+                    ignoreLocation: true
+                });
+
+                renderTable(allProducts);
+            } catch (error) {
+                console.error("Error cargando inventario:", error);
+            }
+        }
+
+        // Dibujar la tabla
+        function renderTable(products) {
+            if (products.length === 0) {
+                inventoryList.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay productos registrados o no coinciden con la búsqueda.</td></tr>`;
+                return;
+            }
+
+            inventoryList.innerHTML = products.map(p => {
+                // Colorear de rojo si el stock está muy bajo
+                const stockColor = p.stock <= 5 ? "text-red-600 font-bold" : "text-gray-800";
+                return `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-4 text-sm font-mono text-gray-500">${p.codigo}</td>
+                        <td class="p-4 font-medium text-gray-800">${p.nombre}</td>
+                        <td class="p-4 text-gray-600">Q${p.precio.toFixed(2)}</td>
+                        <td class="p-4 ${stockColor}">${p.stock}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-3 py-1 rounded shadow-sm text-sm font-bold">
+                                ✎ Editar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // Buscador Inteligente en tiempo real
+        searchInput.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.trim();
+            if (!searchTerm) {
+                renderTable(allProducts); // Si está vacío, mostrar todos
+                return;
+            }
+            // Realizar búsqueda difusa
+            const results = fuse.search(searchTerm);
+            // Fuse devuelve el formato { item: {producto}, refIndex: 0 }, lo extraemos:
+            const filteredProducts = results.map(result => result.item);
+            renderTable(filteredProducts);
+        });
+
+        // Guardar Producto Nuevo
+        addForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const newProduct = {
+                codigo: document.getElementById("add-codigo").value.trim(),
+                nombre: document.getElementById("add-nombre").value.trim(),
+                precio: parseFloat(document.getElementById("add-precio").value),
+                stock: parseInt(document.getElementById("add-stock").value)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/productos`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newProduct)
+                });
+
+                if (response.ok) {
+                    alert("Producto agregado al inventario.");
+                    addForm.reset();
+                    fetchInventory(); // Recargar tabla
+                } else {
+                    const data = await response.json();
+                    alert(`Error: ${data.detail}`);
+                }
+            } catch (error) {
+                alert("Error de comunicación con el servidor.");
+            }
+        });
+
+        // Funciones del Modal de Edición
+        function openEditModal(codigo) {
+            const product = allProducts.find(p => p.codigo === codigo);
+            if (!product) return;
+            
+            currentEditCode = codigo;
+            document.getElementById("edit-nombre").value = product.nombre;
+            document.getElementById("edit-precio").value = product.precio;
+            document.getElementById("edit-stock").value = product.stock; // Muestra el stock actual (ej. 40)
+            
+            editModal.classList.remove("hidden");
+        }
+
+        function closeEditModal() {
+            editModal.classList.add("hidden");
+            currentEditCode = null;
+        }
+
+        // Actualizar Producto Existente
+        editForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const updatedProduct = {
+                codigo: currentEditCode,
+                nombre: document.getElementById("edit-nombre").value.trim(),
+                precio: parseFloat(document.getElementById("edit-precio").value),
+                stock: parseInt(document.getElementById("edit-stock").value) // El dueño pone el nuevo total aquí (ej. 70)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/productos/${currentEditCode}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedProduct)
+                });
+
+                if (response.ok) {
+                    alert("Inventario actualizado correctamente.");
+                    closeEditModal();
+                    fetchInventory(); // Recargar tabla
+                    searchInput.value = ""; // Limpiar buscador
+                } else {
+                    const data = await response.json();
+                    alert(`Error: ${data.detail}`);
+                }
+            } catch (error) {
+                alert("Error de comunicación con el servidor.");
+            }
+        });
+
+        // Iniciar
+        fetchInventory();
+    </script>
+</body>
+</html>
