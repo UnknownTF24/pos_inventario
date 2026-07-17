@@ -257,23 +257,25 @@
             stopBtn.classList.remove("hidden");
 
             const formatos = [
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39
+                Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39
             ];
 
             html5QrcodeScanner = new Html5Qrcode("reader", { formatsToSupport: formatos });
             
-            // Usamos solo el parámetro seguro de cámara trasera
+            // OBLIGAMOS AL CELULAR A USAR EL LENTE PRINCIPAL EXIGIENDO FULL HD
+            const restricciones = { 
+                facingMode: "environment",
+                width: { min: 1280, ideal: 1920 },
+                height: { min: 720, ideal: 1080 }
+            };
+
             html5QrcodeScanner.start(
-                { facingMode: "environment" }, 
+                restricciones, 
                 { 
-                    fps: 15, // Velocidad rápida pero estable
-                    qrbox: { width: 250, height: 150 }, 
-                    aspectRatio: 1.0
+                    fps: 15, 
+                    qrbox: { width: 250, height: 120 }
                 },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
