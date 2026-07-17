@@ -66,7 +66,6 @@
 
             <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl mb-4">
 
-            <!-- ARREGLO DE SCROLL EN INVENTARIO -->
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[600px]">
@@ -110,14 +109,14 @@
                 </div>
             </div>
             
-            <!-- ARREGLO DE SCROLL EN VENTAS -->
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead class="bg-gray-50 text-gray-600">
                             <tr>
                                 <th class="p-4 border-b whitespace-nowrap">Fecha y Hora</th>
-                                <th class="p-4 border-b text-center whitespace-nowrap">Cantidad</th>
+                                <!-- Columna de Cantidad renombrada y ajustada -->
+                                <th class="p-4 border-b text-center whitespace-nowrap">Cant. x Precio</th>
                                 <th class="p-4 border-b w-1/2 min-w-[200px]">Producto</th>
                                 <th class="p-4 border-b text-right whitespace-nowrap">Total</th>
                             </tr>
@@ -126,7 +125,6 @@
                         
                         <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                             <tr>
-                                <!-- Reducimos un poco el tamaño de la letra en celular para el footer -->
                                 <td colspan="3" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm md:text-base">Total Generado (Período Seleccionado):</td>
                                 <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-lg md:text-xl">Q0.00</td>
                             </tr>
@@ -236,7 +234,6 @@
         });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetch(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        // --- SISTEMA DE VENTAS Y ZONA HORARIA ---
         function parseFecha(fechaStr) {
             const partes = fechaStr.split(/[\s,/:]+/);
             if(partes.length >= 5) {
@@ -323,12 +320,29 @@
                     let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
                     let cantHtml = "";
                     let prodHtml = "";
+                    let isSingleItem = items.length === 1;
                     
                     items.forEach(i => {
                         let match = i.trim().match(/^(\d+)x\s*(.*)/);
                         if (match) {
-                            cantHtml += `<div class="py-1 font-bold text-gray-700">${match[1]}</div>`;
-                            prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap min-w-[200px]">${match[2]}</div>`;
+                            let qty = parseInt(match[1]);
+                            let name = match[2].trim();
+                            let price = 0;
+                            
+                            // Lógica inteligente: Si hay un solo producto en la venta, calcula el precio exacto
+                            // Si hay varios, lo busca en el inventario para deducir los subtotales
+                            if (isSingleItem && qty > 0) {
+                                price = v.total / qty;
+                            } else {
+                                let p = allProducts.find(prod => prod.nombre === name);
+                                if (p) price = p.precio;
+                            }
+                            
+                            let cantDisplay = price > 0 ? `${qty} x Q${price.toFixed(2)}` : `${qty}`;
+                            let subTotalDisplay = (!isSingleItem && price > 0) ? ` <span class="text-xs text-blue-500 font-bold ml-1">(Q${(price * qty).toFixed(2)})</span>` : ``;
+
+                            cantHtml += `<div class="py-1 font-bold text-gray-700 whitespace-nowrap">${cantDisplay}</div>`;
+                            prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap min-w-[200px]">${name}${subTotalDisplay}</div>`;
                         } else {
                             cantHtml += `<div class="py-1 font-bold text-gray-700">-</div>`;
                             prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap min-w-[200px]">${i}</div>`;
