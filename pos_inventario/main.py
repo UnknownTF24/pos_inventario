@@ -47,7 +47,6 @@ class ItemVenta(BaseModel):
 class VentaRequest(BaseModel):
     items: List[ItemVenta]
 
-# --- NUEVO: Obtener TODOS los productos ---
 @app.get("/api/productos")
 def listar_productos():
     conn = sqlite3.connect(DB_NAME)
@@ -57,7 +56,6 @@ def listar_productos():
     conn.close()
     return [{"codigo": row[0], "nombre": row[1], "precio": row[2], "stock": row[3]} for row in rows]
 
-# Crear un producto nuevo
 @app.post("/api/productos")
 def crear_producto(producto: Producto):
     conn = sqlite3.connect(DB_NAME)
@@ -75,7 +73,6 @@ def crear_producto(producto: Producto):
     finally:
         conn.close()
 
-# Obtener UN producto por su código
 @app.get("/api/productos/{codigo}")
 def obtener_producto(codigo: str):
     conn = sqlite3.connect(DB_NAME)
@@ -88,7 +85,6 @@ def obtener_producto(codigo: str):
         raise HTTPException(status_code=404, detail="Producto no registrado.")
     return {"codigo": row[0], "nombre": row[1], "precio": row[2], "stock": row[3]}
 
-# --- NUEVO: Actualizar un producto existente ---
 @app.put("/api/productos/{codigo}")
 def actualizar_producto(codigo: str, producto: Producto):
     conn = sqlite3.connect(DB_NAME)
@@ -108,7 +104,23 @@ def actualizar_producto(codigo: str, producto: Producto):
     finally:
         conn.close()
 
-# Procesar una venta
+# --- NUEVO: Eliminar un producto ---
+@app.delete("/api/productos/{codigo}")
+def eliminar_producto(codigo: str):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM productos WHERE codigo = ?", (codigo,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+        conn.commit()
+        return {"status": "success", "message": "Producto eliminado correctamente."}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
 @app.post("/api/ventas")
 def procesar_venta(venta: VentaRequest):
     conn = sqlite3.connect(DB_NAME)

@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administración de Inventario</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Librería para el buscador inteligente (Fuzzy Search) -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
     
-    <!-- Navegación -->
     <nav class="bg-gray-800 text-white p-4 shadow-md flex justify-between items-center">
         <h1 class="text-xl font-bold">Gestión de Inventario</h1>
         <a href="index.html" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition">Ir al POS (Caja)</a>
@@ -18,7 +16,6 @@
 
     <main class="max-w-4xl mx-auto p-4 space-y-6 mt-4">
         
-        <!-- Crear Nuevo Producto -->
         <section class="bg-white p-6 rounded-xl shadow-md">
             <h2 class="text-lg font-bold text-gray-800 mb-4">Registrar Nuevo Producto</h2>
             <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -44,13 +41,11 @@
             </form>
         </section>
 
-        <!-- Buscador Inteligente -->
         <section>
             <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente (ej. 'Totris', 'gaseos')..." 
                    class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:border-blue-500 outline-none shadow-sm">
         </section>
 
-        <!-- Lista de Productos -->
         <section class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -64,14 +59,12 @@
                         </tr>
                     </thead>
                     <tbody id="inventory-list" class="divide-y divide-gray-100">
-                        <!-- Los productos se inyectarán aquí desde JavaScript -->
                     </tbody>
                 </table>
             </div>
         </section>
     </main>
 
-    <!-- Modal para Editar Producto -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -101,26 +94,23 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let allProducts = [];
-        let fuse = null; // Variable para el buscador inteligente
+        let fuse = null;
         let currentEditCode = null;
 
-        // Referencias del DOM
         const inventoryList = document.getElementById("inventory-list");
         const searchInput = document.getElementById("search-input");
         const addForm = document.getElementById("add-form");
         const editForm = document.getElementById("edit-form");
         const editModal = document.getElementById("edit-modal");
 
-        // Cargar todos los productos al inicio
         async function fetchInventory() {
             try {
                 const response = await fetch(`${API_URL}/productos`);
                 allProducts = await response.json();
                 
-                // Configurar Fuse.js para buscar fallas ortográficas leves en el nombre o código
                 fuse = new Fuse(allProducts, {
                     keys: ['nombre', 'codigo'],
-                    threshold: 0.4, // 0.0 es coincidencia exacta, 1.0 es coincidencia muy libre
+                    threshold: 0.4,
                     ignoreLocation: true
                 });
 
@@ -130,7 +120,6 @@
             }
         }
 
-        // Dibujar la tabla
         function renderTable(products) {
             if (products.length === 0) {
                 inventoryList.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay productos registrados o no coinciden con la búsqueda.</td></tr>`;
@@ -138,7 +127,6 @@
             }
 
             inventoryList.innerHTML = products.map(p => {
-                // Colorear de rojo si el stock está muy bajo
                 const stockColor = p.stock <= 5 ? "text-red-600 font-bold" : "text-gray-800";
                 return `
                     <tr class="hover:bg-gray-50 transition">
@@ -147,30 +135,31 @@
                         <td class="p-4 text-gray-600">Q${p.precio.toFixed(2)}</td>
                         <td class="p-4 ${stockColor}">${p.stock}</td>
                         <td class="p-4 text-center">
-                            <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-3 py-1 rounded shadow-sm text-sm font-bold">
-                                ✎ Editar
-                            </button>
+                            <div class="flex justify-center gap-2">
+                                <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-3 py-1 rounded shadow-sm text-sm font-bold">
+                                    ✎ Editar
+                                </button>
+                                <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow-sm text-sm font-bold">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
             }).join("");
         }
 
-        // Buscador Inteligente en tiempo real
         searchInput.addEventListener("input", (e) => {
             const searchTerm = e.target.value.trim();
             if (!searchTerm) {
-                renderTable(allProducts); // Si está vacío, mostrar todos
+                renderTable(allProducts);
                 return;
             }
-            // Realizar búsqueda difusa
             const results = fuse.search(searchTerm);
-            // Fuse devuelve el formato { item: {producto}, refIndex: 0 }, lo extraemos:
             const filteredProducts = results.map(result => result.item);
             renderTable(filteredProducts);
         });
 
-        // Guardar Producto Nuevo
         addForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const newProduct = {
@@ -188,9 +177,8 @@
                 });
 
                 if (response.ok) {
-                    alert("Producto agregado al inventario.");
                     addForm.reset();
-                    fetchInventory(); // Recargar tabla
+                    fetchInventory();
                 } else {
                     const data = await response.json();
                     alert(`Error: ${data.detail}`);
@@ -200,7 +188,6 @@
             }
         });
 
-        // Funciones del Modal de Edición
         function openEditModal(codigo) {
             const product = allProducts.find(p => p.codigo === codigo);
             if (!product) return;
@@ -208,7 +195,7 @@
             currentEditCode = codigo;
             document.getElementById("edit-nombre").value = product.nombre;
             document.getElementById("edit-precio").value = product.precio;
-            document.getElementById("edit-stock").value = product.stock; // Muestra el stock actual (ej. 40)
+            document.getElementById("edit-stock").value = product.stock;
             
             editModal.classList.remove("hidden");
         }
@@ -218,14 +205,13 @@
             currentEditCode = null;
         }
 
-        // Actualizar Producto Existente
         editForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const updatedProduct = {
                 codigo: currentEditCode,
                 nombre: document.getElementById("edit-nombre").value.trim(),
                 precio: parseFloat(document.getElementById("edit-precio").value),
-                stock: parseInt(document.getElementById("edit-stock").value) // El dueño pone el nuevo total aquí (ej. 70)
+                stock: parseInt(document.getElementById("edit-stock").value)
             };
 
             try {
@@ -236,10 +222,9 @@
                 });
 
                 if (response.ok) {
-                    alert("Inventario actualizado correctamente.");
                     closeEditModal();
-                    fetchInventory(); // Recargar tabla
-                    searchInput.value = ""; // Limpiar buscador
+                    fetchInventory();
+                    searchInput.value = "";
                 } else {
                     const data = await response.json();
                     alert(`Error: ${data.detail}`);
@@ -249,7 +234,27 @@
             }
         });
 
-        // Iniciar
+        // NUEVA FUNCIÓN: Eliminar Producto
+        window.deleteProduct = async function(codigo) {
+            const confirmacion = confirm("¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.");
+            if (!confirmacion) return;
+
+            try {
+                const response = await fetch(`${API_URL}/productos/${codigo}`, {
+                    method: "DELETE"
+                });
+
+                if (response.ok) {
+                    fetchInventory(); // Recargar la tabla automáticamente
+                } else {
+                    const data = await response.json();
+                    alert(`Error: ${data.detail}`);
+                }
+            } catch (error) {
+                alert("Error de comunicación al intentar eliminar.");
+            }
+        };
+
         fetchInventory();
     </script>
 </body>
