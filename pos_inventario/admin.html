@@ -6,84 +6,90 @@
     <title>Administración de Inventario</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
-    <!-- Librería Premium de Alertas -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
     
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center w-96">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Acceso Restringido 🔒</h2>
+            <p class="text-gray-500 mb-6">Ingresa el PIN de administrador</p>
+            <input type="password" id="pin-input" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-2xl tracking-widest focus:border-blue-500 outline-none mb-4" placeholder="••••">
+            <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Entrar</button>
+        </div>
+    </div>
+
     <nav class="bg-gray-800 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold">Gestión de Inventario</h1>
-        <a href="index.html" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition">Ir al POS (Caja)</a>
+        <h1 class="text-xl font-bold">Panel de Control</h1>
+        <div class="flex gap-2">
+            <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition">📦 Inventario</button>
+            <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-medium transition">📈 Ventas</button>
+            <a href="index.html" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm font-medium transition ml-4">Salir al POS</a>
+        </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto p-4 space-y-6 mt-4">
+    <main class="max-w-5xl mx-auto p-4 mt-4">
         
-        <section class="bg-white p-6 rounded-xl shadow-md">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Registrar Nuevo Producto</h2>
-            <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Código de Barras</label>
-                    <input type="text" id="add-codigo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Nombre</label>
-                    <input type="text" id="add-nombre" required placeholder="Ej: Tortrix Limón" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Precio (Q)</label>
-                    <input type="number" step="0.01" id="add-precio" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Stock Inicial</label>
-                    <input type="number" id="add-stock" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div class="md:col-span-4 flex justify-end">
-                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 transition">Guardar Producto</button>
-                </div>
-            </form>
-        </section>
+        <!-- PESTAÑA: INVENTARIO -->
+        <div id="tab-inventario">
+            <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Registrar Nuevo Producto</h2>
+                <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div><label class="block text-sm text-gray-600 mb-1">Código de Barras</label><input type="text" id="add-codigo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div><label class="block text-sm text-gray-600 mb-1">Nombre</label><input type="text" id="add-nombre" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div><label class="block text-sm text-gray-600 mb-1">Precio (Q)</label><input type="number" step="0.01" id="add-precio" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div><label class="block text-sm text-gray-600 mb-1">Stock Inicial</label><input type="number" id="add-stock" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700">Guardar Producto</button></div>
+                </form>
+            </section>
 
-        <section>
-            <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente (ej. 'Totris', 'gaseos')..." 
-                   class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:border-blue-500 outline-none shadow-sm">
-        </section>
+            <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:border-blue-500 outline-none shadow-sm mb-4">
 
-        <section class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="overflow-x-auto">
+            <section class="bg-white rounded-xl shadow-md overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr>
+                    </thead>
+                    <tbody id="inventory-list" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- PESTAÑA: VENTAS -->
+        <div id="tab-ventas" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center border-l-4 border-green-500">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Historial de Transacciones</h2>
+                    <p class="text-gray-500 text-sm">Últimas 50 ventas registradas</p>
+                </div>
+                <button onclick="fetchVentas()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded font-bold hover:bg-blue-200 transition">🔄 Actualizar</button>
+            </div>
+            
+            <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-50 text-gray-600">
                         <tr>
-                            <th class="p-4 border-b">Código</th>
-                            <th class="p-4 border-b">Nombre</th>
-                            <th class="p-4 border-b">Precio</th>
-                            <th class="p-4 border-b">Stock</th>
-                            <th class="p-4 border-b text-center">Acción</th>
+                            <th class="p-4 border-b w-1/4">Fecha y Hora</th>
+                            <th class="p-4 border-b w-2/4">Artículos Vendidos</th>
+                            <th class="p-4 border-b w-1/4 text-right">Total Ingreso</th>
                         </tr>
                     </thead>
-                    <tbody id="inventory-list" class="divide-y divide-gray-100">
-                    </tbody>
+                    <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
                 </table>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
 
-    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4">
+    <!-- Modal Editar (Igual que antes) -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
             <form id="edit-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Nombre</label>
-                    <input type="text" id="edit-nombre" required class="w-full border rounded p-2 outline-none">
-                </div>
+                <div><label class="block text-sm text-gray-600 mb-1">Nombre</label><input type="text" id="edit-nombre" required class="w-full border rounded p-2 outline-none"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-600 mb-1">Precio (Q)</label>
-                        <input type="number" step="0.01" id="edit-precio" required class="w-full border rounded p-2 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-blue-600 mb-1">Nuevo Stock Total</label>
-                        <input type="number" id="edit-stock" required class="w-full border-2 border-blue-300 rounded p-2 outline-none">
-                    </div>
+                    <div><label class="block text-sm text-gray-600 mb-1">Precio (Q)</label><input type="number" step="0.01" id="edit-precio" required class="w-full border rounded p-2 outline-none"></div>
+                    <div><label class="block text-sm font-bold text-blue-600 mb-1">Stock</label><input type="number" id="edit-stock" required class="w-full border-2 border-blue-300 rounded p-2 outline-none"></div>
                 </div>
                 <div class="flex justify-end gap-2 mt-6">
                     <button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded text-gray-800 hover:bg-gray-400">Cancelar</button>
@@ -95,199 +101,163 @@
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
+        const PIN_SECRETO = "1234"; // <-- CAMBIA ESTO AL PIN QUE QUIERAS
+        
+        // --- SISTEMA DE LOGIN ---
+        if(sessionStorage.getItem("adminAuth") === "true") {
+            document.getElementById("login-overlay").style.display = "none";
+        }
+
+        function verificarLogin() {
+            const input = document.getElementById("pin-input").value;
+            if(input === PIN_SECRETO) {
+                sessionStorage.setItem("adminAuth", "true");
+                document.getElementById("login-overlay").style.display = "none";
+                fetchInventory();
+                fetchVentas();
+            } else {
+                Swal.fire('Acceso Denegado', 'El PIN es incorrecto', 'error');
+                document.getElementById("pin-input").value = "";
+            }
+        }
+
+        document.getElementById("pin-input").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") verificarLogin();
+        });
+
+        // --- SISTEMA DE PESTAÑAS ---
+        function switchTab(tab) {
+            if(tab === 'inventario') {
+                document.getElementById('tab-inventario').classList.remove('hidden');
+                document.getElementById('tab-ventas').classList.add('hidden');
+                document.getElementById('btn-inv').className = "bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition";
+                document.getElementById('btn-ven').className = "bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-medium transition";
+            } else {
+                document.getElementById('tab-inventario').classList.add('hidden');
+                document.getElementById('tab-ventas').classList.remove('hidden');
+                document.getElementById('btn-ven').className = "bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition";
+                document.getElementById('btn-inv').className = "bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-medium transition";
+                fetchVentas();
+            }
+        }
+
+        // --- LÓGICA DE INVENTARIO (CRUD) ---
         let allProducts = [];
         let fuse = null;
         let currentEditCode = null;
 
-        const inventoryList = document.getElementById("inventory-list");
-        const searchInput = document.getElementById("search-input");
-        const addForm = document.getElementById("add-form");
-        const editForm = document.getElementById("edit-form");
-        const editModal = document.getElementById("edit-modal");
-
         async function fetchInventory() {
             try {
-                const response = await fetch(`${API_URL}/productos`);
-                allProducts = await response.json();
-                
-                fuse = new Fuse(allProducts, {
-                    keys: ['nombre', 'codigo'],
-                    threshold: 0.4,
-                    ignoreLocation: true
-                });
-
+                const res = await fetch(`${API_URL}/productos`);
+                allProducts = await res.json();
+                fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 });
                 renderTable(allProducts);
-            } catch (error) {
-                console.error("Error cargando inventario:", error);
-                Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo cargar el inventario.' });
-            }
+            } catch (error) {}
         }
 
         function renderTable(products) {
+            const list = document.getElementById("inventory-list");
             if (products.length === 0) {
-                inventoryList.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay productos registrados o no coinciden con la búsqueda.</td></tr>`;
+                list.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay productos.</td></tr>`;
                 return;
             }
-
-            inventoryList.innerHTML = products.map(p => {
-                const stockColor = p.stock <= 5 ? "text-red-600 font-bold" : "text-gray-800";
-                return `
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="p-4 text-sm font-mono text-gray-500">${p.codigo}</td>
-                        <td class="p-4 font-medium text-gray-800">${p.nombre}</td>
-                        <td class="p-4 text-gray-600">Q${p.precio.toFixed(2)}</td>
-                        <td class="p-4 ${stockColor}">${p.stock}</td>
-                        <td class="p-4 text-center">
-                            <div class="flex justify-center gap-2">
-                                <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-3 py-1 rounded shadow-sm text-sm font-bold">
-                                    ✎ Editar
-                                </button>
-                                <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow-sm text-sm font-bold">
-                                    🗑️ Eliminar
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
+            list.innerHTML = products.map(p => `
+                <tr class="hover:bg-gray-50 border-b">
+                    <td class="p-4 font-mono text-gray-500">${p.codigo}</td>
+                    <td class="p-4 font-medium text-gray-800">${p.nombre}</td>
+                    <td class="p-4 text-gray-600">Q${p.precio.toFixed(2)}</td>
+                    <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : 'text-gray-800'}">${p.stock}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded text-sm mr-2 font-bold shadow">✎</button>
+                        <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold shadow">✕</button>
+                    </td>
+                </tr>
+            `).join("");
         }
 
-        searchInput.addEventListener("input", (e) => {
-            const searchTerm = e.target.value.trim();
-            if (!searchTerm) {
-                renderTable(allProducts);
-                return;
-            }
-            const results = fuse.search(searchTerm);
-            const filteredProducts = results.map(result => result.item);
-            renderTable(filteredProducts);
+        document.getElementById("search-input").addEventListener("input", (e) => {
+            const term = e.target.value.trim();
+            if (!term) return renderTable(allProducts);
+            renderTable(fuse.search(term).map(r => r.item));
         });
 
-        addForm.addEventListener("submit", async (e) => {
+        document.getElementById("add-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const newProduct = {
-                codigo: document.getElementById("add-codigo").value.trim(),
-                nombre: document.getElementById("add-nombre").value.trim(),
+            const product = {
+                codigo: document.getElementById("add-codigo").value,
+                nombre: document.getElementById("add-nombre").value,
                 precio: parseFloat(document.getElementById("add-precio").value),
                 stock: parseInt(document.getElementById("add-stock").value)
             };
-
-            try {
-                const response = await fetch(`${API_URL}/productos`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(newProduct)
-                });
-
-                if (response.ok) {
-                    addForm.reset();
-                    fetchInventory();
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Producto Guardado!',
-                        text: `${newProduct.nombre} fue registrado con éxito.`,
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                } else {
-                    const data = await response.json();
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
-                }
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error de comunicación con el servidor.' });
-            }
+            await fetch(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
+            document.getElementById("add-form").reset();
+            fetchInventory();
+            Swal.fire({icon: 'success', title: 'Guardado', timer: 1000, showConfirmButton: false});
         });
 
         function openEditModal(codigo) {
-            const product = allProducts.find(p => p.codigo === codigo);
-            if (!product) return;
-            
+            const p = allProducts.find(x => x.codigo === codigo);
             currentEditCode = codigo;
-            document.getElementById("edit-nombre").value = product.nombre;
-            document.getElementById("edit-precio").value = product.precio;
-            document.getElementById("edit-stock").value = product.stock;
-            
-            editModal.classList.remove("hidden");
+            document.getElementById("edit-nombre").value = p.nombre;
+            document.getElementById("edit-precio").value = p.precio;
+            document.getElementById("edit-stock").value = p.stock;
+            document.getElementById("edit-modal").classList.remove("hidden");
         }
+        function closeEditModal() { document.getElementById("edit-modal").classList.add("hidden"); }
 
-        function closeEditModal() {
-            editModal.classList.add("hidden");
-            currentEditCode = null;
-        }
-
-        editForm.addEventListener("submit", async (e) => {
+        document.getElementById("edit-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const updatedProduct = {
+            const product = {
                 codigo: currentEditCode,
-                nombre: document.getElementById("edit-nombre").value.trim(),
+                nombre: document.getElementById("edit-nombre").value,
                 precio: parseFloat(document.getElementById("edit-precio").value),
                 stock: parseInt(document.getElementById("edit-stock").value)
             };
-
-            try {
-                const response = await fetch(`${API_URL}/productos/${currentEditCode}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(updatedProduct)
-                });
-
-                if (response.ok) {
-                    closeEditModal();
-                    fetchInventory();
-                    searchInput.value = "";
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Actualizado!',
-                        text: 'El inventario fue modificado.',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                } else {
-                    const data = await response.json();
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
-                }
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error de comunicación con el servidor.' });
-            }
+            await fetch(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
+            closeEditModal();
+            fetchInventory();
+            Swal.fire({icon: 'success', title: 'Actualizado', timer: 1000, showConfirmButton: false});
         });
 
-        // NUEVA FUNCIÓN CON SWEETALERT
-        window.deleteProduct = async function(codigo) {
+        window.deleteProduct = function(codigo) {
             Swal.fire({
-                title: '¿Estás completamente seguro?',
-                text: "Esta acción no se puede deshacer y borrará el producto de la base de datos.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, eliminarlo',
-                cancelButtonText: 'Cancelar'
+                title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    try {
-                        const response = await fetch(`${API_URL}/productos/${codigo}`, {
-                            method: "DELETE"
-                        });
-
-                        if (response.ok) {
-                            fetchInventory(); 
-                            Swal.fire(
-                                '¡Eliminado!',
-                                'El producto ha sido borrado de tu inventario.',
-                                'success'
-                            )
-                        } else {
-                            const data = await response.json();
-                            Swal.fire('Error', data.detail, 'error');
-                        }
-                    } catch (error) {
-                        Swal.fire('Error', 'Error de comunicación al intentar eliminar.', 'error');
-                    }
+                    await fetch(`${API_URL}/productos/${codigo}`, { method: "DELETE" });
+                    fetchInventory();
                 }
-            })
+            });
         };
 
-        fetchInventory();
+        // --- LÓGICA DE REPORTE DE VENTAS ---
+        async function fetchVentas() {
+            try {
+                const res = await fetch(`${API_URL}/ventas`);
+                const ventas = await res.json();
+                const list = document.getElementById("ventas-list");
+                
+                if(ventas.length === 0) {
+                    list.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Aún no hay ventas registradas.</td></tr>`;
+                    return;
+                }
+
+                list.innerHTML = ventas.map(v => `
+                    <tr class="hover:bg-gray-50 transition border-b">
+                        <td class="p-4 text-sm font-medium text-gray-700">${v.fecha}</td>
+                        <td class="p-4 text-sm text-gray-600">${v.articulos}</td>
+                        <td class="p-4 font-bold text-green-600 text-right text-lg">Q${v.total.toFixed(2)}</td>
+                    </tr>
+                `).join("");
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        if(sessionStorage.getItem("adminAuth") === "true") {
+            fetchInventory();
+            fetchVentas();
+        }
     </script>
 </body>
 </html>

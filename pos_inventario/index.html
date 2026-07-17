@@ -1,159 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Móvil & Inventario</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Librería Premium de Alertas -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
-    <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold">POS & Control de Inventario</h1>
-        <a href="admin.html" class="bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded text-sm font-medium transition shadow">Administración ⚙️</a>
-    </header>
-    <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
-        
-        <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
-            <h2 class="text-lg font-semibold text-gray-700">Escanear Producto</h2>
-            <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
-            <div class="flex gap-2">
-                <button id="start-btn" class="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium shadow hover:bg-green-600 transition">Encender Cámara</button>
-                <button id="stop-btn" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-medium shadow hover:bg-red-600 transition hidden">Apagar Cámara</button>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-md flex gap-2">
-            <input id="manual-code" type="text" placeholder="Código de barras manual" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
-            <h2 class="text-lg font-semibold text-gray-700">Detalle de la Venta</h2>
-            <div id="cart-items" class="space-y-2 max-h-64 overflow-y-auto pr-1">
-                <p class="text-gray-400 text-center py-4">No hay productos en la lista</p>
-            </div>
-            <div class="flex justify-between items-center pt-4 border-t border-gray-200">
-                <span class="text-lg font-bold text-gray-800">Total:</span>
-                <span id="cart-total" class="text-2xl font-bold text-blue-600">Q0.00</span>
-            </div>
-            <button id="checkout-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                Confirmar Venta y Cobrar
-            </button>
-        </div>
-    </main>
-
-    <script>
-        const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
-        let cart = [];
-        let html5QrcodeScanner = null;
-
-        const cartItemsContainer = document.getElementById("cart-items");
-        const cartTotalElement = document.getElementById("cart-total");
-        const checkoutBtn = document.getElementById("checkout-btn");
-        const startBtn = document.getElementById("start-btn");
-        const stopBtn = document.getElementById("stop-btn");
-        const manualInput = document.getElementById("manual-code");
-        const addManualBtn = document.getElementById("add-manual-btn");
-
-        async function fetchProduct(code) {
-            try {
-                const response = await fetch(`${API_URL}/productos/${code}`);
-                if (!response.ok) {
-                    const errData = await response.json();
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: errData.detail || "Error al buscar el producto." });
-                    return;
-                }
-                const product = await response.json();
-                addToCart(product);
-            } catch (error) {
-                console.error("Error al conectar con la API:", error);
-                Swal.fire({ icon: 'error', title: 'Sin conexión', text: 'No se pudo conectar con el servidor.' });
-            }
-        }
-
-        function addToCart(product) {
-            const existingItem = cart.find(item => item.codigo === product.codigo);
-            if (existingItem) {
-                if (existingItem.cantidad < product.stock) {
-                    existingItem.cantidad++;
-                } else {
-                    Swal.fire({ icon: 'warning', title: 'Límite de Stock', text: `Solo hay ${product.stock} unidades de ${product.nombre} en bodega.` });
-                    return;
-                }
-            } else {
-                cart.push({ ...product, cantidad: 1 });
-            }
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">No hay productos en la lista</p>`;
-                cartTotalElement.innerText = "Q0.00";
-                checkoutBtn.disabled = true;
-                return;
-            }
-
-            cartItemsContainer.innerHTML = cart.map((item, index) => {
-                const stockRestante = item.stock - item.cantidad; 
-                
-                return `
-                <div class="flex flex-col py-3 border-b border-gray-100 last:border-0">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="font-medium text-gray-800 leading-tight">${item.nombre}</p>
-                            <p class="text-xs text-blue-500 font-semibold mt-1">En bodega: ${stockRestante} unidades</p>
-                        </div>
-                        <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 rounded">✕</button>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
-                            <button onclick="decreaseQuantity(${index})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 font-bold text-lg transition active:bg-gray-300">-</button>
-                            <span class="px-4 py-1 font-bold text-gray-800 border-x border-gray-300 w-12 text-center">${item.cantidad}</span>
-                            <button onclick="increaseQuantity(${index})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 font-bold text-lg transition active:bg-gray-300 ${stockRestante === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${stockRestante === 0 ? 'disabled' : ''}>+</button>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-400">Q${item.precio.toFixed(2)} c/u</p>
-                            <p class="font-bold text-gray-800 text-lg">Q${(item.precio * item.cantidad).toFixed(2)}</p>
-                        </div>
-                    </div>
-                </div>
-            `}).join("");
-
-            const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            cartTotalElement.innerText = `Q${total.toFixed(2)}`;
-            checkoutBtn.disabled = false;
-        }
-
-        window.increaseQuantity = function(index) {
-            if (cart[index].cantidad < cart[index].stock) {
-                cart[index].cantidad++;
-                updateCartUI();
-            } else {
-                Swal.fire({ icon: 'warning', title: 'Stock Máximo', text: `No puedes agregar más ${cart[index].nombre}, límite alcanzado.` });
-            }
-        };
-
-        window.decreaseQuantity = function(index) {
-            if (cart[index].cantidad > 1) {
-                cart[index].cantidad--;
-                updateCartUI();
-            } else {
-                removeFromCart(index);
-            }
-        };
-
-        window.removeFromCart = function(index) {
-            cart.splice(index, 1);
-            updateCartUI();
-        };
-
+// --- REEMPLAZA TU EVENT LISTENER DEL CHECKOUT POR ESTE ---
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
             const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
+            const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            const cartCopia = [...cart]; // Guardamos copia para el ticket
 
             try {
                 const response = await fetch(`${API_URL}/ventas`, {
@@ -162,68 +12,78 @@
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
                 if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Venta Procesada!',
-                        text: 'El inventario se ha actualizado correctamente.',
-                        showConfirmButton: false,
-                        timer: 2000
-                    });
                     cart = [];
                     updateCartUI();
+                    
+                    Swal.fire({
+                        title: '¡Venta Exitosa!',
+                        text: `Total cobrado: Q${totalVenta.toFixed(2)}`,
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: '🖨️ Imprimir Recibo',
+                        cancelButtonText: 'Cerrar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            imprimirTicket(cartCopia, totalVenta);
+                        }
+                    });
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Error en la venta', text: data.detail });
+                    const data = await response.json();
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
                 }
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error de comunicación al procesar la venta.' });
+                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error al procesar.' });
             }
         });
 
-        addManualBtn.addEventListener("click", () => {
-            const code = manualInput.value.trim();
-            if (code) {
-                fetchProduct(code);
-                manualInput.value = "";
-            }
-        });
-
-        manualInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") addManualBtn.click();
-        });
-
-        startBtn.addEventListener("click", () => {
-            startBtn.classList.add("hidden");
-            stopBtn.classList.remove("hidden");
-
-            html5QrcodeScanner = new Html5Qrcode("reader");
+        // NUEVA FUNCIÓN PARA EL TICKET
+        function imprimirTicket(items, total) {
+            let ventana = window.open('', 'PRINT', 'height=600,width=400');
             
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    if (navigator.vibrate) navigator.vibrate(100);
-                    fetchProduct(decodedText);
-                    stopScanning();
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
-                stopScanning();
-            });
-        });
-
-        function stopScanning() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    startBtn.classList.remove("hidden");
-                    stopBtn.classList.add("hidden");
-                }).catch(err => console.error(err));
-            }
+            let fecha = new Date().toLocaleString();
+            let html = `
+                <html>
+                <head>
+                    <style>
+                        body { font-family: monospace; font-size: 14px; width: 300px; margin: 0; padding: 10px; color: #000; }
+                        h2 { text-align: center; margin: 0 0 10px 0; font-size: 18px; }
+                        p { text-align: center; margin: 5px 0; font-size: 12px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { text-align: left; padding: 4px 0; border-bottom: 1px dashed #000; }
+                        .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; }
+                        .footer { text-align: center; margin-top: 20px; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <h2>MI TIENDA</h2>
+                    <p>Recibo de Compra</p>
+                    <p>${fecha}</p>
+                    <table>
+                        <tr><th>Cant</th><th>Artículo</th><th style="text-align:right">Sub</th></tr>
+                        ${items.map(item => `
+                            <tr>
+                                <td>${item.cantidad}</td>
+                                <td>${item.nombre.substring(0, 15)}</td>
+                                <td style="text-align:right">Q${(item.precio * item.cantidad).toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                    <div class="total">TOTAL: Q${total.toFixed(2)}</div>
+                    <div class="footer">¡Gracias por su compra!</div>
+                </body>
+                </html>
+            `;
+            
+            ventana.document.write(html);
+            ventana.document.close();
+            ventana.focus();
+            
+            // Pausa de medio segundo para que renderice y luego imprime
+            setTimeout(() => {
+                ventana.print();
+                ventana.close();
+            }, 500);
         }
-
-        stopBtn.addEventListener("click", stopScanning);
-    </script>
-</body>
-</html>
