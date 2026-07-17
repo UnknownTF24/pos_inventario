@@ -195,11 +195,11 @@
             
             adminScanner = new Html5Qrcode("admin-reader", { formatsToSupport: formatos });
 
-            // OBLIGAMOS AL CELULAR A USAR EL LENTE PRINCIPAL EXIGIENDO FULL HD
+            // PEDIMOS ALTA RESOLUCIÓN (1080p) SIN FORZAR EL CRASHEO
             const restricciones = { 
                 facingMode: "environment",
-                width: { min: 1280, ideal: 1920 },
-                height: { min: 720, ideal: 1080 }
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
             };
 
             adminScanner.start(
