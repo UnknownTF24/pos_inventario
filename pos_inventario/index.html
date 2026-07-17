@@ -256,11 +256,31 @@
             startBtn.classList.add("hidden");
             stopBtn.classList.remove("hidden");
 
-            html5QrcodeScanner = new Html5Qrcode("reader");
+            // 1. Limitar solo a Códigos de Barras (ACELERA EL ESCANEO)
+            const formatos = [
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39
+            ];
+
+            html5QrcodeScanner = new Html5Qrcode("reader", { formatsToSupport: formatos });
+            
+            // 2. Forzar Auto-Enfoque y Cámara Trasera
+            const restricciones = {
+                facingMode: "environment",
+                advanced: [{ focusMode: "continuous" }]
+            };
             
             html5QrcodeScanner.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 150 } },
+                restricciones, 
+                { 
+                    fps: 20, // Subimos los cuadros por segundo para que sea ultra rápido
+                    qrbox: { width: 250, height: 150 }, // Cuadrito guía de enfoque
+                    aspectRatio: 1.0
+                },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
                     fetchProduct(decodedText);
@@ -268,7 +288,7 @@
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'Error al iniciar la cámara.' });
                 stopScanning();
             });
         });

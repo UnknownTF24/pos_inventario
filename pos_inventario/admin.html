@@ -50,7 +50,7 @@
                 
                 <!-- Contenedor del escáner oculto por defecto -->
                 <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div id="admin-reader" class="overflow-hidden rounded-lg border border-gray-300 max-w-sm mx-auto bg-black"></div>
+                    <div id="admin-reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50 max-w-sm mx-auto"></div>
                     <div class="text-center mt-3">
                         <button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded shadow hover:bg-red-600 font-bold">Apagar Cámara</button>
                     </div>
@@ -186,23 +186,43 @@
 
         startAdminBtn.addEventListener("click", () => {
             adminScannerContainer.classList.remove("hidden");
-            adminScanner = new Html5Qrcode("admin-reader");
             
+            // 1. Limitar solo a Códigos de Barras
+            const formatos = [
+                Html5QrcodeSupportedFormats.EAN_13, 
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A, 
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128, 
+                Html5QrcodeSupportedFormats.CODE_39
+            ];
+            
+            adminScanner = new Html5Qrcode("admin-reader", { formatsToSupport: formatos });
+            
+            // 2. Forzar Auto-Enfoque y Cámara Trasera
+            const restricciones = {
+                facingMode: "environment",
+                advanced: [{ focusMode: "continuous" }]
+            };
+
             adminScanner.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 100 } },
+                restricciones, 
+                { 
+                    fps: 20, // Alta velocidad
+                    qrbox: { width: 250, height: 150 }, // Cuadrito de enfoque idéntico al POS
+                    aspectRatio: 1.0
+                },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
                     // Poner el texto en el input
                     addCodigoInput.value = decodedText;
-                    // Detener la cámara
                     stopAdminScanning();
-                    // Pasar el foco al campo de "Nombre" para seguir escribiendo fluido
+                    // Pasar el foco al campo de "Nombre"
                     document.getElementById("add-nombre").focus();
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara.' });
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'Error al iniciar la cámara.' });
                 stopAdminScanning();
             });
         });
