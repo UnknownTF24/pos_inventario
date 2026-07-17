@@ -107,7 +107,6 @@
                 </div>
             </div>
             
-            <!-- TABLA DE HISTORIAL MEJORADA CON 4 COLUMNAS -->
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-50 text-gray-600">
@@ -122,7 +121,6 @@
                     
                     <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                         <tr>
-                            <!-- Colspan 3 porque ahora hay 4 columnas en total -->
                             <td colspan="3" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide">Total Generado (Período Seleccionado):</td>
                             <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td>
                         </tr>
@@ -231,16 +229,34 @@
         });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetch(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        // --- SISTEMA DE VENTAS ---
+        // --- SISTEMA DE VENTAS Y ZONA HORARIA ---
+        
+        // 1. Interpreta la fecha UTC del servidor
         function parseFecha(fechaStr) {
-            let d = new Date(fechaStr);
-            if (!isNaN(d.getTime())) return d;
-            const partes = fechaStr.split(/[\s,/]+/);
-            if(partes.length >= 3) {
-                d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`); 
+            const partes = fechaStr.split(/[\s,/:]+/);
+            if(partes.length >= 5) {
+                // Al agregar la "Z", el navegador sabe que viene de UTC y lo ajusta a tu hora local (Guatemala) al hacer filtros
+                const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`); 
                 if (!isNaN(d.getTime())) return d;
             }
-            return new Date();
+            return new Date(fechaStr);
+        }
+
+        // 2. Formatea la fecha para mostrarla limpia en la tabla
+        function formatearFechaLocal(fechaStr) {
+            const partes = fechaStr.split(/[\s,/:]+/);
+            if (partes.length >= 5) {
+                const fechaUTC = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`);
+                
+                const dia = String(fechaUTC.getDate()).padStart(2, '0');
+                const mes = String(fechaUTC.getMonth() + 1).padStart(2, '0');
+                const anio = fechaUTC.getFullYear();
+                const horas = String(fechaUTC.getHours()).padStart(2, '0');
+                const mins = String(fechaUTC.getMinutes()).padStart(2, '0');
+                
+                return `${dia}/${mes}/${anio} ${horas}:${mins}`;
+            }
+            return fechaStr;
         }
 
         async function fetchVentas() {
@@ -307,7 +323,6 @@
                     let cantHtml = "";
                     let prodHtml = "";
                     
-                    // Separamos el número de la X del nombre del producto
                     items.forEach(i => {
                         let match = i.trim().match(/^(\d+)x\s*(.*)/);
                         if (match) {
@@ -319,9 +334,10 @@
                         }
                     });
 
+                    // Aquí imprimimos la fecha ya corregida usando formatearFechaLocal()
                     return `
                     <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-4 text-sm font-medium text-gray-600 align-top">${v.fecha}</td>
+                        <td class="p-4 text-sm font-medium text-gray-600 align-top">${formatearFechaLocal(v.fecha)}</td>
                         <td class="p-4 text-sm align-top text-center">${cantHtml}</td>
                         <td class="p-4 text-sm align-top">${prodHtml}</td>
                         <td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td>
@@ -335,6 +351,7 @@
             const ctx = document.getElementById('ventasChart').getContext('2d');
             const agrupado = {};
             ventas.forEach(v => {
+                // Al extraer la fecha para la gráfica, también usamos la hora ajustada
                 const fechaCorta = parseFecha(v.fecha).toLocaleDateString();
                 agrupado[fechaCorta] = (agrupado[fechaCorta] || 0) + v.total;
             });
