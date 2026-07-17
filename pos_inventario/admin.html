@@ -6,6 +6,8 @@
     <title>Administración de Inventario</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <!-- Librería Premium de Alertas -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
     
@@ -117,6 +119,7 @@
                 renderTable(allProducts);
             } catch (error) {
                 console.error("Error cargando inventario:", error);
+                Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo cargar el inventario.' });
             }
         }
 
@@ -179,12 +182,19 @@
                 if (response.ok) {
                     addForm.reset();
                     fetchInventory();
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Producto Guardado!',
+                        text: `${newProduct.nombre} fue registrado con éxito.`,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 } else {
                     const data = await response.json();
-                    alert(`Error: ${data.detail}`);
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
                 }
             } catch (error) {
-                alert("Error de comunicación con el servidor.");
+                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error de comunicación con el servidor.' });
             }
         });
 
@@ -225,34 +235,56 @@
                     closeEditModal();
                     fetchInventory();
                     searchInput.value = "";
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: 'El inventario fue modificado.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 } else {
                     const data = await response.json();
-                    alert(`Error: ${data.detail}`);
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
                 }
             } catch (error) {
-                alert("Error de comunicación con el servidor.");
+                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error de comunicación con el servidor.' });
             }
         });
 
-        // NUEVA FUNCIÓN: Eliminar Producto
+        // NUEVA FUNCIÓN CON SWEETALERT
         window.deleteProduct = async function(codigo) {
-            const confirmacion = confirm("¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.");
-            if (!confirmacion) return;
+            Swal.fire({
+                title: '¿Estás completamente seguro?',
+                text: "Esta acción no se puede deshacer y borrará el producto de la base de datos.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminarlo',
+                cancelButtonText: 'Cancelar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`${API_URL}/productos/${codigo}`, {
+                            method: "DELETE"
+                        });
 
-            try {
-                const response = await fetch(`${API_URL}/productos/${codigo}`, {
-                    method: "DELETE"
-                });
-
-                if (response.ok) {
-                    fetchInventory(); // Recargar la tabla automáticamente
-                } else {
-                    const data = await response.json();
-                    alert(`Error: ${data.detail}`);
+                        if (response.ok) {
+                            fetchInventory(); 
+                            Swal.fire(
+                                '¡Eliminado!',
+                                'El producto ha sido borrado de tu inventario.',
+                                'success'
+                            )
+                        } else {
+                            const data = await response.json();
+                            Swal.fire('Error', data.detail, 'error');
+                        }
+                    } catch (error) {
+                        Swal.fire('Error', 'Error de comunicación al intentar eliminar.', 'error');
+                    }
                 }
-            } catch (error) {
-                alert("Error de comunicación al intentar eliminar.");
-            }
+            })
         };
 
         fetchInventory();

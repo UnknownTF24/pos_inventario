@@ -6,6 +6,8 @@
     <title>POS Móvil & Inventario</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Librería Premium de Alertas -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
@@ -61,14 +63,14 @@
                 const response = await fetch(`${API_URL}/productos/${code}`);
                 if (!response.ok) {
                     const errData = await response.json();
-                    alert(errData.detail || "Error al buscar el producto.");
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: errData.detail || "Error al buscar el producto." });
                     return;
                 }
                 const product = await response.json();
                 addToCart(product);
             } catch (error) {
                 console.error("Error al conectar con la API:", error);
-                alert("No se pudo conectar con el servidor.");
+                Swal.fire({ icon: 'error', title: 'Sin conexión', text: 'No se pudo conectar con el servidor.' });
             }
         }
 
@@ -78,7 +80,7 @@
                 if (existingItem.cantidad < product.stock) {
                     existingItem.cantidad++;
                 } else {
-                    alert(`No puedes agregar más. Stock máximo disponible: ${product.stock}`);
+                    Swal.fire({ icon: 'warning', title: 'Límite de Stock', text: `Solo hay ${product.stock} unidades de ${product.nombre} en bodega.` });
                     return;
                 }
             } else {
@@ -95,9 +97,8 @@
                 return;
             }
 
-            // Aquí está la magia de los botones y el stock en tiempo real
             cartItemsContainer.innerHTML = cart.map((item, index) => {
-                const stockRestante = item.stock - item.cantidad; // Calcula el inventario al instante
+                const stockRestante = item.stock - item.cantidad; 
                 
                 return `
                 <div class="flex flex-col py-3 border-b border-gray-100 last:border-0">
@@ -127,13 +128,12 @@
             checkoutBtn.disabled = false;
         }
 
-        // Nuevas funciones para los botones + y -
         window.increaseQuantity = function(index) {
             if (cart[index].cantidad < cart[index].stock) {
                 cart[index].cantidad++;
                 updateCartUI();
             } else {
-                alert(`Stock máximo alcanzado para ${cart[index].nombre}`);
+                Swal.fire({ icon: 'warning', title: 'Stock Máximo', text: `No puedes agregar más ${cart[index].nombre}, límite alcanzado.` });
             }
         };
 
@@ -142,7 +142,6 @@
                 cart[index].cantidad--;
                 updateCartUI();
             } else {
-                // Si la cantidad es 1 y presionan "-", elimina el producto del carrito
                 removeFromCart(index);
             }
         };
@@ -165,14 +164,20 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert("¡Venta procesada con éxito! El inventario se ha actualizado.");
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Venta Procesada!',
+                        text: 'El inventario se ha actualizado correctamente.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
                     cart = [];
                     updateCartUI();
                 } else {
-                    alert(`Error: ${data.detail}`);
+                    Swal.fire({ icon: 'error', title: 'Error en la venta', text: data.detail });
                 }
             } catch (error) {
-                alert("Error de comunicación al procesar la venta.");
+                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error de comunicación al procesar la venta.' });
             }
         });
 
@@ -196,21 +201,15 @@
             
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 150 }
-                },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
                     fetchProduct(decodedText);
                     stopScanning();
                 },
-                (errorMessage) => {
-                    // Ignorar errores de lectura continuos
-                }
+                (errorMessage) => {}
             ).catch(err => {
-                console.error("Error al abrir cámara:", err);
-                alert("No se pudo abrir la cámara trasera.");
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
                 stopScanning();
             });
         });
