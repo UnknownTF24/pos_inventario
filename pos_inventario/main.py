@@ -45,7 +45,14 @@ class ItemVenta(BaseModel):
     cantidad: int
 
 class VentaRequest(BaseModel):
+    
     items: List[ItemVenta]
+
+class Producto(BaseModel):
+    codigo: str
+    nombre: str
+    precio: float
+    stock: int
 
 @app.get("/api/productos/{codigo}")
 def obtener_producto(codigo: str):
@@ -59,6 +66,23 @@ def obtener_producto(codigo: str):
         raise HTTPException(status_code=404, detail="Producto no registrado.")
     
     return {"codigo": row[0], "nombre": row[1], "precio": row[2], "stock": row[3]}
+
+@app.post("/api/productos")
+def crear_producto(producto: Producto):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO productos (codigo, nombre, precio, stock) VALUES (?, ?, ?, ?)",
+            (producto.codigo, producto.nombre, producto.precio, producto.stock)
+        )
+        conn.commit()
+        return {"status": "success", "message": f"Producto {producto.nombre} creado con éxito."}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="Error al crear producto. Probablemente el código ya existe.")
+    finally:
+        conn.close()
 
 @app.post("/api/ventas")
 def procesar_venta(venta: VentaRequest):
