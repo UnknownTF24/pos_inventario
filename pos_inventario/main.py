@@ -15,7 +15,7 @@ app.add_middleware(
 )
 
 # ¡Tu conexión indestructible a Supabase!
-DATABASE_URL = "postgresql://postgres:u62sTgLkiRyEQvz1@db.vyukcvvzizubxdlximyy.supabase.co:5432/postgres"
+DATABASE_URL = "postgresql://postgres.vyukcvvzizubxdlximyy:u62sTgLkiRyEQvz1@aws-1-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
