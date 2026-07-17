@@ -7,16 +7,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Librería Premium de Cámara agregada al Admin -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
     
     <!-- PANTALLA DE LOGIN -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
-        <div class="bg-white p-8 rounded-xl shadow-2xl text-center w-96">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Acceso Restringido 🔒</h2>
-            <p class="text-gray-500 mb-6">Ingresa el PIN de administrador</p>
-            <input type="password" id="pin-input" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-2xl tracking-widest focus:border-blue-500 outline-none mb-4" placeholder="••••">
-            <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Entrar</button>
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso al Sistema 🔒</h2>
+            <p class="text-gray-500 mb-6 text-sm">Ingresa tus credenciales para continuar</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 font-bold">Usuario</label>
+                    <input type="text" id="user-input" class="w-full border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="admin">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 font-bold">Contraseña</label>
+                    <input type="password" id="pass-input" class="w-full border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 outline-none" placeholder="••••••••">
+                </div>
+                <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mt-2 shadow-md">Iniciar Sesión</button>
+            </div>
         </div>
     </div>
 
@@ -35,12 +47,27 @@
         <div id="tab-inventario">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h2 class="text-lg font-bold text-gray-800 mb-4">Registrar Nuevo Producto</h2>
+                
+                <!-- Contenedor del escáner oculto por defecto -->
+                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div id="admin-reader" class="overflow-hidden rounded-lg border border-gray-300 max-w-sm mx-auto bg-black"></div>
+                    <div class="text-center mt-3">
+                        <button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded shadow hover:bg-red-600 font-bold">Apagar Cámara</button>
+                    </div>
+                </div>
+
                 <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div><label class="block text-sm text-gray-600 mb-1">Código de Barras</label><input type="text" id="add-codigo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Código de Barras</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="add-codigo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button type="button" id="start-admin-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded shadow font-bold text-lg transition" title="Escanear Código">📷</button>
+                        </div>
+                    </div>
                     <div><label class="block text-sm text-gray-600 mb-1">Nombre</label><input type="text" id="add-nombre" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
                     <div><label class="block text-sm text-gray-600 mb-1">Precio (Q)</label><input type="number" step="0.01" id="add-precio" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
                     <div><label class="block text-sm text-gray-600 mb-1">Stock Inicial</label><input type="number" id="add-stock" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                    <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700">Guardar Producto</button></div>
+                    <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 shadow-md">Guardar Producto</button></div>
                 </form>
             </section>
 
@@ -58,12 +85,18 @@
 
         <!-- PESTAÑA: VENTAS -->
         <div id="tab-ventas" class="hidden space-y-4">
-            <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center border-l-4 border-green-500">
-                <div>
-                    <h2 class="text-xl font-bold text-gray-800">Historial de Transacciones</h2>
-                    <p class="text-gray-500 text-sm">Últimas 50 ventas registradas</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center border-l-4 border-green-500">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Historial</h2>
+                        <p class="text-gray-500 text-sm">Últimas 50 ventas</p>
+                    </div>
+                    <button onclick="fetchVentas()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded font-bold hover:bg-blue-200 transition shadow-sm">🔄 Actualizar</button>
                 </div>
-                <button onclick="fetchVentas()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded font-bold hover:bg-blue-200 transition">🔄 Actualizar</button>
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-center items-end border-l-4 border-blue-600">
+                    <p class="text-gray-500 text-sm font-bold uppercase tracking-wide">Total Ingresos</p>
+                    <h3 id="gran-total-ventas" class="text-3xl font-black text-blue-600">Q0.00</h3>
+                </div>
             </div>
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
@@ -81,7 +114,7 @@
         </div>
     </main>
 
-    <!-- Modal Editar (Igual que antes) -->
+    <!-- Modal Editar -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -101,7 +134,8 @@
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
-        const PIN_SECRETO = "1234"; // <-- CAMBIA ESTO AL PIN QUE QUIERAS
+        const USUARIO_SECRETO = "admin";
+        const PASS_SECRETA = "1234"; // <-- Volví a poner el 1234 como pediste por el momento
         
         // --- SISTEMA DE LOGIN ---
         if(sessionStorage.getItem("adminAuth") === "true") {
@@ -109,19 +143,21 @@
         }
 
         function verificarLogin() {
-            const input = document.getElementById("pin-input").value;
-            if(input === PIN_SECRETO) {
+            const user = document.getElementById("user-input").value.trim();
+            const pass = document.getElementById("pass-input").value;
+            
+            if(user === USUARIO_SECRETO && pass === PASS_SECRETA) {
                 sessionStorage.setItem("adminAuth", "true");
                 document.getElementById("login-overlay").style.display = "none";
                 fetchInventory();
                 fetchVentas();
             } else {
-                Swal.fire('Acceso Denegado', 'El PIN es incorrecto', 'error');
-                document.getElementById("pin-input").value = "";
+                Swal.fire('Acceso Denegado', 'Usuario o contraseña incorrectos', 'error');
+                document.getElementById("pass-input").value = "";
             }
         }
 
-        document.getElementById("pin-input").addEventListener("keypress", function(e) {
+        document.getElementById("pass-input").addEventListener("keypress", function(e) {
             if (e.key === "Enter") verificarLogin();
         });
 
@@ -140,6 +176,47 @@
                 fetchVentas();
             }
         }
+
+        // --- SISTEMA DE CÁMARA PARA REGISTRAR PRODUCTOS (NUEVO) ---
+        let adminScanner = null;
+        const startAdminBtn = document.getElementById("start-admin-btn");
+        const stopAdminBtn = document.getElementById("stop-admin-btn");
+        const adminScannerContainer = document.getElementById("admin-scanner-container");
+        const addCodigoInput = document.getElementById("add-codigo");
+
+        startAdminBtn.addEventListener("click", () => {
+            adminScannerContainer.classList.remove("hidden");
+            adminScanner = new Html5Qrcode("admin-reader");
+            
+            adminScanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 100 } },
+                (decodedText) => {
+                    if (navigator.vibrate) navigator.vibrate(100);
+                    // Poner el texto en el input
+                    addCodigoInput.value = decodedText;
+                    // Detener la cámara
+                    stopAdminScanning();
+                    // Pasar el foco al campo de "Nombre" para seguir escribiendo fluido
+                    document.getElementById("add-nombre").focus();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara.' });
+                stopAdminScanning();
+            });
+        });
+
+        function stopAdminScanning() {
+            if (adminScanner) {
+                adminScanner.stop().then(() => {
+                    adminScannerContainer.classList.add("hidden");
+                    adminScanner = null;
+                }).catch(err => console.error(err));
+            }
+        }
+
+        stopAdminBtn.addEventListener("click", stopAdminScanning);
 
         // --- LÓGICA DE INVENTARIO (CRUD) ---
         let allProducts = [];
@@ -168,8 +245,8 @@
                     <td class="p-4 text-gray-600">Q${p.precio.toFixed(2)}</td>
                     <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : 'text-gray-800'}">${p.stock}</td>
                     <td class="p-4 text-center">
-                        <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded text-sm mr-2 font-bold shadow">✎</button>
-                        <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold shadow">✕</button>
+                        <button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded text-sm mr-2 font-bold shadow hover:bg-yellow-500">✎</button>
+                        <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold shadow hover:bg-red-600">✕</button>
                     </td>
                 </tr>
             `).join("");
@@ -189,10 +266,25 @@
                 precio: parseFloat(document.getElementById("add-precio").value),
                 stock: parseInt(document.getElementById("add-stock").value)
             };
-            await fetch(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-            document.getElementById("add-form").reset();
-            fetchInventory();
-            Swal.fire({icon: 'success', title: 'Guardado', timer: 1000, showConfirmButton: false});
+            
+            try {
+                const response = await fetch(`${API_URL}/productos`, { 
+                    method: "POST", 
+                    headers: {"Content-Type": "application/json"}, 
+                    body: JSON.stringify(product) 
+                });
+                
+                if (response.ok) {
+                    document.getElementById("add-form").reset();
+                    fetchInventory();
+                    Swal.fire({icon: 'success', title: 'Producto Guardado', timer: 1500, showConfirmButton: false});
+                } else {
+                    const data = await response.json();
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Fallo de red', text: 'No se pudo guardar el producto.' });
+            }
         });
 
         function openEditModal(codigo) {
@@ -221,7 +313,7 @@
 
         window.deleteProduct = function(codigo) {
             Swal.fire({
-                title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'
+                title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar'
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`${API_URL}/productos/${codigo}`, { method: "DELETE" });
@@ -236,11 +328,16 @@
                 const res = await fetch(`${API_URL}/ventas`);
                 const ventas = await res.json();
                 const list = document.getElementById("ventas-list");
+                const granTotalElement = document.getElementById("gran-total-ventas");
                 
                 if(ventas.length === 0) {
                     list.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Aún no hay ventas registradas.</td></tr>`;
+                    granTotalElement.innerText = "Q0.00";
                     return;
                 }
+
+                const sumaTotal = ventas.reduce((acumulador, venta) => acumulador + venta.total, 0);
+                granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`;
 
                 list.innerHTML = ventas.map(v => `
                     <tr class="hover:bg-gray-50 transition border-b">
