@@ -111,21 +111,24 @@
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
+                    <!-- Ajustamos el ancho mínimo a 800px porque ahora hay 6 columnas -->
+                    <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-gray-50 text-gray-600">
                             <tr>
-                                <th class="p-4 border-b whitespace-nowrap">Fecha y Hora</th>
-                                <!-- Columna de Cantidad renombrada y ajustada -->
-                                <th class="p-4 border-b text-center whitespace-nowrap">Cant. x Precio</th>
-                                <th class="p-4 border-b w-1/2 min-w-[200px]">Producto</th>
-                                <th class="p-4 border-b text-right whitespace-nowrap">Total</th>
+                                <th class="p-4 border-b whitespace-nowrap">Fecha</th>
+                                <th class="p-4 border-b whitespace-nowrap">Hora</th>
+                                <th class="p-4 border-b text-center whitespace-nowrap">Cantidad</th>
+                                <th class="p-4 border-b w-1/3 min-w-[200px]">Producto</th>
+                                <th class="p-4 border-b text-right whitespace-nowrap">Precio U.</th>
+                                <th class="p-4 border-b text-right whitespace-nowrap">Total Venta</th>
                             </tr>
                         </thead>
                         <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
                         
                         <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                             <tr>
-                                <td colspan="3" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm md:text-base">Total Generado (Período Seleccionado):</td>
+                                <!-- Colspan ahora es 5 porque la tabla tiene 6 columnas en total -->
+                                <td colspan="5" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm md:text-base">Total Generado (Período Seleccionado):</td>
                                 <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-lg md:text-xl">Q0.00</td>
                             </tr>
                         </tfoot>
@@ -314,12 +317,13 @@
             if(tablaTotalFooter) tablaTotalFooter.innerText = `Q${sumaTotal.toFixed(2)}`;
 
             if(ventas.length === 0) {
-                list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
+                list.innerHTML = `<tr><td colspan="6" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
             } else {
                 list.innerHTML = ventas.map(v => {
                     let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
                     let cantHtml = "";
                     let prodHtml = "";
+                    let precioUHtml = "";
                     let isSingleItem = items.length === 1;
                     
                     items.forEach(i => {
@@ -329,8 +333,6 @@
                             let name = match[2].trim();
                             let price = 0;
                             
-                            // Lógica inteligente: Si hay un solo producto en la venta, calcula el precio exacto
-                            // Si hay varios, lo busca en el inventario para deducir los subtotales
                             if (isSingleItem && qty > 0) {
                                 price = v.total / qty;
                             } else {
@@ -338,22 +340,29 @@
                                 if (p) price = p.precio;
                             }
                             
-                            let cantDisplay = price > 0 ? `${qty} x Q${price.toFixed(2)}` : `${qty}`;
-                            let subTotalDisplay = (!isSingleItem && price > 0) ? ` <span class="text-xs text-blue-500 font-bold ml-1">(Q${(price * qty).toFixed(2)})</span>` : ``;
-
-                            cantHtml += `<div class="py-1 font-bold text-gray-700 whitespace-nowrap">${cantDisplay}</div>`;
-                            prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap min-w-[200px]">${name}${subTotalDisplay}</div>`;
+                            cantHtml += `<div class="py-1 font-bold text-gray-700">${qty}</div>`;
+                            prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${name}</div>`;
+                            precioUHtml += `<div class="py-1 text-gray-600 text-right">Q${price.toFixed(2)}</div>`;
                         } else {
                             cantHtml += `<div class="py-1 font-bold text-gray-700">-</div>`;
-                            prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap min-w-[200px]">${i}</div>`;
+                            prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${i}</div>`;
+                            precioUHtml += `<div class="py-1 text-gray-600 text-right">-</div>`;
                         }
                     });
 
+                    // Separamos la fecha y hora devuelta por formatearFechaLocal (ej. "17/07/2026 18:00")
+                    const fechaHoraCompleta = formatearFechaLocal(v.fecha);
+                    const partesFechaHora = fechaHoraCompleta.split(' ');
+                    const fechaSolo = partesFechaHora[0];
+                    const horaSolo = partesFechaHora.length > 1 ? partesFechaHora[1] : '';
+
                     return `
                     <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-4 text-sm font-medium text-gray-600 align-top whitespace-nowrap">${formatearFechaLocal(v.fecha)}</td>
+                        <td class="p-4 text-sm font-medium text-gray-600 align-top whitespace-nowrap">${fechaSolo}</td>
+                        <td class="p-4 text-sm font-medium text-gray-500 align-top whitespace-nowrap">${horaSolo}</td>
                         <td class="p-4 text-sm align-top text-center">${cantHtml}</td>
                         <td class="p-4 text-sm align-top">${prodHtml}</td>
+                        <td class="p-4 text-sm align-top">${precioUHtml}</td>
                         <td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td>
                     </tr>
                 `}).join("");
