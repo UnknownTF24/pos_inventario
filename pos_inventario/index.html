@@ -151,7 +151,8 @@
             updateCartUI();
         };
 
-       checkoutBtn.addEventListener("click", async () => {
+        // --- REEMPLAZA TU EVENT LISTENER DEL CHECKOUT POR ESTE ---
+        checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
             const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
             const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
