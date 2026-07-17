@@ -256,7 +256,6 @@
             startBtn.classList.add("hidden");
             stopBtn.classList.remove("hidden");
 
-            // 1. Limitar solo a Códigos de Barras (ACELERA EL ESCANEO)
             const formatos = [
                 Html5QrcodeSupportedFormats.EAN_13,
                 Html5QrcodeSupportedFormats.EAN_8,
@@ -268,17 +267,12 @@
 
             html5QrcodeScanner = new Html5Qrcode("reader", { formatsToSupport: formatos });
             
-            // 2. Forzar Auto-Enfoque y Cámara Trasera
-            const restricciones = {
-                facingMode: "environment",
-                advanced: [{ focusMode: "continuous" }]
-            };
-            
+            // Usamos solo el parámetro seguro de cámara trasera
             html5QrcodeScanner.start(
-                restricciones, 
+                { facingMode: "environment" }, 
                 { 
-                    fps: 20, // Subimos los cuadros por segundo para que sea ultra rápido
-                    qrbox: { width: 250, height: 150 }, // Cuadrito guía de enfoque
+                    fps: 15, // Velocidad rápida pero estable
+                    qrbox: { width: 250, height: 150 }, 
                     aspectRatio: 1.0
                 },
                 (decodedText) => {

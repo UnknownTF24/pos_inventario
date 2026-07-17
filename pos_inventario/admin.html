@@ -187,7 +187,6 @@
         startAdminBtn.addEventListener("click", () => {
             adminScannerContainer.classList.remove("hidden");
             
-            // 1. Limitar solo a Códigos de Barras
             const formatos = [
                 Html5QrcodeSupportedFormats.EAN_13, 
                 Html5QrcodeSupportedFormats.EAN_8,
@@ -198,26 +197,19 @@
             ];
             
             adminScanner = new Html5Qrcode("admin-reader", { formatsToSupport: formatos });
-            
-            // 2. Forzar Auto-Enfoque y Cámara Trasera
-            const restricciones = {
-                facingMode: "environment",
-                advanced: [{ focusMode: "continuous" }]
-            };
 
+            // Usamos solo el parámetro seguro de cámara trasera
             adminScanner.start(
-                restricciones, 
+                { facingMode: "environment" }, 
                 { 
-                    fps: 20, // Alta velocidad
-                    qrbox: { width: 250, height: 150 }, // Cuadrito de enfoque idéntico al POS
+                    fps: 15, // Velocidad rápida pero estable
+                    qrbox: { width: 250, height: 100 }, 
                     aspectRatio: 1.0
                 },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
-                    // Poner el texto en el input
                     addCodigoInput.value = decodedText;
                     stopAdminScanning();
-                    // Pasar el foco al campo de "Nombre"
                     document.getElementById("add-nombre").focus();
                 },
                 (errorMessage) => {}
