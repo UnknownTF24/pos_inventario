@@ -187,21 +187,12 @@
         startAdminBtn.addEventListener("click", () => {
             adminScannerContainer.classList.remove("hidden");
             
-            const formatos = [
-                Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39
-            ];
-            
-            adminScanner = new Html5Qrcode("admin-reader", { formatsToSupport: formatos });
+            // Volvemos a la forma original y confiable
+            adminScanner = new Html5Qrcode("admin-reader");
 
-            // CONFIGURACIÓN A PRUEBA DE BALAS
             adminScanner.start(
                 { facingMode: "environment" }, 
-                { 
-                    fps: 15, 
-                    qrbox: { width: 250, height: 100 } // Cuadro más delgado
-                },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
                     addCodigoInput.value = decodedText;
@@ -210,21 +201,10 @@
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'Error al iniciar la cámara.' });
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara.' });
                 stopAdminScanning();
             });
         });
-
-        function stopAdminScanning() {
-            if (adminScanner) {
-                adminScanner.stop().then(() => {
-                    adminScannerContainer.classList.add("hidden");
-                    adminScanner = null;
-                }).catch(err => console.error(err));
-            }
-        }
-
-        stopAdminBtn.addEventListener("click", stopAdminScanning);
 
         // --- LÓGICA DE INVENTARIO (CRUD) ---
         let allProducts = [];

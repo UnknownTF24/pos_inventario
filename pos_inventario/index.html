@@ -256,21 +256,12 @@
             startBtn.classList.add("hidden");
             stopBtn.classList.remove("hidden");
 
-            const formatos = [
-                Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39
-            ];
-
-            html5QrcodeScanner = new Html5Qrcode("reader", { formatsToSupport: formatos });
+            // Volvemos a la forma original y confiable
+            html5QrcodeScanner = new Html5Qrcode("reader");
             
-            // CONFIGURACIÓN A PRUEBA DE BALAS
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
-                { 
-                    fps: 15, 
-                    qrbox: { width: 250, height: 100 } // Cuadro más delgado para obligar a alejar el teléfono
-                },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
                     fetchProduct(decodedText);
@@ -278,10 +269,11 @@
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'Error al iniciar la cámara.' });
+                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
                 stopScanning();
             });
         });
+
     </script>
 </body>
 </html>
