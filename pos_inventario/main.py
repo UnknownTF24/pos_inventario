@@ -17,6 +17,22 @@ app.add_middleware(
 
 DB_NAME = "inventario.db"
 
+def inicializar_bd():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS productos (
+            codigo TEXT PRIMARY KEY,
+            nombre TEXT,
+            precio REAL,
+            stock INTEGER
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+inicializar_bd()
+
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
