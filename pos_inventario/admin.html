@@ -46,7 +46,6 @@
                     <div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div>
                 </div>
                 
-                <!-- Lector oculto Admin -->
                 <div id="lector-oculto-admin" style="display:none;"></div>
 
                 <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -79,7 +78,6 @@
         <!-- PESTAÑA: VENTAS Y ESTADÍSTICAS -->
         <div id="tab-ventas" class="hidden space-y-4">
             
-            <!-- Controles de Filtro -->
             <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Filtrar Ventas Por:</label>
@@ -100,7 +98,6 @@
                 </div>
             </div>
 
-            <!-- Gráfica -->
             <div class="bg-white p-4 rounded-xl shadow-md">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-xl font-bold text-gray-800">Tendencia de Ingresos</h2>
@@ -111,17 +108,31 @@
                 </div>
             </div>
             
-            <!-- Tabla Historial -->
+            <!-- TABLA DE HISTORIAL MEJORADA CON FOOTER -->
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b w-1/4">Fecha</th><th class="p-4 border-b w-2/4">Artículos</th><th class="p-4 border-b w-1/4 text-right">Total</th></tr></thead>
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th class="p-4 border-b w-1/4">Fecha y Hora</th>
+                            <th class="p-4 border-b w-2/4">Detalle de Artículos</th>
+                            <th class="p-4 border-b w-1/4 text-right">Total</th>
+                        </tr>
+                    </thead>
                     <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
+                    
+                    <!-- ESTE ES EL NUEVO TOTAL AL FINAL DE LA TABLA -->
+                    <tfoot class="bg-blue-50 border-t-2 border-blue-200">
+                        <tr>
+                            <td colspan="2" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide">Total Generado (Período Seleccionado):</td>
+                            <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </section>
         </div>
     </main>
 
-    <!-- Modal Editar (Se mantiene igual) -->
+    <!-- Modal Editar -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -143,9 +154,8 @@
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         const USUARIO_SECRETO = "admin"; const PASS_SECRETA = "1234";
         let miGrafico = null;
-        let todasLasVentas = []; // Aquí guardamos todas las ventas para no saturar el servidor al filtrar
+        let todasLasVentas = [];
         
-        // --- LOGIN ---
         if(sessionStorage.getItem("adminAuth") === "true") { document.getElementById("login-overlay").style.display = "none"; }
         function verificarLogin() {
             if(document.getElementById("user-input").value === USUARIO_SECRETO && document.getElementById("pass-input").value === PASS_SECRETA) {
@@ -155,7 +165,6 @@
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
-        // --- PESTAÑAS ---
         function switchTab(tab) {
             document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
@@ -164,7 +173,6 @@
             if(tab === 'ventas') { fetchVentas(); }
         }
 
-        // --- CÁMARA (FOTO) - FIX ESPACIO BLANCO ---
         document.getElementById("native-admin-input").addEventListener("change", e => {
             if (e.target.files.length == 0) return;
             const scanner = new Html5Qrcode("lector-oculto-admin");
@@ -174,7 +182,6 @@
                 .finally(() => scanner.clear());
         });
 
-        // --- CÁMARA VIVO ---
         let adminScanner = null;
         document.getElementById("start-admin-btn").addEventListener("click", () => {
             document.getElementById("admin-scanner-container").classList.remove("hidden");
@@ -187,7 +194,6 @@
         function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
         document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
 
-        // --- INVENTARIO CRUD ---
         let allProducts = []; let fuse = null; let currentEditCode = null;
         async function fetchInventory() {
             try {
@@ -225,14 +231,13 @@
         });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetch(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        // --- SISTEMA DE VENTAS, FILTROS Y GRÁFICAS ---
+        // --- SISTEMA DE VENTAS ---
         function parseFecha(fechaStr) {
-            // Intenta convertir la fecha del servidor a un objeto Date real
             let d = new Date(fechaStr);
             if (!isNaN(d.getTime())) return d;
             const partes = fechaStr.split(/[\s,/]+/);
             if(partes.length >= 3) {
-                d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`); // Formato DD/MM/YYYY
+                d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`); 
                 if (!isNaN(d.getTime())) return d;
             }
             return new Date();
@@ -242,7 +247,7 @@
             try {
                 const res = await fetch(`${API_URL}/ventas`);
                 todasLasVentas = await res.json();
-                aplicarFiltros(); // Al cargar, aplicamos el filtro por defecto
+                aplicarFiltros(); 
             } catch (e) { console.error(e); }
         }
 
@@ -281,44 +286,51 @@
                     });
                 }
             }
-
             actualizarVistaVentas(ventasFiltradas);
         }
 
         function actualizarVistaVentas(ventas) {
             const list = document.getElementById("ventas-list");
             const granTotalElement = document.getElementById("gran-total-ventas");
+            const tablaTotalFooter = document.getElementById("tabla-total-footer");
             
             const sumaTotal = ventas.reduce((acc, v) => acc + v.total, 0);
+            
+            // EL TOTAL SE ACTUALIZA EN AMBOS LADOS (ARRIBA Y ABAJO)
             granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`;
+            if(tablaTotalFooter) tablaTotalFooter.innerText = `Q${sumaTotal.toFixed(2)}`;
 
             if(ventas.length === 0) {
                 list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
             } else {
-                list.innerHTML = ventas.map(v => `
+                list.innerHTML = ventas.map(v => {
+                    // SEPARAMOS LOS ARTÍCULOS EN ETIQUETAS VISUALES
+                    let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
+                    let articulosFormateados = items.map(i => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200 mb-1 mr-1">${i.trim()}</span>`).join("");
+
+                    return `
                     <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-4 text-sm">${v.fecha}</td><td class="p-4 text-sm">${v.articulos}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td>
+                        <td class="p-4 text-sm font-medium text-gray-600 align-top">${v.fecha}</td>
+                        <td class="p-4 align-top flex flex-wrap gap-1">${articulosFormateados}</td>
+                        <td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td>
                     </tr>
-                `).join("");
+                `}).join("");
             }
             dibujarGrafica(ventas);
         }
 
         function dibujarGrafica(ventas) {
             const ctx = document.getElementById('ventasChart').getContext('2d');
-            
-            // Agrupamos las ventas por día para la gráfica
             const agrupado = {};
             ventas.forEach(v => {
-                // Sacamos solo el "DD/MM/YYYY" de la fecha cortando la hora
                 const fechaCorta = parseFecha(v.fecha).toLocaleDateString();
                 agrupado[fechaCorta] = (agrupado[fechaCorta] || 0) + v.total;
             });
 
-            const etiquetas = Object.keys(agrupado).reverse(); // Fechas
-            const datos = Object.values(agrupado).reverse();   // Dinero
+            const etiquetas = Object.keys(agrupado).reverse();
+            const datos = Object.values(agrupado).reverse();
 
-            if(miGrafico) miGrafico.destroy(); // Borramos la gráfica anterior
+            if(miGrafico) miGrafico.destroy();
 
             miGrafico = new Chart(ctx, {
                 type: 'line',
@@ -327,19 +339,15 @@
                     datasets: [{
                         label: 'Ingresos Diarios (Q)',
                         data: datos.length ? datos : [0],
-                        borderColor: '#2563eb', // Azul Tailwind
+                        borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         borderWidth: 3,
                         pointBackgroundColor: '#2563eb',
-                        tension: 0.3, // Curvas suaves
+                        tension: 0.3,
                         fill: true
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
 
