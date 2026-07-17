@@ -111,7 +111,6 @@
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
-                    <!-- Ajustamos el ancho mínimo a 800px porque ahora hay 6 columnas -->
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-gray-50 text-gray-600">
                             <tr>
@@ -127,7 +126,6 @@
                         
                         <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                             <tr>
-                                <!-- Colspan ahora es 5 porque la tabla tiene 6 columnas en total -->
                                 <td colspan="5" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm md:text-base">Total Generado (Período Seleccionado):</td>
                                 <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-lg md:text-xl">Q0.00</td>
                             </tr>
@@ -179,12 +177,29 @@
             if(tab === 'ventas') { fetchVentas(); }
         }
 
+        // --- FUNCION DE DETECCIÓN INTELIGENTE ---
+        function verificarSiExisteProducto(codigoNuevo) {
+            const existe = allProducts.find(p => p.codigo === codigoNuevo);
+            if (existe) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '¡Código Existente!',
+                    text: `Ese código ya le pertenece a: "${existe.nombre}". Búscalo en la tabla de abajo si deseas modificar su stock o precio.`,
+                    confirmButtonText: 'Entendido'
+                });
+                document.getElementById("add-codigo").value = "";
+            } else {
+                document.getElementById("add-codigo").value = codigoNuevo;
+                document.getElementById("add-nombre").focus();
+            }
+        }
+
         document.getElementById("native-admin-input").addEventListener("change", e => {
             if (e.target.files.length == 0) return;
             const scanner = new Html5Qrcode("lector-oculto-admin");
             scanner.scanFile(e.target.files[0], true)
-                .then(t => { document.getElementById("add-codigo").value = t; document.getElementById("add-nombre").focus(); })
-                .catch(err => Swal.fire('Ups', 'No se detectó código', 'error'))
+                .then(t => { verificarSiExisteProducto(t); })
+                .catch(err => Swal.fire('Ups', 'No se detectó código en la imagen', 'error'))
                 .finally(() => scanner.clear());
         });
 
@@ -193,8 +208,8 @@
             document.getElementById("admin-scanner-container").classList.remove("hidden");
             adminScanner = new Html5Qrcode("admin-reader");
             adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => {
-                document.getElementById("add-codigo").value = t;
-                stopAdminScanning(); document.getElementById("add-nombre").focus();
+                stopAdminScanning(); 
+                verificarSiExisteProducto(t);
             }).catch(e => stopAdminScanning());
         });
         function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
@@ -219,11 +234,34 @@
         }
         document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
         
+        // --- VALIDACIÓN AL GUARDAR ---
         document.getElementById("add-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const product = { codigo: document.getElementById("add-codigo").value, nombre: document.getElementById("add-nombre").value, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) };
-            const response = await fetch(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-            if (response.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire({icon:'success',title:'Guardado',timer:1000}); }
+            
+            const codVal = document.getElementById("add-codigo").value.trim();
+            const nomVal = document.getElementById("add-nombre").value.trim();
+            
+            const codigoRepetido = allProducts.find(p => p.codigo === codVal);
+            if (codigoRepetido) return Swal.fire({ icon: 'error', title: 'Código Duplicado', text: `El código ya está en uso por "${codigoRepetido.nombre}".` });
+            
+            const nombreRepetido = allProducts.find(p => p.nombre.toLowerCase() === nomVal.toLowerCase());
+            if (nombreRepetido) return Swal.fire({ icon: 'error', title: 'Nombre Duplicado', text: `El producto "${nomVal}" ya está registrado.` });
+
+            const product = { codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) };
+            
+            try {
+                const response = await fetch(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
+                if (response.ok) { 
+                    document.getElementById("add-form").reset(); 
+                    fetchInventory(); 
+                    Swal.fire({icon:'success',title:'Producto Registrado',timer:1500, showConfirmButton: false}); 
+                } else {
+                    const data = await response.json();
+                    Swal.fire({ icon: 'error', title: 'No se guardó', text: data.detail || 'Revisa los datos.' });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Verifica tu conexión a internet.' });
+            }
         });
         
         function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
@@ -233,9 +271,9 @@
             e.preventDefault();
             const product = { codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) };
             await fetch(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-            closeEditModal(); fetchInventory(); Swal.fire({icon:'success',title:'Actualizado',timer:1000});
+            closeEditModal(); fetchInventory(); Swal.fire({icon:'success',title:'Actualizado',timer:1000, showConfirmButton: false});
         });
-        window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetch(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
+        window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { if(r.isConfirmed) { await fetch(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
         function parseFecha(fechaStr) {
             const partes = fechaStr.split(/[\s,/:]+/);
@@ -350,7 +388,6 @@
                         }
                     });
 
-                    // Separamos la fecha y hora devuelta por formatearFechaLocal (ej. "17/07/2026 18:00")
                     const fechaHoraCompleta = formatearFechaLocal(v.fecha);
                     const partesFechaHora = fechaHoraCompleta.split(' ');
                     const fechaSolo = partesFechaHora[0];
