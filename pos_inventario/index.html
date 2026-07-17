@@ -4,21 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS Móvil & Inventario</title>
-    <!-- Tailwind CSS CDN para una interfaz móvil moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Librería para escanear códigos de barras con la cámara -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
-
-    <!-- Encabezado -->
     <header class="bg-blue-600 text-white text-center py-4 shadow-md">
         <h1 class="text-xl font-bold">POS & Control de Inventario</h1>
     </header>
-
     <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
         
-        <!-- Sección del Escáner de Cámara -->
         <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
             <h2 class="text-lg font-semibold text-gray-700">Escanear Producto</h2>
             <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
@@ -28,13 +22,11 @@
             </div>
         </div>
 
-        <!-- Entrada Manual (Útil para PC o escáner USB a futuro) -->
         <div class="bg-white p-4 rounded-xl shadow-md flex gap-2">
             <input id="manual-code" type="text" placeholder="Código de barras manual" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
         </div>
 
-        <!-- Carrito de Compras -->
         <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
             <h2 class="text-lg font-semibold text-gray-700">Detalle de la Venta</h2>
             <div id="cart-items" class="space-y-2 divide-y divide-gray-100 max-h-48 overflow-y-auto">
@@ -48,12 +40,10 @@
                 Confirmar Venta y Cobrar
             </button>
         </div>
-
     </main>
 
     <script>
-
-    const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
+        const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = [];
         let html5QrcodeScanner = null;
 
@@ -129,10 +119,7 @@
 
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
-
-            const payload = {
-                items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad }))
-            };
+            const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
 
             try {
                 const response = await fetch(`${API_URL}/ventas`, {
@@ -163,9 +150,7 @@
         });
 
         manualInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                addManualBtn.click();
-            }
+            if (e.key === "Enter") addManualBtn.click();
         });
 
         startBtn.addEventListener("click", () => {
@@ -174,21 +159,24 @@
 
             html5QrcodeScanner = new Html5Qrcode("reader");
             
-            // Aquí está la corrección clave:
+            // Aquí forzamos LA CÁMARA TRASERA de forma correcta
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
                     fps: 10,
-                    qrbox: { width: 250, height: 150 } // Un rectángulo es mejor para códigos de barras
+                    qrbox: { width: 250, height: 150 }
                 },
                 (decodedText) => {
-                    // Cuando lee el código, lo busca y apaga la cámara
+                    if (navigator.vibrate) navigator.vibrate(100);
                     fetchProduct(decodedText);
-                    stopScanning();
+                    stopScanning(); // Apaga la cámara al leer el código
+                },
+                (errorMessage) => {
+                    // Ignorar errores de lectura continuos
                 }
             ).catch(err => {
                 console.error("Error al abrir cámara:", err);
-                alert("No se pudo abrir la cámara. Revisa los permisos.");
+                alert("No se pudo abrir la cámara trasera.");
                 stopScanning();
             });
         });
@@ -198,17 +186,11 @@
                 html5QrcodeScanner.stop().then(() => {
                     startBtn.classList.remove("hidden");
                     stopBtn.classList.add("hidden");
-                }).catch(err => {
-                    console.error("Error apagando el escáner:", err);
-                    startBtn.classList.remove("hidden");
-                    stopBtn.classList.add("hidden");
-                });
+                }).catch(err => console.error(err));
             }
         }
 
         stopBtn.addEventListener("click", stopScanning);
-
-    </script>  
-
+    </script>
 </body>
 </html>
