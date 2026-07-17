@@ -52,8 +52,8 @@
     </main>
 
     <script>
-        // Esta es la dirección de tu servidor local que ya tienes corriendo
-        const API_URL = "https://backend-pos-tienda.onrender.com/api";; 
+
+    const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = [];
         let html5QrcodeScanner = null;
 
@@ -173,21 +173,22 @@
             stopBtn.classList.remove("hidden");
 
             html5QrcodeScanner = new Html5Qrcode("reader");
+            
+            // Aquí está la corrección clave:
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 {
                     fps: 10,
-                    qrbox: { width: 250, height: 150 } 
+                    qrbox: { width: 250, height: 150 } // Un rectángulo es mejor para códigos de barras
                 },
                 (decodedText) => {
-                    navigator.vibrate?.(100); 
+                    // Cuando lee el código, lo busca y apaga la cámara
                     fetchProduct(decodedText);
-                },
-                (errorMessage) => {
-                    // Ignorar errores continuos de lectura
+                    stopScanning();
                 }
             ).catch(err => {
-                alert("No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+                console.error("Error al abrir cámara:", err);
+                alert("No se pudo abrir la cámara. Revisa los permisos.");
                 stopScanning();
             });
         });
@@ -197,11 +198,17 @@
                 html5QrcodeScanner.stop().then(() => {
                     startBtn.classList.remove("hidden");
                     stopBtn.classList.add("hidden");
-                }).catch(err => console.error(err));
+                }).catch(err => {
+                    console.error("Error apagando el escáner:", err);
+                    startBtn.classList.remove("hidden");
+                    stopBtn.classList.add("hidden");
+                });
             }
         }
 
         stopBtn.addEventListener("click", stopScanning);
-    </script>
+
+    </script>  
+
 </body>
 </html>
