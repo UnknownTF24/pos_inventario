@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import sqlite3
+import psycopg2
 from typing import List
 
 app = FastAPI(title="POS & Inventario API")
@@ -14,11 +14,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_NAME = "inventario.db"
+# ¡Tu conexión indestructible a Supabase!
+DATABASE_URL = "postgresql://postgres:u62sTgLkiRyEQvz1@db.vyukcvvzizubxdlximyy.supabase.co:5432/postgres"
+
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
 
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
+    # Crea la tabla directamente en Supabase si no existe
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS productos (
             codigo TEXT PRIMARY KEY,
@@ -49,7 +54,7 @@ class VentaRequest(BaseModel):
 
 @app.get("/api/productos")
 def listar_productos():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT codigo, nombre, precio, stock FROM productos")
     rows = cursor.fetchall()
@@ -58,11 +63,11 @@ def listar_productos():
 
 @app.post("/api/productos")
 def crear_producto(producto: Producto):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO productos (codigo, nombre, precio, stock) VALUES (?, ?, ?, ?)",
+            "INSERT INTO productos (codigo, nombre, precio, stock) VALUES (%s, %s, %s, %s)",
             (producto.codigo, producto.nombre, producto.precio, producto.stock)
         )
         conn.commit()
@@ -75,9 +80,9 @@ def crear_producto(producto: Producto):
 
 @app.get("/api/productos/{codigo}")
 def obtener_producto(codigo: str):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT codigo, nombre, precio, stock FROM productos WHERE codigo = ?", (codigo,))
+    cursor.execute("SELECT codigo, nombre, precio, stock FROM productos WHERE codigo = %s", (codigo,))
     row = cursor.fetchone()
     conn.close()
     
@@ -87,11 +92,11 @@ def obtener_producto(codigo: str):
 
 @app.put("/api/productos/{codigo}")
 def actualizar_producto(codigo: str, producto: Producto):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE codigo = ?",
+            "UPDATE productos SET nombre = %s, precio = %s, stock = %s WHERE codigo = %s",
             (producto.nombre, producto.precio, producto.stock, codigo)
         )
         if cursor.rowcount == 0:
@@ -104,13 +109,12 @@ def actualizar_producto(codigo: str, producto: Producto):
     finally:
         conn.close()
 
-# --- NUEVO: Eliminar un producto ---
 @app.delete("/api/productos/{codigo}")
 def eliminar_producto(codigo: str):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("DELETE FROM productos WHERE codigo = ?", (codigo,))
+        cursor.execute("DELETE FROM productos WHERE codigo = %s", (codigo,))
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
         conn.commit()
@@ -123,12 +127,12 @@ def eliminar_producto(codigo: str):
 
 @app.post("/api/ventas")
 def procesar_venta(venta: VentaRequest):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
         for item in venta.items:
-            cursor.execute("SELECT stock, nombre FROM productos WHERE codigo = ?", (item.codigo,))
+            cursor.execute("SELECT stock, nombre FROM productos WHERE codigo = %s", (item.codigo,))
             row = cursor.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail=f"El producto {item.codigo} no existe.")
@@ -138,7 +142,7 @@ def procesar_venta(venta: VentaRequest):
                 raise HTTPException(status_code=400, detail=f"Stock insuficiente para {nombre}.")
         
         for item in venta.items:
-            cursor.execute("UPDATE productos SET stock = stock - ? WHERE codigo = ?", (item.cantidad, item.codigo))
+            cursor.execute("UPDATE productos SET stock = stock - %s WHERE codigo = %s", (item.cantidad, item.codigo))
         
         conn.commit()
         return {"status": "success", "message": "Venta procesada con éxito."}
