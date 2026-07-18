@@ -44,7 +44,6 @@ def init_db():
             articulos TEXT NOT NULL
         )
     """)
-    # NUEVA TABLA: Usuarios del sistema
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id SERIAL PRIMARY KEY,
@@ -53,7 +52,6 @@ def init_db():
         )
     """)
     
-    # Crear usuario maestro por defecto si la tabla está vacía
     cursor.execute("SELECT COUNT(*) FROM usuarios")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO usuarios (usuario, password) VALUES ('admin', '1234')")
@@ -94,13 +92,13 @@ def verificar_token(authorization: str = Header(None)):
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload["sub"]
+        return payload["sub"] # Esto devuelve el nombre del usuario (ej. 'admin' o 'juan_cajero')
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Tu sesión ha expirado.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido.")
 
-# ---- RUTA DE LOGIN (Verifica en Base de Datos) ----
+# ---- RUTA DE LOGIN ----
 @app.post("/api/login")
 def login(req: LoginRequest):
     conn = get_db_connection()
@@ -112,13 +110,17 @@ def login(req: LoginRequest):
     if user:
         expiracion = datetime.utcnow() + timedelta(hours=12)
         token = jwt.encode({"sub": req.usuario, "exp": expiracion}, SECRET_KEY, algorithm=ALGORITHM)
-        return {"token": token, "usuario": req.usuario}
+        return {"token": token, "usuario": req.usuario} # Enviamos el nombre de usuario al frontend
     
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
-# ---- RUTAS DE USUARIOS (Súper Admin) ----
+# ---- RUTAS DE USUARIOS (SÚPER ADMIN ÚNICAMENTE) ----
 @app.get("/api/usuarios")
-def listar_usuarios(admin: str = Depends(verificar_token)):
+def listar_usuarios(usuario_actual: str = Depends(verificar_token)):
+    # BLOQUEO DE SEGURIDAD: Si no eres el creador, te rechaza
+    if usuario_actual != "admin":
+        raise HTTPException(status_code=403, detail="Acceso denegado. Solo el creador puede ver esto.")
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, usuario, password FROM usuarios ORDER BY id ASC")
@@ -127,7 +129,10 @@ def listar_usuarios(admin: str = Depends(verificar_token)):
     return [{"id": row[0], "usuario": row[1], "password": row[2]} for row in rows]
 
 @app.post("/api/usuarios")
-def crear_usuario(req: UsuarioRequest, admin: str = Depends(verificar_token)):
+def crear_usuario(req: UsuarioRequest, usuario_actual: str = Depends(verificar_token)):
+    if usuario_actual != "admin":
+        raise HTTPException(status_code=403, detail="Solo el creador puede crear cuentas.")
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -141,11 +146,13 @@ def crear_usuario(req: UsuarioRequest, admin: str = Depends(verificar_token)):
         conn.close()
 
 @app.delete("/api/usuarios/{id_usuario}")
-def eliminar_usuario(id_usuario: int, admin: str = Depends(verificar_token)):
+def eliminar_usuario(id_usuario: int, usuario_actual: str = Depends(verificar_token)):
+    if usuario_actual != "admin":
+        raise HTTPException(status_code=403, detail="Solo el creador puede eliminar cuentas.")
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # Prevenir que borren al último usuario y se queden sin acceso
         cursor.execute("SELECT COUNT(*) FROM usuarios")
         if cursor.fetchone()[0] <= 1:
             raise HTTPException(status_code=400, detail="No puedes eliminar al último usuario del sistema.")
@@ -211,9 +218,9 @@ def procesar_venta(venta: VentaRequest):
     finally:
         conn.close()
 
-# ---- RUTAS PROTEGIDAS (Admin) ----
+# ---- RUTAS PROTEGIDAS (Admin y Cajeros) ----
 @app.post("/api/productos")
-def crear_producto(producto: Producto, admin: str = Depends(verificar_token)):
+def crear_producto(producto: Producto, usuario_actual: str = Depends(verificar_token)):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -230,7 +237,7 @@ def crear_producto(producto: Producto, admin: str = Depends(verificar_token)):
         conn.close()
 
 @app.put("/api/productos/{codigo}")
-def actualizar_producto(codigo: str, producto: Producto, admin: str = Depends(verificar_token)):
+def actualizar_producto(codigo: str, producto: Producto, usuario_actual: str = Depends(verificar_token)):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -247,7 +254,7 @@ def actualizar_producto(codigo: str, producto: Producto, admin: str = Depends(ve
         conn.close()
 
 @app.delete("/api/productos/{codigo}")
-def eliminar_producto(codigo: str, admin: str = Depends(verificar_token)):
+def eliminar_producto(codigo: str, usuario_actual: str = Depends(verificar_token)):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -261,7 +268,7 @@ def eliminar_producto(codigo: str, admin: str = Depends(verificar_token)):
         conn.close()
 
 @app.get("/api/ventas/historial")
-def historial_ventas(admin: str = Depends(verificar_token)):
+def historial_ventas(usuario_actual: str = Depends(verificar_token)):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, fecha, total, articulos FROM ventas ORDER BY fecha DESC LIMIT 100")

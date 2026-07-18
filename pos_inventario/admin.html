@@ -199,7 +199,6 @@
         let allProducts = []; let fuse = null; let currentEditCode = null;
         let allUsers = [];
         
-        // --- FUNCIÓN CENTRAL CON TOKEN JWT ---
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken");
             if (!options.headers) options.headers = {};
@@ -208,17 +207,36 @@
             const response = await fetch(url, options);
             if (response.status === 401) {
                 sessionStorage.removeItem("adminToken");
+                sessionStorage.removeItem("nombreUsuario");
                 document.getElementById("login-overlay").style.display = "flex";
                 Swal.fire('Sesión Expirada', 'Tu sesión ha terminado. Inicia sesión nuevamente.', 'warning');
                 throw new Error("No autorizado");
             }
+            if (response.status === 403) {
+                Swal.fire('Acceso Denegado', 'No tienes permisos de Súper Administrador para hacer esto.', 'error');
+                throw new Error("Permisos insuficientes");
+            }
             return response;
         }
 
-        // --- SISTEMA DE LOGIN Y PESTAÑAS ---
+        // --- SISTEMA DE ROLES VISUALES ---
+        function aplicarPermisos() {
+            const usuarioActual = sessionStorage.getItem("nombreUsuario");
+            // Si no es el admin creador, ocultar la pestaña de usuarios
+            if (usuarioActual !== "admin") {
+                document.getElementById("btn-usr").style.display = "none";
+                // Asegurarse de que no se queden atascados en una vista que no pueden ver
+                switchTab('inventario');
+            } else {
+                document.getElementById("btn-usr").style.display = "block";
+            }
+        }
+
         if(sessionStorage.getItem("adminToken")) { 
             document.getElementById("login-overlay").style.display = "none";
-            fetchInventory(); fetchVentas(); fetchUsuarios();
+            aplicarPermisos();
+            fetchInventory(); fetchVentas(); 
+            if(sessionStorage.getItem("nombreUsuario") === "admin") fetchUsuarios();
         }
         
         async function verificarLogin() {
@@ -234,8 +252,15 @@
                 if (res.ok) {
                     const data = await res.json();
                     sessionStorage.setItem("adminToken", data.token); 
+                    sessionStorage.setItem("nombreUsuario", data.usuario); // Guardamos quién entró
+                    
                     document.getElementById("login-overlay").style.display = "none";
-                    fetchInventory(); fetchVentas(); fetchUsuarios();
+                    document.getElementById("user-input").value = "";
+                    document.getElementById("pass-input").value = "";
+                    
+                    aplicarPermisos();
+                    fetchInventory(); fetchVentas(); 
+                    if(data.usuario === "admin") fetchUsuarios();
                 } else {
                     const error = await res.json();
                     Swal.fire('Acceso Denegado', error.detail, 'error');
@@ -244,6 +269,7 @@
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
+        // (El resto del script se mantiene igual desde la función switchTab hacia abajo)
         function switchTab(tab) {
             document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
@@ -254,10 +280,9 @@
             document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             
             if(tab === 'ventas') fetchVentas();
-            if(tab === 'usuarios') fetchUsuarios();
+            if(tab === 'usuarios' && sessionStorage.getItem("nombreUsuario") === "admin") fetchUsuarios();
         }
 
-        // --- GESTIÓN DE USUARIOS ---
         async function fetchUsuarios() {
             try {
                 const res = await fetchConToken(`${API_URL}/usuarios`);
@@ -307,7 +332,6 @@
             }); 
         };
 
-        // --- FUNCIONES DE CÁMARA (INVENTARIO) ---
         function verificarSiExisteProducto(codigoNuevo) {
             const existe = allProducts.find(p => p.codigo === codigoNuevo);
             if (existe) {
@@ -332,7 +356,6 @@
         function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
         document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
 
-        // --- INVENTARIO CRUD ---
         async function fetchInventory() {
             try {
                 const res = await fetchConToken(`${API_URL}/productos`); 
@@ -376,7 +399,6 @@
         });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        // --- VENTAS HISTÓRICAS ---
         function parseFecha(fechaStr) {
             const partes = fechaStr.split(/[\s,/:]+/);
             if(partes.length >= 5) { const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`); if (!isNaN(d.getTime())) return d; }
