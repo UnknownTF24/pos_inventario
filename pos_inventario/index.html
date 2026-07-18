@@ -98,7 +98,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     sessionStorage.setItem("adminToken", data.token); 
-                    sessionStorage.setItem("nombreUsuario", data.usuario);
+                    sessionStorage.setItem("nombreUsuario", data.nombre_completo);
                     sessionStorage.setItem("rolUsuario", data.rol);
                     checkSession();
                 } else { Swal.fire('Error', 'Credenciales incorrectas', 'error'); }

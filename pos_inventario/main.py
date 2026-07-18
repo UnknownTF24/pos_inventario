@@ -5,6 +5,7 @@ import psycopg2
 from typing import List
 import jwt
 from datetime import datetime, timedelta
+import re
 
 app = FastAPI(title="POS & Inventario API")
 
@@ -50,12 +51,17 @@ def init_db():
         )
     """)
     
+    # Migraciones para agregar rol, cajero en ventas, y el nuevo NOMBRE COMPLETO
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
+    cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
+    
+    # Rellenar nombres completos si estaban vacíos con el nombre de usuario
+    cursor.execute("UPDATE usuarios SET nombre_completo = usuario WHERE nombre_completo IS NULL")
     
     cursor.execute("SELECT COUNT(*) FROM usuarios WHERE usuario = 'admin'")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO usuarios (usuario, password, rol) VALUES ('admin', '1234', 'superadmin')")
+        cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo) VALUES ('admin', '1234', 'superadmin', 'Creador (Súper Admin)')")
     else:
         cursor.execute("UPDATE usuarios SET rol = 'superadmin' WHERE usuario = 'admin'")
         
@@ -87,6 +93,7 @@ class UsuarioRequest(BaseModel):
     usuario: str
     password: str
     rol: str
+    nombre_completo: str
 
 def verificar_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -94,7 +101,7 @@ def verificar_token(authorization: str = Header(None)):
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return {"usuario": payload["sub"], "rol": payload.get("rol", "cajero")}
+        return {"usuario": payload["sub"], "rol": payload.get("rol", "cajero"), "nombre_completo": payload.get("nombre", payload["sub"])}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Tu sesión ha expirado.")
     except jwt.InvalidTokenError:
@@ -104,82 +111,88 @@ def verificar_token(authorization: str = Header(None)):
 def login(req: LoginRequest):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT usuario, password, rol FROM usuarios WHERE usuario = %s AND password = %s", (req.usuario, req.password))
+    cursor.execute("SELECT usuario, password, rol, nombre_completo FROM usuarios WHERE usuario = %s AND password = %s", (req.usuario, req.password))
     user = cursor.fetchone()
     conn.close()
 
     if user:
         expiracion = datetime.utcnow() + timedelta(hours=12)
-        token = jwt.encode({"sub": user[0], "rol": user[2], "exp": expiracion}, SECRET_KEY, algorithm=ALGORITHM)
-        return {"token": token, "usuario": user[0], "rol": user[2]}
+        # Metemos el nombre completo en el token
+        token = jwt.encode({"sub": user[0], "rol": user[2], "nombre": user[3], "exp": expiracion}, SECRET_KEY, algorithm=ALGORITHM)
+        return {"token": token, "usuario": user[0], "rol": user[2], "nombre_completo": user[3]}
     
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
 # ---- RUTAS DE USUARIOS ----
 @app.get("/api/usuarios")
 def listar_usuarios(user_info: dict = Depends(verificar_token)):
-    # Ahora el admin de tienda también puede ver la lista
     if user_info["rol"] not in ["superadmin", "admin"]:
         raise HTTPException(status_code=403, detail="Acceso denegado.")
     
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, usuario, password, rol FROM usuarios ORDER BY id ASC")
+    cursor.execute("SELECT id, usuario, password, rol, nombre_completo FROM usuarios ORDER BY id ASC")
     rows = cursor.fetchall()
     conn.close()
     
     result = []
     for row in rows:
-        # Si es Admin de tienda, Python oculta la contraseña real. Solo el Súper Admin la recibe.
         pwd = row[2] if user_info["rol"] == "superadmin" else "********"
-        result.append({"id": row[0], "usuario": row[1], "password": pwd, "rol": row[3]})
+        result.append({"id": row[0], "usuario": row[1], "password": pwd, "rol": row[3], "nombre_completo": row[4]})
     return result
 
 @app.post("/api/usuarios")
 def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token)):
-    # El admin de tienda también puede crear usuarios
     if user_info["rol"] not in ["superadmin", "admin"]:
         raise HTTPException(status_code=403, detail="Sin permisos para crear cuentas.")
     
-    # Un admin normal no puede crear a un superadmin
-    if user_info["rol"] == "admin" and req.rol == "superadmin":
-        raise HTTPException(status_code=403, detail="No puedes crear cuentas de nivel superior al tuyo.")
+    # Validar que el usuario (login) no tenga espacios
+    if bool(re.search(r"\s", req.usuario)):
+        raise HTTPException(status_code=400, detail="El nombre de 'Usuario' para iniciar sesión no puede tener espacios.")
+
+    # Restringir al Admin normal para que NO cree a otros admins
+    if user_info["rol"] == "admin" and req.rol != "cajero":
+        raise HTTPException(status_code=403, detail="Para crear un Administrador, contacta al Creador del sistema.")
         
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO usuarios (usuario, password, rol) VALUES (%s, %s, %s)", (req.usuario, req.password, req.rol))
+        cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo) VALUES (%s, %s, %s, %s)", 
+                       (req.usuario, req.password, req.rol, req.nombre_completo))
         conn.commit()
         return {"status": "success"}
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=400, detail="El nombre de usuario ya existe.")
+        raise HTTPException(status_code=400, detail="Ese Usuario (para iniciar sesión) ya está en uso.")
     finally:
         conn.close()
 
 @app.delete("/api/usuarios/{id_usuario}")
 def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)):
-    # El admin también puede eliminar cajeros
     if user_info["rol"] not in ["superadmin", "admin"]:
         raise HTTPException(status_code=403, detail="Sin permisos.")
         
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT COUNT(*) FROM usuarios")
-        if cursor.fetchone()[0] <= 1:
-            raise HTTPException(status_code=400, detail="No puedes eliminar al último usuario del sistema.")
-            
+        # Candado anti-eliminación de Superadmin
+        cursor.execute("SELECT rol FROM usuarios WHERE id = %s", (id_usuario,))
+        rol_target = cursor.fetchone()
+        if rol_target and rol_target[0] == "superadmin":
+            raise HTTPException(status_code=403, detail="Protección de sistema: No puedes eliminar al Súper Administrador.")
+
         cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_usuario,))
         conn.commit()
         return {"status": "success"}
+    except HTTPException:
+        raise
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
 
-# ---- PRODUCTOS ----
+# ---- PRODUCTOS Y VENTAS RESTO DEL CÓDIGO (Igual) ----
 @app.get("/api/productos")
 def listar_productos():
     conn = get_db_connection()
@@ -248,7 +261,6 @@ def eliminar_producto(codigo: str, user_info: dict = Depends(verificar_token)):
     finally:
         conn.close()
 
-# ---- VENTAS ----
 @app.post("/api/ventas")
 def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_token)):
     conn = get_db_connection()
@@ -270,7 +282,8 @@ def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_toke
             cursor.execute("UPDATE productos SET stock = stock - %s WHERE codigo = %s", (item.cantidad, item.codigo))
         
         detalles_str = " | ".join(detalles_lista)
-        cursor.execute("INSERT INTO ventas (total, articulos, cajero) VALUES (%s, %s, %s)", (total_venta, detalles_str, user_info["usuario"]))
+        # Registramos la venta con el nombre en pantalla, NO con el usuario de login
+        cursor.execute("INSERT INTO ventas (total, articulos, cajero) VALUES (%s, %s, %s)", (total_venta, detalles_str, user_info["nombre_completo"]))
         conn.commit()
         return {"status": "success"}
     except Exception as e:

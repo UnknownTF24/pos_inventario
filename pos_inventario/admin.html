@@ -12,7 +12,6 @@
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
-    <!-- LOGIN DEL PANEL -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Panel Administrativo 🔒</h2>
@@ -21,8 +20,6 @@
                 <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
-            
-            <!-- ENLACES DE SOPORTE Y RETORNO -->
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
                 <a href="#" onclick="Swal.fire('Soporte Técnico', 'Para recuperar o modificar tu contraseña de Administrador, comunícate con el Creador/Soporte Técnico del sistema.', 'info')" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
                 <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">🛒 Volver a la Caja (POS)</a>
@@ -30,7 +27,6 @@
         </div>
     </div>
 
-    <!-- NAVEGACIÓN -->
     <nav class="bg-gray-800 text-white p-4 shadow-md flex flex-wrap gap-4 justify-between items-center">
         <div>
             <h1 class="text-xl font-bold">Panel de Control</h1>
@@ -40,16 +36,14 @@
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded transition">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded transition">📈 Ventas</button>
             <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded transition hidden">👥 Usuarios</button>
-            
-            <div class="w-px h-8 bg-gray-600 mx-2"></div> <!-- Divisor -->
-            
+            <div class="w-px h-8 bg-gray-600 mx-2"></div>
             <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
             <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition ml-2">Salir</button>
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto p-4 mt-4 w-full">
-        
+    <main class="max-w-7xl mx-auto p-4 mt-4 w-full">
+        <!-- PESTAÑA INVENTARIO Y VENTAS OCULTAS POR BREVEDAD, SE MANTIENEN IGUAL -->
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
@@ -74,18 +68,12 @@
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Período:</label>
                     <select id="filtro-fecha" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
-                        <option value="hoy">📅 Hoy</option>
-                        <option value="semana">📅 Últimos 7 Días</option>
-                        <option value="mes">📅 Este Mes</option>
-                        <option value="todas" selected>📚 Todas</option>
-                        <option value="manual">⚙️ Manual...</option>
+                        <option value="hoy">📅 Hoy</option><option value="semana">📅 Últimos 7 Días</option><option value="mes">📅 Este Mes</option><option value="todas" selected>📚 Todas</option><option value="manual">⚙️ Manual...</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Cajero:</label>
-                    <select id="filtro-cajero" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
-                        <option value="todos">Todos los cajeros</option>
-                    </select>
+                    <select id="filtro-cajero" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()"><option value="todos">Todos los cajeros</option></select>
                 </div>
                 <div id="controles-manuales" class="hidden flex gap-2 items-end">
                     <div><label class="block text-sm text-gray-500 mb-1">Desde</label><input type="date" id="fecha-inicio" class="border rounded p-2"></div>
@@ -93,39 +81,8 @@
                     <button onclick="aplicarFiltros()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Buscar</button>
                 </div>
             </div>
-
-            <div class="bg-white p-4 rounded-xl shadow-md">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xl font-bold text-gray-800">Rendimiento (Según filtros)</h2>
-                    <h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3>
-                </div>
-                <div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div>
-            </div>
-            
-            <section class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[900px]">
-                        <thead class="bg-gray-50 text-gray-600">
-                            <tr>
-                                <th class="p-4 border-b whitespace-nowrap">Fecha</th>
-                                <th class="p-4 border-b whitespace-nowrap">Hora</th>
-                                <th class="p-4 border-b text-center whitespace-nowrap">Cantidad</th>
-                                <th class="p-4 border-b min-w-[200px]">Producto</th>
-                                <th class="p-4 border-b text-right whitespace-nowrap">Precio U.</th>
-                                <th class="p-4 border-b font-bold text-blue-600">Cajero</th>
-                                <th class="p-4 border-b text-right whitespace-nowrap">Total Venta</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
-                        <tfoot class="bg-blue-50 border-t-2 border-blue-200">
-                            <tr>
-                                <td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado (Período Seleccionado):</td>
-                                <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </section>
+            <div class="bg-white p-4 rounded-xl shadow-md"><div class="flex justify-between items-center mb-2"><h2 class="text-xl font-bold text-gray-800">Rendimiento</h2><h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3></div><div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div></div>
+            <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b">Fecha</th><th class="p-4 border-b">Hora</th><th class="p-4 border-b text-center">Cant.</th><th class="p-4 border-b min-w-[200px]">Producto</th><th class="p-4 border-b text-right">Precio U.</th><th class="p-4 border-b font-bold text-blue-600">Cajero</th><th class="p-4 border-b text-right">Total Venta</th></tr></thead><tbody id="ventas-list" class="divide-y divide-gray-100"></tbody><tfoot class="bg-blue-50 border-t-2 border-blue-200"><tr><td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado:</td><td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td></tr></tfoot></table></div></section>
         </div>
 
         <!-- PESTAÑA: USUARIOS -->
@@ -133,23 +90,29 @@
             
             <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
-                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <!-- NUEVO CAMPO: USUARIO LOGIN -->
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Nombre de Usuario</label>
-                        <input type="text" id="new-user-name" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero">
+                        <label class="block text-xs font-bold mb-1 text-gray-600">Usuario Login <span class="text-red-500 font-normal">(Sin espacios)</span></label>
+                        <input type="text" id="new-user-name" pattern="[^\s]+" title="El usuario no debe llevar espacios." required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero">
+                    </div>
+                    <!-- NUEVO CAMPO: NOMBRE EN PANTALLA -->
+                    <div>
+                        <label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla <span class="text-gray-400 font-normal">(Ticket)</span></label>
+                        <input type="text" id="new-user-fullname" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. Pablo Perez">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Contraseña Inicial</label>
+                        <label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label>
                         <input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. clave123">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Nivel de Acceso (Rol)</label>
+                        <label class="block text-xs font-bold mb-1 text-gray-600">Nivel de Acceso</label>
                         <select id="new-user-rol" class="w-full border p-2 rounded focus:border-purple-500 outline-none bg-gray-50 font-semibold">
                             <option value="cajero">🛒 Cajero (Solo Cobrar)</option>
                             <option value="admin">🏢 Admin de Tienda</option>
                         </select>
                     </div>
-                    <div><button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
+                    <div><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
                 </form>
             </section>
 
@@ -158,11 +121,13 @@
                     <h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
+                    <!-- Agregamos la columna de Nombre a la tabla -->
+                    <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200">
                             <tr>
-                                <th class="p-4">ID</th>
-                                <th class="p-4">Usuario</th>
+                                <th class="p-4 w-16">ID</th>
+                                <th class="p-4">Usuario (Login)</th>
+                                <th class="p-4 text-blue-600 font-bold">Nombre en Pantalla</th>
                                 <th class="p-4">Rol</th>
                                 <th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th>
                                 <th class="p-4 text-center">Acción</th>
@@ -202,11 +167,19 @@
         window.solicitarSoporte = function() {
             Swal.fire({
                 title: 'Soporte Técnico',
-                html: '<p>Para recuperar o modificar contraseñas del personal, por favor comunícate urgente con el creador del sistema.</p><br><p class="font-bold text-blue-600">WhatsApp / Teléfono: [Tu Número Aquí]</p>',
+                html: '<p>Para gestionar administradores o recuperar contraseñas, por favor comunícate urgente con el creador del sistema.</p><br><p class="font-bold text-blue-600">WhatsApp: [Tu Número Aquí]</p>',
                 icon: 'info',
                 confirmButtonText: 'Entendido'
             });
         };
+
+        // BLOQUEO DE ROL EN EL FORMULARIO
+        document.getElementById("new-user-rol").addEventListener("change", function(e) {
+            if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") {
+                Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Súper Administrador / Creador del sistema.', 'warning');
+                this.value = "cajero";
+            }
+        });
 
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken");
@@ -220,7 +193,8 @@
                 throw new Error("No autorizado");
             }
             if (response.status === 403) {
-                Swal.fire('Acceso Denegado', 'No tienes el Nivel de Acceso necesario para ver esto.', 'error');
+                const errData = await response.json().catch(() => ({}));
+                Swal.fire('Acceso Denegado', errData.detail || 'No tienes el Nivel de Acceso necesario.', 'error');
                 throw new Error("Permisos insuficientes");
             }
             return response;
@@ -267,7 +241,7 @@
                         Swal.fire('Atención Cajero', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS), no aquí en Administración.', 'info');
                         return;
                     }
-                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.usuario); sessionStorage.setItem("rolUsuario", data.rol);
+                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("login-overlay").style.display = "none";
                     aplicarPermisos(); fetchInventory(); fetchVentas(); 
                     if(data.rol !== "cajero") fetchUsuarios();
@@ -279,14 +253,10 @@
             document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
             document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
-            
             document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-            
             const rol = sessionStorage.getItem("rolUsuario");
-            if (rol !== "cajero") {
-                document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-            }
+            if (rol !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
         }
 
         async function fetchUsuarios() {
@@ -301,29 +271,39 @@
             const list = document.getElementById("usuarios-list");
             const rolActual = sessionStorage.getItem("rolUsuario");
             
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay personal registrado aún.</td></tr>`;
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal registrado.</td></tr>`;
             
             list.innerHTML = usuarios.map(u => {
-                let passwordHtml = '';
-                let actionHtml = '';
+                let passwordHtml = ''; let actionHtml = '';
+                let trClass = "hover:bg-gray-50 border-b";
+                let candadoSuperAdmin = "";
+
+                if (u.rol === 'superadmin') {
+                    trClass = "bg-gray-50 border-b";
+                    candadoSuperAdmin = `<span title="El Súper Admin no se puede eliminar">🛡️</span>`;
+                }
 
                 if (rolActual === "superadmin") {
                     passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`;
-                    actionHtml = `<td class="p-4 text-center"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️ Eliminar</button></td>`;
+                    actionHtml = `<td class="p-4 text-center">
+                        ${u.rol === 'superadmin' ? candadoSuperAdmin : `<button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600">🗑️ Eliminar</button>`}
+                    </td>`;
                 } else {
                     passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`;
                     actionHtml = `<td class="p-4 text-center flex justify-center gap-2">
-                        <button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200">🆘 Soporte</button>
-                        <button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️</button>
+                        <button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200" title="Recuperar/Editar">🆘 Soporte</button>
+                        ${u.rol === 'superadmin' ? candadoSuperAdmin : `<button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600">🗑️</button>`}
                     </td>`;
                 }
 
+                // El admin de tienda NUNCA ve al super admin en su tabla
                 if (rolActual === "admin" && u.rol === "superadmin") return "";
 
                 return `
-                <tr class="hover:bg-gray-50 border-b">
+                <tr class="${trClass}">
                     <td class="p-4 font-mono text-gray-500">${u.id}</td>
-                    <td class="p-4 font-bold text-gray-800">${u.usuario}</td>
+                    <td class="p-4 font-mono text-gray-600">${u.usuario}</td>
+                    <td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td>
                     <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
                     ${passwordHtml}
                     ${actionHtml}
@@ -333,9 +313,12 @@
 
         document.getElementById("add-user-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const usr = document.getElementById("new-user-name").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value;
+            const usr = document.getElementById("new-user-name").value.trim(); 
+            const fName = document.getElementById("new-user-fullname").value.trim(); 
+            const pwd = document.getElementById("new-user-pass").value.trim(); 
+            const rol = document.getElementById("new-user-rol").value;
             try {
-                const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, password: pwd, rol: rol }) });
+                const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) });
                 if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } 
                 else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
             } catch (error) {}
@@ -347,6 +330,7 @@
             }); 
         };
 
+        // --- RESTO DE LÓGICAS (Inventario / Ventas) ---
         function verificarSiExisteProducto(codigoNuevo) {
             const existe = allProducts.find(p => p.codigo === codigoNuevo);
             if (existe) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById("add-codigo").value = ""; } 
