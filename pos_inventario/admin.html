@@ -12,6 +12,7 @@
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
+    <!-- LOGIN DEL PANEL -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Panel Administrativo 🔒</h2>
@@ -20,13 +21,15 @@
                 <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
+            
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
-                <a href="#" onclick="Swal.fire('Soporte Técnico', 'Para recuperar o modificar tu contraseña de Administrador, comunícate con el Creador/Soporte Técnico del sistema.', 'info')" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
+                <a href="#" onclick="solicitarSoporte()" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
                 <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">🛒 Volver a la Caja (POS)</a>
             </div>
         </div>
     </div>
 
+    <!-- NAVEGACIÓN -->
     <nav class="bg-gray-800 text-white p-4 shadow-md flex flex-wrap gap-4 justify-between items-center">
         <div>
             <h1 class="text-xl font-bold">Panel de Control</h1>
@@ -36,14 +39,15 @@
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded transition">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded transition">📈 Ventas</button>
             <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded transition hidden">👥 Usuarios</button>
+            
             <div class="w-px h-8 bg-gray-600 mx-2"></div>
+            
             <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
             <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition ml-2">Salir</button>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto p-4 mt-4 w-full">
-        <!-- PESTAÑA INVENTARIO Y VENTAS OCULTAS POR BREVEDAD, SE MANTIENEN IGUAL -->
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
@@ -68,7 +72,7 @@
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Período:</label>
                     <select id="filtro-fecha" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
-                        <option value="hoy">📅 Hoy</option><option value="semana">📅 Últimos 7 Días</option><option value="mes">📅 Este Mes</option><option value="todas" selected>📚 Todas</option><option value="manual">⚙️ Manual...</option>
+                        <option value="hoy">📅 Hoy</option><option value="semana">📅 Últimos 7 Días</option><option value="mes">📅 Este Mes</option><option value="todas" selected>📚 Todas</option><option value="manual">⚙️ Rango Manual...</option>
                     </select>
                 </div>
                 <div>
@@ -91,14 +95,12 @@
             <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
                 <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <!-- NUEVO CAMPO: USUARIO LOGIN -->
                     <div>
                         <label class="block text-xs font-bold mb-1 text-gray-600">Usuario Login <span class="text-red-500 font-normal">(Sin espacios)</span></label>
                         <input type="text" id="new-user-name" pattern="[^\s]+" title="El usuario no debe llevar espacios." required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero">
                     </div>
-                    <!-- NUEVO CAMPO: NOMBRE EN PANTALLA -->
                     <div>
-                        <label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla <span class="text-gray-400 font-normal">(Ticket)</span></label>
+                        <label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla <span class="text-gray-400 font-normal">(Recibo)</span></label>
                         <input type="text" id="new-user-fullname" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. Pablo Perez">
                     </div>
                     <div>
@@ -119,9 +121,9 @@
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
                     <h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2>
+                    <button onclick="verAuditoria()" class="bg-gray-600 hover:bg-gray-500 text-sm px-3 py-1 rounded shadow">📜 Ver Historial de Cambios</button>
                 </div>
                 <div class="overflow-x-auto">
-                    <!-- Agregamos la columna de Nombre a la tabla -->
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200">
                             <tr>
@@ -140,7 +142,7 @@
         </div>
     </main>
 
-    <!-- Modal Editar Inventario -->
+    <!-- MODAL EDITAR INVENTARIO -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -158,6 +160,56 @@
         </div>
     </div>
 
+    <!-- MODAL EDITAR USUARIO -->
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2>
+            <form id="form-editar-usuario" class="space-y-4">
+                <input type="hidden" id="edit-usr-id">
+                <div>
+                    <label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label>
+                    <input type="text" id="edit-usr-fullname" required class="w-full border-2 border-blue-200 rounded p-2 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm">Usuario Login</label>
+                    <input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-sm">Contraseña</label>
+                    <input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-sm">Nivel de Acceso</label>
+                    <select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50">
+                        <option value="cajero">🛒 Cajero</option>
+                        <option value="admin">🏢 Admin de Tienda</option>
+                        <option value="superadmin">👑 Súper Admin</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+                    <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL AUDITORÍA -->
+    <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios de Nombres</h2>
+                <button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button>
+            </div>
+            <div class="max-h-96 overflow-y-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead>
+                    <tbody id="audit-list" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = [];
@@ -167,16 +219,15 @@
         window.solicitarSoporte = function() {
             Swal.fire({
                 title: 'Soporte Técnico',
-                html: '<p>Para gestionar administradores o recuperar contraseñas, por favor comunícate urgente con el creador del sistema.</p><br><p class="font-bold text-blue-600">WhatsApp: [Tu Número Aquí]</p>',
+                html: '<p>Para recuperar o modificar contraseñas del personal, o para solicitar cuenta de administrador, por favor comunícate con el creador de la página.</p><br><p class="font-bold text-blue-600">WhatsApp / Teléfono: 4941-1913<br>Correo: isaijonatan4222@gmail.com</p>',
                 icon: 'info',
                 confirmButtonText: 'Entendido'
             });
         };
 
-        // BLOQUEO DE ROL EN EL FORMULARIO
         document.getElementById("new-user-rol").addEventListener("change", function(e) {
             if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") {
-                Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Súper Administrador / Creador del sistema.', 'warning');
+                Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador del sistema.', 'warning');
                 this.value = "cajero";
             }
         });
@@ -205,20 +256,15 @@
             document.getElementById("rol-display").innerText = "Rol: " + (rol === "superadmin" ? "👑 Súper Admin (Creador)" : "🏢 Admin de Tienda");
             
             const btnUsr = document.getElementById("btn-usr");
-            
             if (rol === "cajero") {
                 window.location.href = "index.html";
             } else if (rol === "admin") {
-                btnUsr.classList.remove("hidden");
-                btnUsr.innerText = "👥 Mi Personal";
-                document.getElementById("seccion-crear-usuario").style.display = "block";
+                btnUsr.classList.remove("hidden"); btnUsr.innerText = "👥 Mi Personal";
                 document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo";
                 document.getElementById("header-clave").innerText = "Contraseña";
                 document.getElementById("header-clave").className = "p-4 text-gray-700";
             } else if (rol === "superadmin") {
-                btnUsr.classList.remove("hidden");
-                btnUsr.innerText = "👥 Usuarios (Global)";
-                document.getElementById("seccion-crear-usuario").style.display = "block";
+                btnUsr.classList.remove("hidden"); btnUsr.innerText = "👥 Usuarios (Global)";
                 document.getElementById("titulo-tabla-usuarios").innerText = "Administración Global de Usuarios";
                 document.getElementById("header-clave").innerText = "Bóveda: Clave Secreta";
                 document.getElementById("header-clave").className = "p-4 text-yellow-600 font-bold";
@@ -255,59 +301,37 @@
             document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
             document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-            const rol = sessionStorage.getItem("rolUsuario");
-            if (rol !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
+            if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
         }
 
+        // --- GESTIÓN DE USUARIOS Y AUDITORÍA ---
         async function fetchUsuarios() {
-            try { 
-                const res = await fetchConToken(`${API_URL}/usuarios`); 
-                allUsers = await res.json(); 
-                renderUsuarios(allUsers); 
-            } catch (e) {}
+            try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {}
         }
 
         function renderUsuarios(usuarios) {
-            const list = document.getElementById("usuarios-list");
-            const rolActual = sessionStorage.getItem("rolUsuario");
-            
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal registrado.</td></tr>`;
+            const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario");
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`;
             
             list.innerHTML = usuarios.map(u => {
                 let passwordHtml = ''; let actionHtml = '';
-                let trClass = "hover:bg-gray-50 border-b";
-                let candadoSuperAdmin = "";
-
-                if (u.rol === 'superadmin') {
-                    trClass = "bg-gray-50 border-b";
-                    candadoSuperAdmin = `<span title="El Súper Admin no se puede eliminar">🛡️</span>`;
-                }
+                let trClass = u.rol === 'superadmin' ? "bg-gray-50 border-b" : "hover:bg-gray-50 border-b";
 
                 if (rolActual === "superadmin") {
                     passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`;
-                    actionHtml = `<td class="p-4 text-center">
-                        ${u.rol === 'superadmin' ? candadoSuperAdmin : `<button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600">🗑️ Eliminar</button>`}
+                    actionHtml = `<td class="p-4 text-center whitespace-nowrap">
+                        <button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button>
+                        ${u.rol === 'superadmin' ? `<span title="El Creador no se puede eliminar">🛡️</span>` : `<button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button>`}
                     </td>`;
                 } else {
                     passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`;
-                    actionHtml = `<td class="p-4 text-center flex justify-center gap-2">
-                        <button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200" title="Recuperar/Editar">🆘 Soporte</button>
-                        ${u.rol === 'superadmin' ? candadoSuperAdmin : `<button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600">🗑️</button>`}
+                    actionHtml = `<td class="p-4 text-center whitespace-nowrap">
+                        <button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1" title="Editar Nombre">✏️ Nombre</button>
+                        ${u.rol === 'superadmin' ? '' : `<button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button>`}
                     </td>`;
                 }
-
-                // El admin de tienda NUNCA ve al super admin en su tabla
                 if (rolActual === "admin" && u.rol === "superadmin") return "";
-
-                return `
-                <tr class="${trClass}">
-                    <td class="p-4 font-mono text-gray-500">${u.id}</td>
-                    <td class="p-4 font-mono text-gray-600">${u.usuario}</td>
-                    <td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
-                    ${passwordHtml}
-                    ${actionHtml}
-                </tr>`
+                return `<tr class="${trClass}"><td class="p-4 font-mono text-gray-500">${u.id}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>`
             }).join("");
         }
 
@@ -330,35 +354,84 @@
             }); 
         };
 
-        // --- RESTO DE LÓGICAS (Inventario / Ventas) ---
-        function verificarSiExisteProducto(codigoNuevo) {
-            const existe = allProducts.find(p => p.codigo === codigoNuevo);
-            if (existe) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById("add-codigo").value = ""; } 
-            else { document.getElementById("add-codigo").value = codigoNuevo; document.getElementById("add-nombre").focus(); }
-        }
-        document.getElementById("native-admin-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto-admin"); scanner.scanFile(e.target.files[0], true).then(t => { verificarSiExisteProducto(t); }).finally(() => scanner.clear()); });
+        // Modal estricto para que el admin elimine
+        window.eliminarUsuarioConfirmado = function(id) {
+            Swal.fire({title: '¡ADVERTENCIA IRREVERSIBLE!', text: "Estás a punto de borrar definitivamente este usuario y no se podrá recuperar. ¿Estás absolutamente seguro?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar para siempre', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => {
+                if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success');} } catch(e){} }
+            });
+        };
+
+        window.openEditUser = function(id) {
+            const u = allUsers.find(x => x.id === id);
+            document.getElementById("edit-usr-id").value = u.id;
+            document.getElementById("edit-usr-fullname").value = u.nombre_completo;
+            document.getElementById("edit-usr-name").value = u.usuario;
+            document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : '';
+            document.getElementById("edit-usr-rol").value = u.rol;
+
+            const rolActual = sessionStorage.getItem("rolUsuario");
+            const esAdminNormal = rolActual === "admin";
+            
+            // Si es admin, bloqueamos los campos sensibles
+            document.getElementById("edit-usr-name").disabled = esAdminNormal;
+            document.getElementById("edit-usr-pass").disabled = esAdminNormal;
+            document.getElementById("edit-usr-rol").disabled = esAdminNormal;
+            
+            if(esAdminNormal) {
+                document.getElementById("edit-usr-pass").placeholder = "Comunícate con Soporte para cambiar";
+                document.getElementById("edit-usr-name").title = "No modificable";
+            }
+
+            document.getElementById("edit-user-modal").classList.remove("hidden");
+        };
+
+        document.getElementById("form-editar-usuario").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("edit-usr-id").value;
+            const payload = {
+                nombre_completo: document.getElementById("edit-usr-fullname").value.trim(),
+                usuario: document.getElementById("edit-usr-name").value.trim(),
+                password: document.getElementById("edit-usr-pass").value.trim(),
+                rol: document.getElementById("edit-usr-rol").value
+            };
+            
+            if(sessionStorage.getItem("rolUsuario") === "admin") { delete payload.usuario; delete payload.password; delete payload.rol; }
+            
+            try {
+                const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
+                if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); }
+            } catch (e) {}
+        });
+
+        window.verAuditoria = async function() {
+            try {
+                const res = await fetchConToken(`${API_URL}/auditoria`);
+                const data = await res.json();
+                const list = document.getElementById("audit-list");
+                if (data.length === 0) list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay registros de auditoría.</td></tr>`;
+                else list.innerHTML = data.map(r => `<tr><td class="p-2 border-b whitespace-nowrap text-gray-500">${r.fecha}</td><td class="p-2 border-b font-mono">${r.usuario}</td><td class="p-2 border-b text-blue-800">${r.detalle}</td></tr>`).join("");
+                document.getElementById("audit-modal").classList.remove("hidden");
+            } catch (e) {}
+        };
+
+        // --- RESTO DE LÓGICAS (Inventario) ---
+        function verificarSiExisteProducto(codigoNuevo) { const existe = allProducts.find(p => p.codigo === codigoNuevo); if (existe) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById("add-codigo").value = ""; } else { document.getElementById("add-codigo").value = codigoNuevo; document.getElementById("add-nombre").focus(); } }
+        document.getElementById("native-admin-input").addEventListener("change", e => { if (e.target.files.length == 0) return; new Html5Qrcode("lector-oculto-admin").scanFile(e.target.files[0], true).then(t => verificarSiExisteProducto(t)); });
         document.getElementById("start-admin-btn").addEventListener("click", () => { document.getElementById("admin-scanner-container").classList.remove("hidden"); adminScanner = new Html5Qrcode("admin-reader"); adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopAdminScanning(); verificarSiExisteProducto(t); }).catch(e => stopAdminScanning()); });
         function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
         document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
 
         async function fetchInventory() { try { const res = await fetchConToken(`${API_URL}/productos`); allProducts = await res.json(); fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts); } catch (e) {} }
-        function renderTable(products) {
-            const list = document.getElementById("inventory-list"); if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="text-center p-4">Vacío</td></tr>`;
-            list.innerHTML = products.map(p => `<tr class="border-b"><td class="p-4 font-mono">${p.codigo}</td><td class="p-4">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td><td class="p-4 font-bold ${p.stock<=5?'text-red-600':''}">${p.stock}</td><td class="p-4 text-center"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td></tr>`).join("");
-        }
+        function renderTable(products) { const list = document.getElementById("inventory-list"); if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="text-center p-4">Vacío</td></tr>`; list.innerHTML = products.map(p => `<tr class="border-b"><td class="p-4 font-mono">${p.codigo}</td><td class="p-4">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td><td class="p-4 font-bold ${p.stock<=5?'text-red-600':''}">${p.stock}</td><td class="p-4 text-center"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td></tr>`).join(""); }
         document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
         
-        document.getElementById("add-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const codVal = document.getElementById("add-codigo").value.trim(); const nomVal = document.getElementById("add-nombre").value.trim();
-            if (allProducts.find(p => p.codigo === codVal)) return Swal.fire('Error', 'Código en uso', 'error');
-            try { const res = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) }) }); if (res.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire('Éxito', 'Guardado', 'success'); } } catch (e) {}
-        });
+        document.getElementById("add-form").addEventListener("submit", async (e) => { e.preventDefault(); const codVal = document.getElementById("add-codigo").value.trim(); const nomVal = document.getElementById("add-nombre").value.trim(); if (allProducts.find(p => p.codigo === codVal)) return Swal.fire('Error', 'Código en uso', 'error'); try { const res = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) }) }); if (res.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire('Éxito', 'Guardado', 'success'); } } catch (e) {} });
         function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
         function closeEditModal() { document.getElementById("edit-modal").classList.add("hidden"); }
         document.getElementById("edit-form").addEventListener("submit", async (e) => { e.preventDefault(); try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) }) }); closeEditModal(); fetchInventory(); Swal.fire('Éxito', 'Actualizado', 'success'); } catch (e) {} });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
+        // --- VENTAS ---
         function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
         function formatearFechaLocal(f) { const p = f.split(/[\s,/:]+/); if (p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } return f; }
 
@@ -385,46 +458,39 @@
             else if (filtroF === "mes") filtradas = filtradas.filter(v => parseFecha(v.fecha).getMonth() === ahora.getMonth() && parseFecha(v.fecha).getFullYear() === ahora.getFullYear());
             else if (filtroF === "manual") {
                 const fI = document.getElementById("fecha-inicio").value; const fF = document.getElementById("fecha-fin").value;
-                if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); }
+                if (fI && fF) { 
+                    const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); 
+                    
+                    // BLOQUEO DE 6 MESES (180 DÍAS)
+                    const diffDays = Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24));
+                    if(diffDays > 180) {
+                        Swal.fire('Rango Excedido', 'Para no sobrecargar la base de datos, el periodo máximo de búsqueda manual es de 6 meses (180 días).', 'warning');
+                        return; // Detiene la busqueda
+                    }
+                    filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); 
+                }
             }
 
             if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC);
-
             actualizarVistaVentas(filtradas);
         }
 
         function actualizarVistaVentas(ventas) {
             const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer");
-            const sum = ventas.reduce((acc, v) => acc + v.total, 0);
-            gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`;
-
+            const sum = ventas.reduce((acc, v) => acc + v.total, 0); gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`;
             if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas.</td></tr>`; } 
             else {
                 list.innerHTML = ventas.map(v => {
-                    let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
-                    let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1;
-                    items.forEach(i => {
-                        let m = i.trim().match(/^(\d+)x\s*(.*)/);
-                        if (m) {
-                            let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0;
-                            if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; }
-                            cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`;
-                        } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; }
-                    });
-                    const fh = formatearFechaLocal(v.fecha).split(' ');
-                    const caj = v.cajero || "Desconocido";
+                    let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1;
+                    items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } });
+                    const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido";
                     return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`;
                 }).join("");
             }
             dibujarGrafica(ventas);
         }
 
-        function dibujarGrafica(ventas) {
-            const ctx = document.getElementById('ventasChart').getContext('2d'); const ag = {};
-            ventas.forEach(v => { const fc = parseFecha(v.fecha).toLocaleDateString(); ag[fc] = (ag[fc] || 0) + v.total; });
-            if(miGrafico) miGrafico.destroy();
-            miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(ag).reverse(), datasets: [{ label: 'Ingresos (Q)', data: Object.values(ag).reverse(), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        }
+        function dibujarGrafica(ventas) { const ctx = document.getElementById('ventasChart').getContext('2d'); const ag = {}; ventas.forEach(v => { const fc = parseFecha(v.fecha).toLocaleDateString(); ag[fc] = (ag[fc] || 0) + v.total; }); if(miGrafico) miGrafico.destroy(); miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(ag).reverse(), datasets: [{ label: 'Ingresos (Q)', data: Object.values(ag).reverse(), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); }
     </script>
 </body>
 </html>
