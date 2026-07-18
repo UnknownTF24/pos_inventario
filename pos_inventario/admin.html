@@ -21,8 +21,11 @@
                 <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
-            <div class="mt-4 border-t pt-4">
+            
+            <!-- ENLACES DE SOPORTE Y RETORNO -->
+            <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
                 <a href="#" onclick="Swal.fire('Soporte Técnico', 'Para recuperar o modificar tu contraseña de Administrador, comunícate con el Creador/Soporte Técnico del sistema.', 'info')" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
+                <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">🛒 Volver a la Caja (POS)</a>
             </div>
         </div>
     </div>
@@ -40,7 +43,6 @@
             
             <div class="w-px h-8 bg-gray-600 mx-2"></div> <!-- Divisor -->
             
-            <!-- NUEVO BOTÓN PARA IR AL POS -->
             <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
             <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition ml-2">Salir</button>
         </div>
@@ -129,7 +131,6 @@
         <!-- PESTAÑA: USUARIOS -->
         <div id="tab-usuarios" class="hidden space-y-4">
             
-            <!-- Este formulario ahora lo ven TANTO Súper Admin como Admin -->
             <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
                 <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -234,16 +235,13 @@
             if (rol === "cajero") {
                 window.location.href = "index.html";
             } else if (rol === "admin") {
-                // Admin de Tienda
                 btnUsr.classList.remove("hidden");
                 btnUsr.innerText = "👥 Mi Personal";
-                // Ahora sí le permitimos ver el formulario de crear usuario
                 document.getElementById("seccion-crear-usuario").style.display = "block";
                 document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo";
                 document.getElementById("header-clave").innerText = "Contraseña";
                 document.getElementById("header-clave").className = "p-4 text-gray-700";
             } else if (rol === "superadmin") {
-                // Súper Admin
                 btnUsr.classList.remove("hidden");
                 btnUsr.innerText = "👥 Usuarios (Global)";
                 document.getElementById("seccion-crear-usuario").style.display = "block";
@@ -291,10 +289,8 @@
             }
         }
 
-        // --- GESTIÓN DE USUARIOS (ACTUALIZADA) ---
         async function fetchUsuarios() {
             try { 
-                // Ahora tanto Admin como Superadmin consultan la API real. El backend se encarga de ocultar las contraseñas.
                 const res = await fetchConToken(`${API_URL}/usuarios`); 
                 allUsers = await res.json(); 
                 renderUsuarios(allUsers); 
@@ -316,7 +312,6 @@
                     actionHtml = `<td class="p-4 text-center"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️ Eliminar</button></td>`;
                 } else {
                     passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`;
-                    // El admin puede eliminar y solicitar soporte
                     actionHtml = `<td class="p-4 text-center flex justify-center gap-2">
                         <button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200">🆘 Soporte</button>
                         <button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️</button>
@@ -352,7 +347,6 @@
             }); 
         };
 
-        // --- RESTO DE LÓGICAS (Inventario / Ventas) ---
         function verificarSiExisteProducto(codigoNuevo) {
             const existe = allProducts.find(p => p.codigo === codigoNuevo);
             if (existe) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById("add-codigo").value = ""; } 
