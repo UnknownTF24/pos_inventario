@@ -12,85 +12,75 @@
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
-    <!-- LOGIN -->
+    <!-- LOGIN DEL PANEL -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso al Sistema 🔒</h2>
-            <div class="space-y-4 text-left">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Panel Administrativo 🔒</h2>
+            <div class="space-y-4 text-left mt-4">
                 <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. admin"></div>
                 <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
+            </div>
+            <div class="mt-4 border-t pt-4">
+                <a href="#" onclick="Swal.fire('Soporte Técnico', 'Para recuperar o modificar tu contraseña de Administrador, comunícate con el Creador/Soporte Técnico del sistema.', 'info')" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
             </div>
         </div>
     </div>
 
     <!-- NAVEGACIÓN -->
     <nav class="bg-gray-800 text-white p-4 shadow-md flex flex-wrap gap-4 justify-between items-center">
-        <h1 class="text-xl font-bold">Panel de Control</h1>
+        <div>
+            <h1 class="text-xl font-bold">Panel de Control</h1>
+            <p class="text-xs text-gray-400" id="rol-display">Modo: ---</p>
+        </div>
         <div class="flex gap-2 flex-wrap">
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded">📈 Ventas</button>
-            <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded">👥 Usuarios</button>
-            <a href="index.html" class="bg-red-600 px-4 py-2 rounded ml-4">Salir</a>
+            <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded hidden">👥 Usuarios</button>
+            <button onclick="cerrarSesion()" class="bg-red-600 px-4 py-2 rounded ml-4">Salir</button>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto p-4 mt-4 w-full">
+    <main class="max-w-6xl mx-auto p-4 mt-4 w-full">
         
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
+            <!-- (Idéntico a tu versión anterior) -->
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h2 class="text-lg font-bold mb-4">Registrar Nuevo Producto</h2>
-                
-                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border">
-                    <div id="admin-reader" class="max-w-sm mx-auto"></div>
-                    <div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div>
-                </div>
-                
+                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border"><div id="admin-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div>
                 <div id="lector-oculto-admin" style="display:none;"></div>
-
                 <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm mb-1">Código de Barras</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="add-codigo" required class="w-full border p-2 rounded">
-                            <button type="button" id="start-admin-btn" class="bg-green-500 text-white px-3 rounded">📷</button>
-                            <button type="button" onclick="document.getElementById('native-admin-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button>
-                        </div>
-                        <input type="file" id="native-admin-input" accept="image/*" capture="environment" style="display:none">
-                    </div>
+                    <div><label class="block text-sm mb-1">Código</label><div class="flex gap-2"><input type="text" id="add-codigo" required class="w-full border p-2 rounded"><button type="button" id="start-admin-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-admin-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-admin-input" accept="image/*" capture="environment" style="display:none"></div>
                     <div><label class="block text-sm mb-1">Nombre</label><input type="text" id="add-nombre" required class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm mb-1">Precio (Q)</label><input type="number" step="0.01" id="add-precio" required class="w-full border p-2 rounded"></div>
-                    <div><label class="block text-sm mb-1">Stock Inicial</label><input type="number" id="add-stock" required class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm mb-1">Stock</label><input type="number" id="add-stock" required class="w-full border p-2 rounded"></div>
                     <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Guardar Producto</button></div>
                 </form>
             </section>
-
-            <input type="text" id="search-input" placeholder="🔍 Buscar producto inteligente..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl mb-4">
-
-            <section class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead class="bg-gray-50"><tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr></thead>
-                        <tbody id="inventory-list" class="divide-y divide-gray-100"></tbody>
-                    </table>
-                </div>
-            </section>
+            <input type="text" id="search-input" placeholder="🔍 Buscar producto..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl mb-4">
+            <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[600px]"><thead class="bg-gray-50"><tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr></thead><tbody id="inventory-list" class="divide-y divide-gray-100"></tbody></table></div></section>
         </div>
 
-        <!-- PESTAÑA: VENTAS Y ESTADÍSTICAS -->
+        <!-- PESTAÑA: VENTAS -->
         <div id="tab-ventas" class="hidden space-y-4">
-            
             <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Filtrar Ventas Por:</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Período:</label>
                     <select id="filtro-fecha" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
                         <option value="hoy">📅 Hoy</option>
                         <option value="semana">📅 Últimos 7 Días</option>
-                        <option value="quincena">📅 Últimos 14 Días</option>
                         <option value="mes">📅 Este Mes</option>
-                        <option value="todas" selected>📚 Todas las ventas</option>
-                        <option value="manual">⚙️ Rango Manual...</option>
+                        <option value="todas" selected>📚 Todas</option>
+                        <option value="manual">⚙️ Manual...</option>
+                    </select>
+                </div>
+                <!-- NUEVO FILTRO POR CAJERO -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Cajero:</label>
+                    <select id="filtro-cajero" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
+                        <option value="todos">Todos los cajeros</option>
+                        <!-- Se llena con JS -->
                     </select>
                 </div>
                 
@@ -103,33 +93,32 @@
 
             <div class="bg-white p-4 rounded-xl shadow-md">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xl font-bold text-gray-800">Tendencia de Ingresos</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Rendimiento (Según filtros)</h2>
                     <h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3>
                 </div>
-                <div class="relative h-64 w-full">
-                    <canvas id="ventasChart"></canvas>
-                </div>
+                <div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div>
             </div>
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[800px]">
+                    <!-- Ahora hay 7 columnas (se agregó el Cajero) -->
+                    <table class="w-full text-left border-collapse min-w-[900px]">
                         <thead class="bg-gray-50 text-gray-600">
                             <tr>
                                 <th class="p-4 border-b whitespace-nowrap">Fecha</th>
                                 <th class="p-4 border-b whitespace-nowrap">Hora</th>
                                 <th class="p-4 border-b text-center whitespace-nowrap">Cantidad</th>
-                                <th class="p-4 border-b w-1/3 min-w-[200px]">Producto</th>
+                                <th class="p-4 border-b min-w-[200px]">Producto</th>
                                 <th class="p-4 border-b text-right whitespace-nowrap">Precio U.</th>
+                                <th class="p-4 border-b font-bold text-blue-600">Cajero</th>
                                 <th class="p-4 border-b text-right whitespace-nowrap">Total Venta</th>
                             </tr>
                         </thead>
                         <tbody id="ventas-list" class="divide-y divide-gray-100"></tbody>
-                        
                         <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                             <tr>
-                                <td colspan="5" class="p-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm md:text-base">Total Generado (Período Seleccionado):</td>
-                                <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-lg md:text-xl">Q0.00</td>
+                                <td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado (Período Seleccionado):</td>
+                                <td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -137,34 +126,36 @@
             </section>
         </div>
 
-        <!-- PESTAÑA: USUARIOS -->
+        <!-- PESTAÑA: USUARIOS (SOLO SÚPER ADMIN) -->
         <div id="tab-usuarios" class="hidden space-y-4">
-            <section class="bg-white p-6 rounded-xl shadow-md mb-6">
-                <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Usuario</h2>
-                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <section class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
+                <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
+                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label class="block text-sm mb-1 text-gray-600">Nombre de Usuario</label>
-                        <input type="text" id="new-user-name" required class="w-full border p-2 rounded focus:border-blue-500 outline-none" placeholder="Ej. juan_cajero">
+                        <input type="text" id="new-user-name" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Contraseña</label>
-                        <input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-blue-500 outline-none" placeholder="Ingresa una clave segura">
+                        <label class="block text-sm mb-1 text-gray-600">Contraseña Temporal</label>
+                        <input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. clave123">
                     </div>
                     <div>
-                        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded font-bold w-full hover:bg-green-700">Crear Usuario</button>
+                        <label class="block text-sm mb-1 text-gray-600">Nivel de Acceso (Rol)</label>
+                        <select id="new-user-rol" class="w-full border p-2 rounded focus:border-purple-500 outline-none bg-gray-50 font-semibold">
+                            <option value="cajero">🛒 Cajero (Solo Cobrar)</option>
+                            <option value="admin">🏢 Admin de Tienda (Inventario/Ventas)</option>
+                        </select>
                     </div>
+                    <div><button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
                 </form>
             </section>
 
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[500px]">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead class="bg-gray-800 text-white">
                             <tr>
-                                <th class="p-4">ID</th>
-                                <th class="p-4">Usuario</th>
-                                <th class="p-4 text-yellow-300">Contraseña (Bóveda Súper Admin)</th>
-                                <th class="p-4 text-center">Acción</th>
+                                <th class="p-4">ID</th><th class="p-4">Usuario</th><th class="p-4">Rol</th><th class="p-4 text-yellow-300">Clave Secreta</th><th class="p-4 text-center">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody>
@@ -174,7 +165,7 @@
         </div>
     </main>
 
-    <!-- Modal Editar (Inventario) -->
+    <!-- Modal Editar Inventario (Mismo que antes) -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -194,11 +185,10 @@
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
-        let miGrafico = null;
-        let todasLasVentas = [];
-        let allProducts = []; let fuse = null; let currentEditCode = null;
-        let allUsers = [];
+        let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = [];
         
+        function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
+
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken");
             if (!options.headers) options.headers = {};
@@ -206,267 +196,196 @@
             
             const response = await fetch(url, options);
             if (response.status === 401) {
-                sessionStorage.removeItem("adminToken");
-                sessionStorage.removeItem("nombreUsuario");
-                document.getElementById("login-overlay").style.display = "flex";
-                Swal.fire('Sesión Expirada', 'Tu sesión ha terminado. Inicia sesión nuevamente.', 'warning');
+                sessionStorage.clear(); document.getElementById("login-overlay").style.display = "flex";
+                Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning');
                 throw new Error("No autorizado");
             }
             if (response.status === 403) {
-                Swal.fire('Acceso Denegado', 'No tienes permisos de Súper Administrador para hacer esto.', 'error');
+                Swal.fire('Acceso Denegado', 'No tienes el Nivel de Acceso necesario para ver esto.', 'error');
                 throw new Error("Permisos insuficientes");
             }
             return response;
         }
 
-        // --- SISTEMA DE ROLES VISUALES ---
         function aplicarPermisos() {
-            const usuarioActual = sessionStorage.getItem("nombreUsuario");
-            // Si no es el admin creador, ocultar la pestaña de usuarios
-            if (usuarioActual !== "admin") {
-                document.getElementById("btn-usr").style.display = "none";
-                // Asegurarse de que no se queden atascados en una vista que no pueden ver
-                switchTab('inventario');
-            } else {
-                document.getElementById("btn-usr").style.display = "block";
+            const rol = sessionStorage.getItem("rolUsuario");
+            document.getElementById("rol-display").innerText = "Rol: " + (rol === "superadmin" ? "👑 Súper Admin (Creador)" : "🏢 Admin de Tienda");
+            
+            if (rol === "cajero") {
+                // Si un cajero intenta entrar aquí, lo mandamos a su POS
+                window.location.href = "index.html";
+            } else if (rol === "admin") {
+                document.getElementById("btn-usr").classList.add("hidden"); // Ocultamos pestaña usuarios
+            } else if (rol === "superadmin") {
+                document.getElementById("btn-usr").classList.remove("hidden"); // Mostramos todo
             }
         }
 
         if(sessionStorage.getItem("adminToken")) { 
             document.getElementById("login-overlay").style.display = "none";
-            aplicarPermisos();
-            fetchInventory(); fetchVentas(); 
-            if(sessionStorage.getItem("nombreUsuario") === "admin") fetchUsuarios();
+            aplicarPermisos(); fetchInventory(); fetchVentas(); 
+            if(sessionStorage.getItem("rolUsuario") === "superadmin") fetchUsuarios();
         }
         
         async function verificarLogin() {
-            const user = document.getElementById("user-input").value.trim();
-            const pass = document.getElementById("pass-input").value;
-            
+            const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
             try {
-                const res = await fetch(`${API_URL}/login`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ usuario: user, password: pass })
-                });
-
+                const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
                     const data = await res.json();
-                    sessionStorage.setItem("adminToken", data.token); 
-                    sessionStorage.setItem("nombreUsuario", data.usuario); // Guardamos quién entró
-                    
+                    if(data.rol === "cajero") {
+                        Swal.fire('Atención Cajero', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS), no aquí en Administración.', 'info');
+                        return;
+                    }
+                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.usuario); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("login-overlay").style.display = "none";
-                    document.getElementById("user-input").value = "";
-                    document.getElementById("pass-input").value = "";
-                    
-                    aplicarPermisos();
-                    fetchInventory(); fetchVentas(); 
-                    if(data.usuario === "admin") fetchUsuarios();
-                } else {
-                    const error = await res.json();
-                    Swal.fire('Acceso Denegado', error.detail, 'error');
-                }
-            } catch (error) { Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'); }
+                    aplicarPermisos(); fetchInventory(); fetchVentas(); 
+                    if(data.rol === "superadmin") fetchUsuarios();
+                } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
+            } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
-        document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
-        // (El resto del script se mantiene igual desde la función switchTab hacia abajo)
         function switchTab(tab) {
             document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
             document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
-            
             document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             
             if(tab === 'ventas') fetchVentas();
-            if(tab === 'usuarios' && sessionStorage.getItem("nombreUsuario") === "admin") fetchUsuarios();
+            if(tab === 'usuarios' && sessionStorage.getItem("rolUsuario") === "superadmin") fetchUsuarios();
         }
 
+        // --- GESTIÓN DE USUARIOS (SÚPER ADMIN) ---
         async function fetchUsuarios() {
-            try {
-                const res = await fetchConToken(`${API_URL}/usuarios`);
-                allUsers = await res.json();
-                renderUsuarios(allUsers);
-            } catch (e) {}
+            try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {}
         }
-
         function renderUsuarios(usuarios) {
             const list = document.getElementById("usuarios-list");
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No hay usuarios.</td></tr>`;
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5">Vacio</td></tr>`;
             list.innerHTML = usuarios.map(u => `
                 <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 font-mono text-gray-500">${u.id}</td>
-                    <td class="p-4 font-bold text-gray-800">${u.usuario}</td>
-                    <td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>
-                    <td class="p-4 text-center whitespace-nowrap"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600">🗑️ Eliminar</button></td>
+                    <td class="p-4 font-mono text-gray-500">${u.id}</td><td class="p-4 font-bold text-gray-800">${u.usuario}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
+                    <td class="p-4 font-mono text-blue-600 bg-blue-50">${u.password}</td>
+                    <td class="p-4 text-center"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️</button></td>
                 </tr>`).join("");
         }
-
         document.getElementById("add-user-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const usr = document.getElementById("new-user-name").value.trim();
-            const pwd = document.getElementById("new-user-pass").value.trim();
+            const usr = document.getElementById("new-user-name").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value;
             try {
-                const response = await fetchConToken(`${API_URL}/usuarios`, { 
-                    method: "POST", headers: {"Content-Type": "application/json"}, 
-                    body: JSON.stringify({ usuario: usr, password: pwd }) 
-                });
-                if (response.ok) { 
-                    document.getElementById("add-user-form").reset(); 
-                    fetchUsuarios(); 
-                    Swal.fire({icon:'success',title:'Usuario Creado',timer:1500, showConfirmButton: false}); 
-                } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
+                const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, password: pwd, rol: rol }) });
+                if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } 
+                else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
             } catch (error) {}
         });
-
         window.eliminarUsuario = function(id) { 
-            Swal.fire({title: '¿Eliminar usuario?', text: 'Esta acción no se puede deshacer', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { 
-                if(r.isConfirmed) { 
-                    try {
-                        const response = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); 
-                        if(response.ok) { fetchUsuarios(); } 
-                        else { const data = await response.json(); Swal.fire('No se pudo eliminar', data.detail, 'error'); }
-                    } catch(e){}
-                } 
+            Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { 
+                if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } 
             }); 
         };
 
+        // --- RESTO DE LÓGICAS (Inventario / Ventas con Cajeros) ---
         function verificarSiExisteProducto(codigoNuevo) {
             const existe = allProducts.find(p => p.codigo === codigoNuevo);
-            if (existe) {
-                Swal.fire({ icon: 'warning', title: '¡Código Existente!', text: `Ese código ya le pertenece a: "${existe.nombre}".`, confirmButtonText: 'Entendido' });
-                document.getElementById("add-codigo").value = "";
-            } else { document.getElementById("add-codigo").value = codigoNuevo; document.getElementById("add-nombre").focus(); }
+            if (existe) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById("add-codigo").value = ""; } 
+            else { document.getElementById("add-codigo").value = codigoNuevo; document.getElementById("add-nombre").focus(); }
         }
-
-        document.getElementById("native-admin-input").addEventListener("change", e => {
-            if (e.target.files.length == 0) return;
-            const scanner = new Html5Qrcode("lector-oculto-admin");
-            scanner.scanFile(e.target.files[0], true).then(t => { verificarSiExisteProducto(t); }).finally(() => scanner.clear());
-        });
-
-        document.getElementById("start-admin-btn").addEventListener("click", () => {
-            document.getElementById("admin-scanner-container").classList.remove("hidden");
-            adminScanner = new Html5Qrcode("admin-reader");
-            adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => {
-                stopAdminScanning(); verificarSiExisteProducto(t);
-            }).catch(e => stopAdminScanning());
-        });
+        document.getElementById("native-admin-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto-admin"); scanner.scanFile(e.target.files[0], true).then(t => { verificarSiExisteProducto(t); }).finally(() => scanner.clear()); });
+        document.getElementById("start-admin-btn").addEventListener("click", () => { document.getElementById("admin-scanner-container").classList.remove("hidden"); adminScanner = new Html5Qrcode("admin-reader"); adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopAdminScanning(); verificarSiExisteProducto(t); }).catch(e => stopAdminScanning()); });
         function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
         document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
 
-        async function fetchInventory() {
-            try {
-                const res = await fetchConToken(`${API_URL}/productos`); 
-                allProducts = await res.json();
-                fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts);
-            } catch (e) {}
-        }
-        
+        async function fetchInventory() { try { const res = await fetchConToken(`${API_URL}/productos`); allProducts = await res.json(); fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts); } catch (e) {} }
         function renderTable(products) {
-            const list = document.getElementById("inventory-list");
-            if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center">No hay productos.</td></tr>`;
-            list.innerHTML = products.map(p => `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 font-mono">${p.codigo}</td><td class="p-4 font-medium">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td>
-                    <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : ''}">${p.stock}</td>
-                    <td class="p-4 text-center whitespace-nowrap"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td>
-                </tr>`).join("");
+            const list = document.getElementById("inventory-list"); if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="text-center p-4">Vacío</td></tr>`;
+            list.innerHTML = products.map(p => `<tr class="border-b"><td class="p-4 font-mono">${p.codigo}</td><td class="p-4">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td><td class="p-4 font-bold ${p.stock<=5?'text-red-600':''}">${p.stock}</td><td class="p-4 text-center"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td></tr>`).join("");
         }
         document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
         
         document.getElementById("add-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const codVal = document.getElementById("add-codigo").value.trim(); const nomVal = document.getElementById("add-nombre").value.trim();
-            const codigoRepetido = allProducts.find(p => p.codigo === codVal);
-            if (codigoRepetido) return Swal.fire({ icon: 'error', title: 'Código Duplicado', text: `En uso por "${codigoRepetido.nombre}".` });
-            const product = { codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) };
-            try {
-                const response = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-                if (response.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire({icon:'success',title:'Guardado',timer:1500, showConfirmButton: false}); }
-                else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
-            } catch (error) {}
+            if (allProducts.find(p => p.codigo === codVal)) return Swal.fire('Error', 'Código en uso', 'error');
+            try { const res = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) }) }); if (res.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire('Éxito', 'Guardado', 'success'); } } catch (e) {}
         });
-        
         function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
         function closeEditModal() { document.getElementById("edit-modal").classList.add("hidden"); }
-        
-        document.getElementById("edit-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const product = { codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) };
-            try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) }); closeEditModal(); fetchInventory(); Swal.fire({icon:'success',title:'Actualizado',timer:1000, showConfirmButton: false}); } catch (error) {}
-        });
-        window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
+        document.getElementById("edit-form").addEventListener("submit", async (e) => { e.preventDefault(); try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) }) }); closeEditModal(); fetchInventory(); Swal.fire('Éxito', 'Actualizado', 'success'); } catch (e) {} });
+        window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        function parseFecha(fechaStr) {
-            const partes = fechaStr.split(/[\s,/:]+/);
-            if(partes.length >= 5) { const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`); if (!isNaN(d.getTime())) return d; }
-            return new Date(fechaStr);
-        }
-        function formatearFechaLocal(fechaStr) {
-            const partes = fechaStr.split(/[\s,/:]+/);
-            if (partes.length >= 5) {
-                const fechaUTC = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`);
-                return `${String(fechaUTC.getDate()).padStart(2, '0')}/${String(fechaUTC.getMonth() + 1).padStart(2, '0')}/${fechaUTC.getFullYear()} ${String(fechaUTC.getHours()).padStart(2, '0')}:${String(fechaUTC.getMinutes()).padStart(2, '0')}`;
-            }
-            return fechaStr;
-        }
+        function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
+        function formatearFechaLocal(f) { const p = f.split(/[\s,/:]+/); if (p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } return f; }
 
         async function fetchVentas() {
-            try { const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); aplicarFiltros(); } catch (e) {}
+            try { 
+                const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); 
+                
+                // Extraer los nombres de los cajeros para el filtro (sin repetir)
+                const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))];
+                const selectCajero = document.getElementById("filtro-cajero");
+                selectCajero.innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join("");
+                
+                aplicarFiltros(); 
+            } catch (e) {}
         }
 
         function aplicarFiltros() {
-            const filtro = document.getElementById("filtro-fecha").value;
-            const divManual = document.getElementById("controles-manuales");
-            divManual.classList.toggle("hidden", filtro !== "manual");
-            let ventasFiltradas = todasLasVentas;
-            const ahora = new Date(); const getInicioDia = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            const filtroF = document.getElementById("filtro-fecha").value;
+            const filtroC = document.getElementById("filtro-cajero").value;
+            document.getElementById("controles-manuales").classList.toggle("hidden", filtroF !== "manual");
+            
+            let filtradas = todasLasVentas;
+            const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
 
-            if (filtro === "hoy") { const hoy = getInicioDia(ahora); ventasFiltradas = todasLasVentas.filter(v => getInicioDia(parseFecha(v.fecha)) === hoy); } 
-            else if (filtro === "semana") { const hace7 = ahora.getTime() - (7 * 24 * 60 * 60 * 1000); ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace7); } 
-            else if (filtro === "quincena") { const hace14 = ahora.getTime() - (14 * 24 * 60 * 60 * 1000); ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace14); } 
-            else if (filtro === "mes") { ventasFiltradas = todasLasVentas.filter(v => { const d = parseFecha(v.fecha); return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear(); }); } 
-            else if (filtro === "manual") {
-                const fInicio = document.getElementById("fecha-inicio").value; const fFin = document.getElementById("fecha-fin").value;
-                if (fInicio && fFin) { const tInicio = new Date(fInicio + "T00:00:00").getTime(); const tFin = new Date(fFin + "T23:59:59").getTime(); ventasFiltradas = todasLasVentas.filter(v => { const t = parseFecha(v.fecha).getTime(); return t >= tInicio && t <= tFin; }); }
+            // Filtro de fecha
+            if (filtroF === "hoy") filtradas = filtradas.filter(v => new Date(parseFecha(v.fecha).getFullYear(), parseFecha(v.fecha).getMonth(), parseFecha(v.fecha).getDate()).getTime() === dHoy);
+            else if (filtroF === "semana") filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= ahora.getTime() - (7 * 86400000));
+            else if (filtroF === "mes") filtradas = filtradas.filter(v => parseFecha(v.fecha).getMonth() === ahora.getMonth() && parseFecha(v.fecha).getFullYear() === ahora.getFullYear());
+            else if (filtroF === "manual") {
+                const fI = document.getElementById("fecha-inicio").value; const fF = document.getElementById("fecha-fin").value;
+                if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); }
             }
-            actualizarVistaVentas(ventasFiltradas);
+
+            // Filtro de cajero
+            if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC);
+
+            actualizarVistaVentas(filtradas);
         }
 
         function actualizarVistaVentas(ventas) {
-            const list = document.getElementById("ventas-list"); const granTotalElement = document.getElementById("gran-total-ventas"); const tablaTotalFooter = document.getElementById("tabla-total-footer");
-            const sumaTotal = ventas.reduce((acc, v) => acc + v.total, 0);
-            granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`; if(tablaTotalFooter) tablaTotalFooter.innerText = `Q${sumaTotal.toFixed(2)}`;
+            const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer");
+            const sum = ventas.reduce((acc, v) => acc + v.total, 0);
+            gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`;
 
-            if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="6" class="p-4 text-center">No hay ventas en este período.</td></tr>`; } 
+            if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas.</td></tr>`; } 
             else {
                 list.innerHTML = ventas.map(v => {
                     let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
-                    let cantHtml = ""; let prodHtml = ""; let precioUHtml = ""; let isSingleItem = items.length === 1;
-                    
+                    let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1;
                     items.forEach(i => {
-                        let match = i.trim().match(/^(\d+)x\s*(.*)/);
-                        if (match) {
-                            let qty = parseInt(match[1]); let name = match[2].trim(); let price = 0;
-                            if (isSingleItem && qty > 0) { price = v.total / qty; } else { let p = allProducts.find(prod => prod.nombre === name); if (p) price = p.precio; }
-                            cantHtml += `<div class="py-1 font-bold text-gray-700">${qty}</div>`; prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${name}</div>`; precioUHtml += `<div class="py-1 text-gray-600 text-right">Q${price.toFixed(2)}</div>`;
-                        } else { cantHtml += `<div class="py-1 font-bold text-gray-700">-</div>`; prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${i}</div>`; precioUHtml += `<div class="py-1 text-gray-600 text-right">-</div>`; }
+                        let m = i.trim().match(/^(\d+)x\s*(.*)/);
+                        if (m) {
+                            let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0;
+                            if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; }
+                            cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`;
+                        } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; }
                     });
-
                     const fh = formatearFechaLocal(v.fecha).split(' ');
-                    return `<tr class="hover:bg-gray-50 border-b"><td class="p-4 text-sm font-medium text-gray-600 align-top whitespace-nowrap">${fh[0]}</td><td class="p-4 text-sm font-medium text-gray-500 align-top whitespace-nowrap">${fh[1] || ''}</td><td class="p-4 text-sm align-top text-center">${cantHtml}</td><td class="p-4 text-sm align-top">${prodHtml}</td><td class="p-4 text-sm align-top">${precioUHtml}</td><td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td></tr>`;
+                    const caj = v.cajero || "Desconocido";
+                    return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`;
                 }).join("");
             }
             dibujarGrafica(ventas);
         }
 
         function dibujarGrafica(ventas) {
-            const ctx = document.getElementById('ventasChart').getContext('2d'); const agrupado = {};
-            ventas.forEach(v => { const fechaCorta = parseFecha(v.fecha).toLocaleDateString(); agrupado[fechaCorta] = (agrupado[fechaCorta] || 0) + v.total; });
+            const ctx = document.getElementById('ventasChart').getContext('2d'); const ag = {};
+            ventas.forEach(v => { const fc = parseFecha(v.fecha).toLocaleDateString(); ag[fc] = (ag[fc] || 0) + v.total; });
             if(miGrafico) miGrafico.destroy();
-            miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(agrupado).reverse().length ? Object.keys(agrupado).reverse() : ['Sin datos'], datasets: [{ label: 'Ingresos Diarios (Q)', data: Object.values(agrupado).reverse().length ? Object.values(agrupado).reverse() : [0], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, pointBackgroundColor: '#2563eb', tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(ag).reverse(), datasets: [{ label: 'Ingresos (Q)', data: Object.values(ag).reverse(), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
     </script>
 </body>

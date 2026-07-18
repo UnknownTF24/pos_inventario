@@ -9,23 +9,45 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+    
+    <!-- LOGIN OBLIGATORIO PARA CAJEROS -->
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">POS Cajas 🛒</h2>
+            <p class="text-gray-500 text-sm mb-4">Inicia sesión para comenzar tu turno</p>
+            <div class="space-y-4 text-left">
+                <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. juan_cajero"></div>
+                <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
+                <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Abrir Caja</button>
+            </div>
+            <div class="mt-4 border-t pt-4">
+                <a href="#" onclick="Swal.fire('Soporte', 'Por favor, contacta al Súper Administrador / Creador del sistema para recuperar o modificar tu contraseña.', 'info')" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
+            </div>
+        </div>
+    </div>
+
     <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold">POS & Control de Inventario</h1>
-        <a href="admin.html" class="bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded text-sm font-medium transition shadow">Administración ⚙️</a>
+        <div>
+            <h1 class="text-xl font-bold">Punto de Venta</h1>
+            <p class="text-xs text-blue-200" id="cajero-name-display">Cajero: ---</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="admin.html" id="btn-admin-link" class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-medium transition shadow hidden">Admin ⚙️</a>
+            <button onclick="cerrarSesion()" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded text-sm font-medium transition shadow">Salir</button>
+        </div>
     </header>
 
     <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
         
         <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
             <h2 class="text-lg font-semibold text-gray-700">Escanear Producto</h2>
-            
             <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
             <div id="lector-oculto" style="display: none;"></div>
             
             <div class="grid grid-cols-2 gap-2">
-                <button id="start-btn" class="bg-green-500 text-white py-2 rounded-lg font-medium shadow hover:bg-green-600 transition">📷 Cámara Vivo</button>
-                <button id="stop-btn" class="bg-red-500 text-white py-2 rounded-lg font-medium shadow hover:bg-red-600 transition hidden col-span-2">Apagar Cámara</button>
-                <button type="button" onclick="document.getElementById('native-cam-input').click()" class="bg-purple-600 text-white py-2 rounded-lg font-medium shadow hover:bg-purple-700 transition">📸 Tomar Foto</button>
+                <button id="start-btn" class="bg-green-500 text-white py-2 rounded-lg font-medium shadow">📷 Cámara Vivo</button>
+                <button id="stop-btn" class="bg-red-500 text-white py-2 rounded-lg font-medium shadow hidden col-span-2">Apagar Cámara</button>
+                <button type="button" onclick="document.getElementById('native-cam-input').click()" class="bg-purple-600 text-white py-2 rounded-lg font-medium shadow">📸 Tomar Foto</button>
             </div>
             <input type="file" id="native-cam-input" accept="image/*" capture="environment" style="display:none">
         </div>
@@ -37,140 +59,127 @@
 
         <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
             <h2 class="text-lg font-semibold text-gray-700">Detalle de la Venta</h2>
-            <div id="cart-items" class="space-y-2 max-h-64 overflow-y-auto pr-1">
-                <p class="text-gray-400 text-center py-4">No hay productos en la lista</p>
-            </div>
+            <div id="cart-items" class="space-y-2 max-h-64 overflow-y-auto pr-1"><p class="text-gray-400 text-center py-4">No hay productos</p></div>
             <div class="flex justify-between items-center pt-4 border-t border-gray-200">
                 <span class="text-lg font-bold text-gray-800">Total:</span>
                 <span id="cart-total" class="text-2xl font-bold text-blue-600">Q0.00</span>
             </div>
-            <button id="checkout-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                Confirmar Venta y Cobrar
-            </button>
+            <button id="checkout-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow disabled:opacity-50" disabled>Confirmar y Cobrar</button>
         </div>
     </main>
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
-        let cart = [];
-        let html5QrcodeScanner = null;
+        let cart = []; let html5QrcodeScanner = null;
 
+        // --- SISTEMA DE LOGIN PARA EL POS ---
+        function checkSession() {
+            if(sessionStorage.getItem("adminToken")) {
+                document.getElementById("login-overlay").style.display = "none";
+                document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
+                if (sessionStorage.getItem("rolUsuario") !== "cajero") {
+                    document.getElementById("btn-admin-link").classList.remove("hidden");
+                }
+            } else { document.getElementById("login-overlay").style.display = "flex"; }
+        }
+        checkSession();
+
+        async function verificarLogin() {
+            const user = document.getElementById("user-input").value.trim();
+            const pass = document.getElementById("pass-input").value;
+            try {
+                const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
+                if (res.ok) {
+                    const data = await res.json();
+                    sessionStorage.setItem("adminToken", data.token); 
+                    sessionStorage.setItem("nombreUsuario", data.usuario);
+                    sessionStorage.setItem("rolUsuario", data.rol);
+                    checkSession();
+                } else { Swal.fire('Error', 'Credenciales incorrectas', 'error'); }
+            } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
+        }
+        document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
+
+        function cerrarSesion() {
+            sessionStorage.clear();
+            window.location.reload();
+        }
+
+        async function fetchConToken(url, options = {}) {
+            const token = sessionStorage.getItem("adminToken");
+            if (!options.headers) options.headers = {};
+            if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            const res = await fetch(url, options);
+            if (res.status === 401) cerrarSesion();
+            return res;
+        }
+
+        // Autofocus Lector Físico
+        document.body.addEventListener("click", (e) => {
+            if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && document.getElementById("login-overlay").style.display === "none") {
+                document.getElementById("manual-code").focus();
+            }
+        });
+
+        // --- LÓGICA DEL CARRITO (Igual que antes pero asegurada) ---
+        const manualInput = document.getElementById("manual-code");
+        const addManualBtn = document.getElementById("add-manual-btn");
         const cartItemsContainer = document.getElementById("cart-items");
         const cartTotalElement = document.getElementById("cart-total");
         const checkoutBtn = document.getElementById("checkout-btn");
-        const startBtn = document.getElementById("start-btn");
-        const stopBtn = document.getElementById("stop-btn");
-        const manualInput = document.getElementById("manual-code");
-        const addManualBtn = document.getElementById("add-manual-btn");
-
-        document.body.addEventListener("click", (e) => {
-            if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') manualInput.focus();
-        });
-        manualInput.focus();
-
-        const nativeInput = document.getElementById("native-cam-input");
-        nativeInput.addEventListener("change", e => {
-            if (e.target.files.length == 0) return;
-            const imageFile = e.target.files[0];
-            
-            const scanner = new Html5Qrcode("lector-oculto");
-            scanner.scanFile(imageFile, true)
-                .then(decodedText => { fetchProduct(decodedText); })
-                .catch(err => { Swal.fire({ icon: 'error', title: 'Ups', text: 'No se detectó código. Intenta centrarlo mejor.' }); })
-                .finally(() => { scanner.clear(); });
-        });
 
         async function fetchProduct(code) {
             try {
                 const response = await fetch(`${API_URL}/productos/${code}`);
-                if (!response.ok) {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: "Error al buscar el producto." });
-                    manualInput.value = ""; manualInput.focus();
-                    return;
-                }
-                const product = await response.json();
-                addToCart(product);
-                manualInput.value = ""; manualInput.focus();
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Sin conexión', text: 'No se pudo conectar.' });
-            }
+                if (!response.ok) { Swal.fire('Oops...', "Producto no encontrado", 'error'); manualInput.value = ""; return; }
+                const product = await response.json(); addToCart(product); manualInput.value = "";
+            } catch (error) { Swal.fire('Error', 'No se pudo conectar', 'error'); }
         }
 
         function addToCart(product) {
             const existingItem = cart.find(item => item.codigo === product.codigo);
             if (existingItem) {
-                if (existingItem.cantidad < product.stock) {
-                    existingItem.cantidad++;
-                } else {
-                    Swal.fire({ icon: 'warning', title: 'Límite de Stock', text: `Solo hay ${product.stock} unidades de ${product.nombre} en bodega.` });
-                    return;
-                }
-            } else {
-                cart.push({ ...product, cantidad: 1 });
-            }
+                if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } 
+                else { return Swal.fire('Límite', `Solo hay ${product.stock} unidades.`, 'warning'); }
+            } else { cart.push({ ...product, cantidad: 1 }); }
             updateCartUI();
         }
 
         function updateCartUI() {
             if (cart.length === 0) {
                 cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">No hay productos en la lista</p>`;
-                cartTotalElement.innerText = "Q0.00";
-                checkoutBtn.disabled = true;
-                return;
+                cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return;
             }
-            
             cartItemsContainer.innerHTML = cart.map((item, index) => {
                 const stockRestante = item.stock - item.cantidad; 
-                const totalItem = (item.precio * item.cantidad).toFixed(2);
-                
                 return `
                 <div class="flex flex-col py-3 border-b border-gray-100 last:border-0">
                     <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="font-medium text-gray-800 leading-tight">${item.nombre}</p>
-                            <p class="text-xs text-blue-500 font-semibold mt-1">En bodega: ${stockRestante} unidades</p>
-                        </div>
-                        <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-600 font-bold px-2 py-1 rounded">✕</button>
+                        <div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock: ${stockRestante}</p></div>
+                        <button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button>
                     </div>
                     <div class="flex justify-between items-center mt-1">
-                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
-                            <button onclick="decreaseQuantity(${index})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 font-bold text-lg transition active:bg-gray-300">-</button>
-                            <span class="px-4 py-1 font-bold text-gray-800 border-x border-gray-300 w-12 text-center">${item.cantidad}</span>
-                            <button onclick="increaseQuantity(${index})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 font-bold text-lg transition active:bg-gray-300 ${stockRestante === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${stockRestante === 0 ? 'disabled' : ''}>+</button>
+                        <div class="flex items-center border border-gray-300 rounded-lg bg-white">
+                            <button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button>
+                            <span class="px-4 py-1 font-bold text-gray-800 w-12 text-center">${item.cantidad}</span>
+                            <button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button>
                         </div>
-                        <div class="text-right flex flex-col justify-end">
-                            <span class="text-xs text-gray-500 font-bold mb-1 tracking-wide">${item.cantidad} x Q${item.precio.toFixed(2)}</span>
-                            <span class="font-black text-gray-800 text-xl">Q${totalItem}</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span>
+                            <span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span>
                         </div>
                     </div>
-                </div>
-            `}).join("");
-
+                </div>`
+            }).join("");
             const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            cartTotalElement.innerText = `Q${total.toFixed(2)}`;
-            checkoutBtn.disabled = false;
+            cartTotalElement.innerText = `Q${total.toFixed(2)}`; checkoutBtn.disabled = false;
         }
 
-        window.increaseQuantity = function(index) {
-            if (cart[index].cantidad < cart[index].stock) { 
-                cart[index].cantidad++; 
-                updateCartUI(); 
-            } else {
-                Swal.fire({ icon: 'warning', title: 'Stock Máximo', text: `No puedes agregar más ${cart[index].nombre}, límite alcanzado.` });
-            }
-        };
-        
-        window.decreaseQuantity = function(index) {
-            if (cart[index].cantidad > 1) { 
-                cart[index].cantidad--; 
-                updateCartUI(); 
-            } else { 
-                removeFromCart(index); 
-            }
-        };
-        
+        window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } };
+        window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } };
         window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); };
 
+        // CHECKOUT SEGURO CON TOKEN
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
             const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
@@ -178,52 +187,39 @@
             const cartCopia = [...cart];
 
             try {
-                const response = await fetch(`${API_URL}/ventas`, {
-                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-                });
+                // Ahora usamos fetchConToken para enviar quién hizo la venta
+                const response = await fetchConToken(`${API_URL}/ventas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 if (response.ok) {
                     cart = []; updateCartUI();
                     Swal.fire({
                         title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success',
-                        showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#6b7280', confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar'
+                        showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar'
                     }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); });
-                } else {
-                    const data = await response.json();
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.detail });
-                }
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Fallo de Red', text: 'Error al procesar la venta.' });
-            }
+                } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
+            } catch (error) { }
         });
 
         function imprimirTicket(items, total) {
+            let cajero = sessionStorage.getItem("nombreUsuario");
             let ventana = window.open('', 'PRINT', 'height=600,width=400');
             let fecha = new Date().toLocaleString();
-            let html = `<html><head><style>body { font-family: monospace; font-size: 14px; width: 300px; padding: 10px; margin: 0; color: #000; } h2 { text-align: center; margin: 0 0 10px 0; font-size: 18px; } p { text-align: center; margin: 5px 0; font-size: 12px; } table { width: 100%; border-collapse: collapse; margin-top: 10px; } th, td { text-align: left; padding: 4px 0; border-bottom: 1px dashed #000; } .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; } .footer { text-align: center; margin-top: 20px; font-size: 12px; }</style></head><body><h2>MI TIENDA</h2><p>Recibo de Compra</p><p>${fecha}</p><table><tr><th>Cant</th><th>Artículo</th><th style="text-align:right">Sub</th></tr>${items.map(item => `<tr><td>${item.cantidad}</td><td>${item.nombre.substring(0, 15)}</td><td style="text-align:right">Q${(item.precio * item.cantidad).toFixed(2)}</td></tr>`).join('')}</table><div class="total">TOTAL: Q${total.toFixed(2)}</div><div class="footer">¡Gracias por su compra!</div></body></html>`;
+            let html = `<html><head><style>body { font-family: monospace; font-size: 14px; width: 300px; padding: 10px; margin: 0;} h2 { text-align: center; margin: 0 0 5px 0;} p { text-align: center; margin: 2px 0; font-size: 12px; } table { width: 100%; border-collapse: collapse; margin-top: 10px; } th, td { text-align: left; padding: 4px 0; border-bottom: 1px dashed #000; } .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; } .footer { text-align: center; margin-top: 20px; font-size: 12px; }</style></head><body><h2>MI TIENDA</h2><p>Recibo de Compra</p><p>${fecha}</p><p>Cajero: ${cajero}</p><table><tr><th>Cant</th><th>Artículo</th><th style="text-align:right">Sub</th></tr>${items.map(item => `<tr><td>${item.cantidad}</td><td>${item.nombre.substring(0, 15)}</td><td style="text-align:right">Q${(item.precio * item.cantidad).toFixed(2)}</td></tr>`).join('')}</table><div class="total">TOTAL: Q${total.toFixed(2)}</div><div class="footer">¡Gracias por su compra!</div></body></html>`;
             ventana.document.write(html); ventana.document.close(); ventana.focus();
             setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        function stopScanning() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().catch(e => console.log(e));
-                startBtn.classList.remove("hidden"); stopBtn.classList.add("hidden");
-            }
-        }
-
-        startBtn.addEventListener("click", () => {
-            startBtn.classList.add("hidden"); stopBtn.classList.remove("hidden");
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => {
-                if (navigator.vibrate) navigator.vibrate(100);
-                fetchProduct(text); stopScanning();
-            }).catch(e => { 
-                Swal.fire({ icon: 'error', title: 'Cámara Inaccesible', text: 'No se pudo abrir la cámara de tu dispositivo.' });
-                stopScanning(); 
-            });
+        // Escáneres (Igual)
+        document.getElementById("native-cam-input").addEventListener("change", e => {
+            if (e.target.files.length == 0) return;
+            new Html5Qrcode("lector-oculto").scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).finally(() => { scanner.clear(); });
         });
-
-        stopBtn.addEventListener("click", stopScanning);
+        document.getElementById("start-btn").addEventListener("click", () => {
+            document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden");
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { fetchProduct(text); stopScanning(); }).catch(e => { stopScanning(); });
+        });
+        function stopScanning() { if (html5QrcodeScanner) { html5QrcodeScanner.stop(); document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
+        document.getElementById("stop-btn").addEventListener("click", stopScanning);
         addManualBtn.addEventListener("click", () => { const c = manualInput.value.trim(); if (c) fetchProduct(c); });
         manualInput.addEventListener("keypress", (e) => { if (e.key === "Enter") addManualBtn.click(); });
     </script>
