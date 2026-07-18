@@ -33,9 +33,10 @@
             <h1 class="text-xl font-bold">Panel de Control</h1>
             <p class="text-xs text-gray-400" id="rol-display">Modo: ---</p>
         </div>
-        <div class="flex gap-2 flex-wrap">
+        <div class="flex gap-2 flex-wrap" id="nav-buttons">
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded">📈 Ventas</button>
+            <!-- Este botón cambiará de nombre y función según el rol -->
             <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded hidden">👥 Usuarios</button>
             <button onclick="cerrarSesion()" class="bg-red-600 px-4 py-2 rounded ml-4">Salir</button>
         </div>
@@ -45,7 +46,6 @@
         
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
-            <!-- (Idéntico a tu versión anterior) -->
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h2 class="text-lg font-bold mb-4">Registrar Nuevo Producto</h2>
                 <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border"><div id="admin-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div>
@@ -75,15 +75,12 @@
                         <option value="manual">⚙️ Manual...</option>
                     </select>
                 </div>
-                <!-- NUEVO FILTRO POR CAJERO -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Cajero:</label>
                     <select id="filtro-cajero" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
                         <option value="todos">Todos los cajeros</option>
-                        <!-- Se llena con JS -->
                     </select>
                 </div>
-                
                 <div id="controles-manuales" class="hidden flex gap-2 items-end">
                     <div><label class="block text-sm text-gray-500 mb-1">Desde</label><input type="date" id="fecha-inicio" class="border rounded p-2"></div>
                     <div><label class="block text-sm text-gray-500 mb-1">Hasta</label><input type="date" id="fecha-fin" class="border rounded p-2"></div>
@@ -101,7 +98,6 @@
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="overflow-x-auto">
-                    <!-- Ahora hay 7 columnas (se agregó el Cajero) -->
                     <table class="w-full text-left border-collapse min-w-[900px]">
                         <thead class="bg-gray-50 text-gray-600">
                             <tr>
@@ -126,9 +122,11 @@
             </section>
         </div>
 
-        <!-- PESTAÑA: USUARIOS (SOLO SÚPER ADMIN) -->
+        <!-- PESTAÑA: USUARIOS (Adaptable según el Rol) -->
         <div id="tab-usuarios" class="hidden space-y-4">
-            <section class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
+            
+            <!-- Este formulario de creación SOLO lo ve el Súper Admin -->
+            <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
                 <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
@@ -151,11 +149,18 @@
             </section>
 
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
+                    <h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead class="bg-gray-800 text-white">
+                        <thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200">
                             <tr>
-                                <th class="p-4">ID</th><th class="p-4">Usuario</th><th class="p-4">Rol</th><th class="p-4 text-yellow-300">Clave Secreta</th><th class="p-4 text-center">Acción</th>
+                                <th class="p-4">ID</th>
+                                <th class="p-4">Usuario</th>
+                                <th class="p-4">Rol</th>
+                                <th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th>
+                                <th class="p-4 text-center">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody>
@@ -165,7 +170,7 @@
         </div>
     </main>
 
-    <!-- Modal Editar Inventario (Mismo que antes) -->
+    <!-- Modal Editar Inventario -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -189,6 +194,16 @@
         
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
+        // Muestra información de contacto de soporte
+        window.solicitarSoporte = function() {
+            Swal.fire({
+                title: 'Soporte Técnico',
+                html: '<p>Para recuperar o modificar contraseñas del personal, por favor comunícate urgente con el creador del sistema.</p><br><p class="font-bold text-blue-600">WhatsApp / Teléfono: (+502) 4941-1913</p>',
+                icon: 'info',
+                confirmButtonText: 'Entendido'
+            });
+        };
+
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken");
             if (!options.headers) options.headers = {};
@@ -211,20 +226,34 @@
             const rol = sessionStorage.getItem("rolUsuario");
             document.getElementById("rol-display").innerText = "Rol: " + (rol === "superadmin" ? "👑 Súper Admin (Creador)" : "🏢 Admin de Tienda");
             
+            const btnUsr = document.getElementById("btn-usr");
+            
             if (rol === "cajero") {
-                // Si un cajero intenta entrar aquí, lo mandamos a su POS
                 window.location.href = "index.html";
             } else if (rol === "admin") {
-                document.getElementById("btn-usr").classList.add("hidden"); // Ocultamos pestaña usuarios
+                // Admin de Tienda: Ve la pestaña pero adaptada
+                btnUsr.classList.remove("hidden");
+                btnUsr.innerText = "👥 Mi Personal";
+                document.getElementById("seccion-crear-usuario").style.display = "none";
+                document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo";
+                document.getElementById("header-clave").innerText = "Contraseña";
+                document.getElementById("header-clave").className = "p-4 text-gray-700"; // Quitar el color amarillo
             } else if (rol === "superadmin") {
-                document.getElementById("btn-usr").classList.remove("hidden"); // Mostramos todo
+                // Súper Admin: Ve todo
+                btnUsr.classList.remove("hidden");
+                btnUsr.innerText = "👥 Usuarios (Global)";
+                document.getElementById("seccion-crear-usuario").style.display = "block";
+                document.getElementById("titulo-tabla-usuarios").innerText = "Administración Global de Usuarios";
+                document.getElementById("header-clave").innerText = "Bóveda: Clave Secreta";
+                document.getElementById("header-clave").className = "p-4 text-yellow-600 font-bold";
             }
         }
 
         if(sessionStorage.getItem("adminToken")) { 
             document.getElementById("login-overlay").style.display = "none";
             aplicarPermisos(); fetchInventory(); fetchVentas(); 
-            if(sessionStorage.getItem("rolUsuario") === "superadmin") fetchUsuarios();
+            // Ahora ambos admins pueden pedir la lista, pero el servidor la filtrará o la mostraremos diferente
+            if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios();
         }
         
         async function verificarLogin() {
@@ -240,7 +269,7 @@
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.usuario); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("login-overlay").style.display = "none";
                     aplicarPermisos(); fetchInventory(); fetchVentas(); 
-                    if(data.rol === "superadmin") fetchUsuarios();
+                    if(data.rol !== "cajero") fetchUsuarios();
                 } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
@@ -249,29 +278,84 @@
             document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
             document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
+            
             document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-            document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             
-            if(tab === 'ventas') fetchVentas();
-            if(tab === 'usuarios' && sessionStorage.getItem("rolUsuario") === "superadmin") fetchUsuarios();
+            const rol = sessionStorage.getItem("rolUsuario");
+            if (rol !== "cajero") {
+                document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            }
         }
 
-        // --- GESTIÓN DE USUARIOS (SÚPER ADMIN) ---
+        // --- GESTIÓN DE USUARIOS (ADAPTATIVA) ---
         async function fetchUsuarios() {
-            try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {}
+            try { 
+                // Aunque la ruta está protegida en Python para que solo "admin" la vea, vamos a simular 
+                // para la demostración que la ruta permite a los admins ver la lista (necesitaríamos cambiar Python)
+                // PERO como en la API actual solo el superadmin puede ver la ruta /usuarios, para el admin de tienda 
+                // vamos a armar la lista a partir del historial de ventas que él sí puede ver.
+                
+                const rol = sessionStorage.getItem("rolUsuario");
+                
+                if (rol === "superadmin") {
+                    const res = await fetchConToken(`${API_URL}/usuarios`); 
+                    allUsers = await res.json(); 
+                    renderUsuarios(allUsers); 
+                } else if (rol === "admin") {
+                    // El admin no puede ver las contraseñas desde la base de datos, así que extraemos a los cajeros
+                    // basándonos en quienes han hecho ventas, o podríamos mostrar una lista estática.
+                    // Extraemos cajeros únicos del array de ventas que ya se cargó
+                    if (todasLasVentas.length > 0) {
+                        const cajerosNombres = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))];
+                        const usuariosSimulados = cajerosNombres.map((nombre, index) => ({
+                            id: index + 1,
+                            usuario: nombre,
+                            rol: 'cajero',
+                            password: '***' // Oculto
+                        }));
+                        renderUsuarios(usuariosSimulados);
+                    } else {
+                        renderUsuarios([]);
+                    }
+                }
+            } catch (e) {}
         }
+
         function renderUsuarios(usuarios) {
             const list = document.getElementById("usuarios-list");
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5">Vacio</td></tr>`;
-            list.innerHTML = usuarios.map(u => `
+            const rolActual = sessionStorage.getItem("rolUsuario");
+            
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay personal registrado aún.</td></tr>`;
+            
+            list.innerHTML = usuarios.map(u => {
+                // Si eres Súper Admin, ves la contraseña y el botón eliminar.
+                // Si eres Admin de tienda, ves "***" y un botón de "Soporte".
+                let passwordHtml = '';
+                let actionHtml = '';
+
+                if (rolActual === "superadmin") {
+                    passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50">${u.password}</td>`;
+                    actionHtml = `<td class="p-4 text-center"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️ Eliminar</button></td>`;
+                } else {
+                    passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`;
+                    actionHtml = `<td class="p-4 text-center"><button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200">🆘 Solicitar Soporte</button></td>`;
+                }
+
+                // Evitar mostrar al súper admin en la lista del admin normal
+                if (rolActual === "admin" && u.rol === "superadmin") return "";
+
+                return `
                 <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 font-mono text-gray-500">${u.id}</td><td class="p-4 font-bold text-gray-800">${u.usuario}</td>
+                    <td class="p-4 font-mono text-gray-500">${u.id}</td>
+                    <td class="p-4 font-bold text-gray-800">${u.usuario}</td>
                     <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
-                    <td class="p-4 font-mono text-blue-600 bg-blue-50">${u.password}</td>
-                    <td class="p-4 text-center"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️</button></td>
-                </tr>`).join("");
+                    ${passwordHtml}
+                    ${actionHtml}
+                </tr>`
+            }).join("");
         }
+
         document.getElementById("add-user-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const usr = document.getElementById("new-user-name").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value;
@@ -287,7 +371,7 @@
             }); 
         };
 
-        // --- RESTO DE LÓGICAS (Inventario / Ventas con Cajeros) ---
+        // --- RESTO DE LÓGICAS (Inventario / Ventas) ---
         function verificarSiExisteProducto(codigoNuevo) {
             const existe = allProducts.find(p => p.codigo === codigoNuevo);
             if (existe) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById("add-codigo").value = ""; } 
@@ -322,11 +406,12 @@
         async function fetchVentas() {
             try { 
                 const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); 
-                
-                // Extraer los nombres de los cajeros para el filtro (sin repetir)
                 const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))];
                 const selectCajero = document.getElementById("filtro-cajero");
                 selectCajero.innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join("");
+                
+                // Si el rol es admin, forzamos a recargar su lista de usuarios basándonos en las ventas
+                if(sessionStorage.getItem("rolUsuario") === "admin") fetchUsuarios();
                 
                 aplicarFiltros(); 
             } catch (e) {}
@@ -340,7 +425,6 @@
             let filtradas = todasLasVentas;
             const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
 
-            // Filtro de fecha
             if (filtroF === "hoy") filtradas = filtradas.filter(v => new Date(parseFecha(v.fecha).getFullYear(), parseFecha(v.fecha).getMonth(), parseFecha(v.fecha).getDate()).getTime() === dHoy);
             else if (filtroF === "semana") filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= ahora.getTime() - (7 * 86400000));
             else if (filtroF === "mes") filtradas = filtradas.filter(v => parseFecha(v.fecha).getMonth() === ahora.getMonth() && parseFecha(v.fecha).getFullYear() === ahora.getFullYear());
@@ -349,7 +433,6 @@
                 if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); }
             }
 
-            // Filtro de cajero
             if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC);
 
             actualizarVistaVentas(filtradas);
