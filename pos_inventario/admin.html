@@ -33,12 +33,16 @@
             <h1 class="text-xl font-bold">Panel de Control</h1>
             <p class="text-xs text-gray-400" id="rol-display">Modo: ---</p>
         </div>
-        <div class="flex gap-2 flex-wrap" id="nav-buttons">
-            <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded">📦 Inventario</button>
-            <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded">📈 Ventas</button>
-            <!-- Este botón cambiará de nombre y función según el rol -->
-            <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded hidden">👥 Usuarios</button>
-            <button onclick="cerrarSesion()" class="bg-red-600 px-4 py-2 rounded ml-4">Salir</button>
+        <div class="flex gap-2 flex-wrap items-center" id="nav-buttons">
+            <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded transition">📦 Inventario</button>
+            <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded transition">📈 Ventas</button>
+            <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded transition hidden">👥 Usuarios</button>
+            
+            <div class="w-px h-8 bg-gray-600 mx-2"></div> <!-- Divisor -->
+            
+            <!-- NUEVO BOTÓN PARA IR AL POS -->
+            <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
+            <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition ml-2">Salir</button>
         </div>
     </nav>
 
@@ -122,10 +126,10 @@
             </section>
         </div>
 
-        <!-- PESTAÑA: USUARIOS (Adaptable según el Rol) -->
+        <!-- PESTAÑA: USUARIOS -->
         <div id="tab-usuarios" class="hidden space-y-4">
             
-            <!-- Este formulario de creación SOLO lo ve el Súper Admin -->
+            <!-- Este formulario ahora lo ven TANTO Súper Admin como Admin -->
             <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
                 <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -134,14 +138,14 @@
                         <input type="text" id="new-user-name" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1 text-gray-600">Contraseña Temporal</label>
+                        <label class="block text-sm mb-1 text-gray-600">Contraseña Inicial</label>
                         <input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. clave123">
                     </div>
                     <div>
                         <label class="block text-sm mb-1 text-gray-600">Nivel de Acceso (Rol)</label>
                         <select id="new-user-rol" class="w-full border p-2 rounded focus:border-purple-500 outline-none bg-gray-50 font-semibold">
                             <option value="cajero">🛒 Cajero (Solo Cobrar)</option>
-                            <option value="admin">🏢 Admin de Tienda (Inventario/Ventas)</option>
+                            <option value="admin">🏢 Admin de Tienda</option>
                         </select>
                     </div>
                     <div><button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
@@ -194,11 +198,10 @@
         
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
-        // Muestra información de contacto de soporte
         window.solicitarSoporte = function() {
             Swal.fire({
                 title: 'Soporte Técnico',
-                html: '<p>Para recuperar o modificar contraseñas del personal, por favor comunícate urgente con el creador del sistema.</p><br><p class="font-bold text-blue-600">WhatsApp / Teléfono: (+502) 4941-1913</p>',
+                html: '<p>Para recuperar o modificar contraseñas del personal, por favor comunícate urgente con el creador del sistema.</p><br><p class="font-bold text-blue-600">WhatsApp / Teléfono: [Tu Número Aquí]</p>',
                 icon: 'info',
                 confirmButtonText: 'Entendido'
             });
@@ -231,15 +234,16 @@
             if (rol === "cajero") {
                 window.location.href = "index.html";
             } else if (rol === "admin") {
-                // Admin de Tienda: Ve la pestaña pero adaptada
+                // Admin de Tienda
                 btnUsr.classList.remove("hidden");
                 btnUsr.innerText = "👥 Mi Personal";
-                document.getElementById("seccion-crear-usuario").style.display = "none";
+                // Ahora sí le permitimos ver el formulario de crear usuario
+                document.getElementById("seccion-crear-usuario").style.display = "block";
                 document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo";
                 document.getElementById("header-clave").innerText = "Contraseña";
-                document.getElementById("header-clave").className = "p-4 text-gray-700"; // Quitar el color amarillo
+                document.getElementById("header-clave").className = "p-4 text-gray-700";
             } else if (rol === "superadmin") {
-                // Súper Admin: Ve todo
+                // Súper Admin
                 btnUsr.classList.remove("hidden");
                 btnUsr.innerText = "👥 Usuarios (Global)";
                 document.getElementById("seccion-crear-usuario").style.display = "block";
@@ -252,7 +256,6 @@
         if(sessionStorage.getItem("adminToken")) { 
             document.getElementById("login-overlay").style.display = "none";
             aplicarPermisos(); fetchInventory(); fetchVentas(); 
-            // Ahora ambos admins pueden pedir la lista, pero el servidor la filtrará o la mostraremos diferente
             if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios();
         }
         
@@ -288,37 +291,13 @@
             }
         }
 
-        // --- GESTIÓN DE USUARIOS (ADAPTATIVA) ---
+        // --- GESTIÓN DE USUARIOS (ACTUALIZADA) ---
         async function fetchUsuarios() {
             try { 
-                // Aunque la ruta está protegida en Python para que solo "admin" la vea, vamos a simular 
-                // para la demostración que la ruta permite a los admins ver la lista (necesitaríamos cambiar Python)
-                // PERO como en la API actual solo el superadmin puede ver la ruta /usuarios, para el admin de tienda 
-                // vamos a armar la lista a partir del historial de ventas que él sí puede ver.
-                
-                const rol = sessionStorage.getItem("rolUsuario");
-                
-                if (rol === "superadmin") {
-                    const res = await fetchConToken(`${API_URL}/usuarios`); 
-                    allUsers = await res.json(); 
-                    renderUsuarios(allUsers); 
-                } else if (rol === "admin") {
-                    // El admin no puede ver las contraseñas desde la base de datos, así que extraemos a los cajeros
-                    // basándonos en quienes han hecho ventas, o podríamos mostrar una lista estática.
-                    // Extraemos cajeros únicos del array de ventas que ya se cargó
-                    if (todasLasVentas.length > 0) {
-                        const cajerosNombres = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))];
-                        const usuariosSimulados = cajerosNombres.map((nombre, index) => ({
-                            id: index + 1,
-                            usuario: nombre,
-                            rol: 'cajero',
-                            password: '***' // Oculto
-                        }));
-                        renderUsuarios(usuariosSimulados);
-                    } else {
-                        renderUsuarios([]);
-                    }
-                }
+                // Ahora tanto Admin como Superadmin consultan la API real. El backend se encarga de ocultar las contraseñas.
+                const res = await fetchConToken(`${API_URL}/usuarios`); 
+                allUsers = await res.json(); 
+                renderUsuarios(allUsers); 
             } catch (e) {}
         }
 
@@ -329,20 +308,21 @@
             if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay personal registrado aún.</td></tr>`;
             
             list.innerHTML = usuarios.map(u => {
-                // Si eres Súper Admin, ves la contraseña y el botón eliminar.
-                // Si eres Admin de tienda, ves "***" y un botón de "Soporte".
                 let passwordHtml = '';
                 let actionHtml = '';
 
                 if (rolActual === "superadmin") {
-                    passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50">${u.password}</td>`;
+                    passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`;
                     actionHtml = `<td class="p-4 text-center"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️ Eliminar</button></td>`;
                 } else {
                     passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`;
-                    actionHtml = `<td class="p-4 text-center"><button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200">🆘 Solicitar Soporte</button></td>`;
+                    // El admin puede eliminar y solicitar soporte
+                    actionHtml = `<td class="p-4 text-center flex justify-center gap-2">
+                        <button onclick="solicitarSoporte()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow font-semibold hover:bg-blue-200">🆘 Soporte</button>
+                        <button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600" ${u.rol==='superadmin'?'disabled opacity-50':''}>🗑️</button>
+                    </td>`;
                 }
 
-                // Evitar mostrar al súper admin en la lista del admin normal
                 if (rolActual === "admin" && u.rol === "superadmin") return "";
 
                 return `
@@ -365,6 +345,7 @@
                 else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
             } catch (error) {}
         });
+        
         window.eliminarUsuario = function(id) { 
             Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { 
                 if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } 
@@ -409,10 +390,6 @@
                 const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))];
                 const selectCajero = document.getElementById("filtro-cajero");
                 selectCajero.innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join("");
-                
-                // Si el rol es admin, forzamos a recargar su lista de usuarios basándonos en las ventas
-                if(sessionStorage.getItem("rolUsuario") === "admin") fetchUsuarios();
-                
                 aplicarFiltros(); 
             } catch (e) {}
         }

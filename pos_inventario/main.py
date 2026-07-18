@@ -50,11 +50,9 @@ def init_db():
         )
     """)
     
-    # Actualizaciones de base de datos para agregar roles y cajeros sin borrar datos
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
     
-    # Asegurar que el creador exista y sea superadmin
     cursor.execute("SELECT COUNT(*) FROM usuarios WHERE usuario = 'admin'")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO usuarios (usuario, password, rol) VALUES ('admin', '1234', 'superadmin')")
@@ -68,7 +66,6 @@ def init_db():
 def startup_event():
     init_db()
 
-# ---- MODELOS ----
 class Producto(BaseModel):
     codigo: str
     nombre: str
@@ -91,7 +88,6 @@ class UsuarioRequest(BaseModel):
     password: str
     rol: str
 
-# ---- SEGURIDAD ----
 def verificar_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -119,22 +115,36 @@ def login(req: LoginRequest):
     
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
-# ---- USUARIOS ----
+# ---- RUTAS DE USUARIOS ----
 @app.get("/api/usuarios")
 def listar_usuarios(user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin":
-        raise HTTPException(status_code=403, detail="Solo el Súper Admin puede ver esto.")
+    # Ahora el admin de tienda también puede ver la lista
+    if user_info["rol"] not in ["superadmin", "admin"]:
+        raise HTTPException(status_code=403, detail="Acceso denegado.")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, usuario, password, rol FROM usuarios ORDER BY id ASC")
     rows = cursor.fetchall()
     conn.close()
-    return [{"id": row[0], "usuario": row[1], "password": row[2], "rol": row[3]} for row in rows]
+    
+    result = []
+    for row in rows:
+        # Si es Admin de tienda, Python oculta la contraseña real. Solo el Súper Admin la recibe.
+        pwd = row[2] if user_info["rol"] == "superadmin" else "********"
+        result.append({"id": row[0], "usuario": row[1], "password": pwd, "rol": row[3]})
+    return result
 
 @app.post("/api/usuarios")
 def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin":
-        raise HTTPException(status_code=403, detail="Solo el Súper Admin puede crear cuentas.")
+    # El admin de tienda también puede crear usuarios
+    if user_info["rol"] not in ["superadmin", "admin"]:
+        raise HTTPException(status_code=403, detail="Sin permisos para crear cuentas.")
+    
+    # Un admin normal no puede crear a un superadmin
+    if user_info["rol"] == "admin" and req.rol == "superadmin":
+        raise HTTPException(status_code=403, detail="No puedes crear cuentas de nivel superior al tuyo.")
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -149,14 +159,17 @@ def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token
 
 @app.delete("/api/usuarios/{id_usuario}")
 def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin":
-        raise HTTPException(status_code=403, detail="Solo el Súper Admin puede eliminar cuentas.")
+    # El admin también puede eliminar cajeros
+    if user_info["rol"] not in ["superadmin", "admin"]:
+        raise HTTPException(status_code=403, detail="Sin permisos.")
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT COUNT(*) FROM usuarios")
         if cursor.fetchone()[0] <= 1:
             raise HTTPException(status_code=400, detail="No puedes eliminar al último usuario del sistema.")
+            
         cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_usuario,))
         conn.commit()
         return {"status": "success"}
@@ -257,7 +270,6 @@ def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_toke
             cursor.execute("UPDATE productos SET stock = stock - %s WHERE codigo = %s", (item.cantidad, item.codigo))
         
         detalles_str = " | ".join(detalles_lista)
-        # Registramos también quién hizo la venta
         cursor.execute("INSERT INTO ventas (total, articulos, cajero) VALUES (%s, %s, %s)", (total_venta, detalles_str, user_info["usuario"]))
         conn.commit()
         return {"status": "success"}
@@ -270,7 +282,7 @@ def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_toke
 @app.get("/api/ventas/historial")
 def historial_ventas(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] == "cajero":
-        raise HTTPException(status_code=403, detail="Los cajeros no tienen acceso a estadísticas generales.")
+        raise HTTPException(status_code=403, detail="Los cajeros no tienen acceso.")
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, fecha, total, articulos, cajero FROM ventas ORDER BY fecha DESC LIMIT 100")
