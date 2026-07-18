@@ -10,30 +10,32 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen">
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
     <!-- LOGIN -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso al Sistema 🔒</h2>
             <div class="space-y-4 text-left">
-                <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="admin"></div>
+                <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. admin"></div>
                 <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
         </div>
     </div>
 
-    <nav class="bg-gray-800 text-white p-4 shadow-md flex justify-between items-center">
+    <!-- NAVEGACIÓN -->
+    <nav class="bg-gray-800 text-white p-4 shadow-md flex flex-wrap gap-4 justify-between items-center">
         <h1 class="text-xl font-bold">Panel de Control</h1>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded">📈 Ventas</button>
+            <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded">👥 Usuarios</button>
             <a href="index.html" class="bg-red-600 px-4 py-2 rounded ml-4">Salir</a>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto p-4 mt-4">
+    <main class="max-w-5xl mx-auto p-4 mt-4 w-full">
         
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
@@ -134,9 +136,45 @@
                 </div>
             </section>
         </div>
+
+        <!-- PESTAÑA: USUARIOS -->
+        <div id="tab-usuarios" class="hidden space-y-4">
+            <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Usuario</h2>
+                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Nombre de Usuario</label>
+                        <input type="text" id="new-user-name" required class="w-full border p-2 rounded focus:border-blue-500 outline-none" placeholder="Ej. juan_cajero">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-600">Contraseña</label>
+                        <input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-blue-500 outline-none" placeholder="Ingresa una clave segura">
+                    </div>
+                    <div>
+                        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded font-bold w-full hover:bg-green-700">Crear Usuario</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[500px]">
+                        <thead class="bg-gray-800 text-white">
+                            <tr>
+                                <th class="p-4">ID</th>
+                                <th class="p-4">Usuario</th>
+                                <th class="p-4 text-yellow-300">Contraseña (Bóveda Súper Admin)</th>
+                                <th class="p-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
 
-    <!-- Modal Editar -->
+    <!-- Modal Editar (Inventario) -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -155,312 +193,259 @@
     </div>
 
     <script>
-    const API_URL = "https://backend-pos-tienda.onrender.com/api";
-    let miGrafico = null;
-    let todasLasVentas = [];
-    let allProducts = []; let fuse = null; let currentEditCode = null;
-    
-    // Función centralizada para hacer peticiones con Token
-    async function fetchConToken(url, options = {}) {
-        const token = sessionStorage.getItem("adminToken");
-        if (!options.headers) options.headers = {};
-        if (token) options.headers["Authorization"] = `Bearer ${token}`;
+        const API_URL = "https://backend-pos-tienda.onrender.com/api";
+        let miGrafico = null;
+        let todasLasVentas = [];
+        let allProducts = []; let fuse = null; let currentEditCode = null;
+        let allUsers = [];
         
-        const response = await fetch(url, options);
-        if (response.status === 401) {
-            sessionStorage.removeItem("adminToken");
-            document.getElementById("login-overlay").style.display = "flex";
-            Swal.fire('Sesión Expirada', 'Tu sesión ha terminado. Inicia sesión nuevamente.', 'warning');
-            throw new Error("No autorizado");
-        }
-        return response;
-    }
-
-    // --- SISTEMA DE LOGIN SEGURO ---
-    if(sessionStorage.getItem("adminToken")) { 
-        document.getElementById("login-overlay").style.display = "none";
-        fetchInventory(); fetchVentas();
-    }
-    
-    async function verificarLogin() {
-        const user = document.getElementById("user-input").value.trim();
-        const pass = document.getElementById("pass-input").value;
-        
-        try {
-            const res = await fetch(`${API_URL}/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ usuario: user, password: pass })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                sessionStorage.setItem("adminToken", data.token); // Guardamos la llave digital
-                document.getElementById("login-overlay").style.display = "none";
-                fetchInventory(); fetchVentas();
-            } else {
-                const error = await res.json();
-                Swal.fire('Acceso Denegado', error.detail, 'error');
+        // --- FUNCIÓN CENTRAL CON TOKEN JWT ---
+        async function fetchConToken(url, options = {}) {
+            const token = sessionStorage.getItem("adminToken");
+            if (!options.headers) options.headers = {};
+            if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            
+            const response = await fetch(url, options);
+            if (response.status === 401) {
+                sessionStorage.removeItem("adminToken");
+                document.getElementById("login-overlay").style.display = "flex";
+                Swal.fire('Sesión Expirada', 'Tu sesión ha terminado. Inicia sesión nuevamente.', 'warning');
+                throw new Error("No autorizado");
             }
-        } catch (error) {
-            Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+            return response;
         }
-    }
-    document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
-    function switchTab(tab) {
-        document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
-        document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
-        document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-        document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-        if(tab === 'ventas') { fetchVentas(); }
-    }
-
-    // --- DETECCIÓN INTELIGENTE ---
-    function verificarSiExisteProducto(codigoNuevo) {
-        const existe = allProducts.find(p => p.codigo === codigoNuevo);
-        if (existe) {
-            Swal.fire({ icon: 'warning', title: '¡Código Existente!', text: `Ese código ya le pertenece a: "${existe.nombre}".`, confirmButtonText: 'Entendido' });
-            document.getElementById("add-codigo").value = "";
-        } else {
-            document.getElementById("add-codigo").value = codigoNuevo;
-            document.getElementById("add-nombre").focus();
+        // --- SISTEMA DE LOGIN Y PESTAÑAS ---
+        if(sessionStorage.getItem("adminToken")) { 
+            document.getElementById("login-overlay").style.display = "none";
+            fetchInventory(); fetchVentas(); fetchUsuarios();
         }
-    }
-
-    document.getElementById("native-admin-input").addEventListener("change", e => {
-        if (e.target.files.length == 0) return;
-        const scanner = new Html5Qrcode("lector-oculto-admin");
-        scanner.scanFile(e.target.files[0], true)
-            .then(t => { verificarSiExisteProducto(t); })
-            .catch(err => Swal.fire('Ups', 'No se detectó código', 'error'))
-            .finally(() => scanner.clear());
-    });
-
-    let adminScanner = null;
-    document.getElementById("start-admin-btn").addEventListener("click", () => {
-        document.getElementById("admin-scanner-container").classList.remove("hidden");
-        adminScanner = new Html5Qrcode("admin-reader");
-        adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => {
-            stopAdminScanning(); verificarSiExisteProducto(t);
-        }).catch(e => stopAdminScanning());
-    });
-    function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
-    document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
-
-    // --- INVENTARIO PROTEGIDO CON TOKEN ---
-    async function fetchInventory() {
-        try {
-            const res = await fetchConToken(`${API_URL}/productos`); 
-            allProducts = await res.json();
-            fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts);
-        } catch (e) {}
-    }
-    
-    function renderTable(products) {
-        const list = document.getElementById("inventory-list");
-        if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center">No hay productos.</td></tr>`;
-        list.innerHTML = products.map(p => `
-            <tr class="hover:bg-gray-50 border-b">
-                <td class="p-4 font-mono">${p.codigo}</td><td class="p-4 font-medium">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td>
-                <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : ''}">${p.stock}</td>
-                <td class="p-4 text-center whitespace-nowrap"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td>
-            </tr>`).join("");
-    }
-    document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
-    
-    document.getElementById("add-form").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const codVal = document.getElementById("add-codigo").value.trim();
-        const nomVal = document.getElementById("add-nombre").value.trim();
         
-        const codigoRepetido = allProducts.find(p => p.codigo === codVal);
-        if (codigoRepetido) return Swal.fire({ icon: 'error', title: 'Código Duplicado', text: `El código ya está en uso.` });
-        
-        const nombreRepetido = allProducts.find(p => p.nombre.toLowerCase() === nomVal.toLowerCase());
-        if (nombreRepetido) return Swal.fire({ icon: 'error', title: 'Nombre Duplicado', text: `El producto ya está registrado.` });
-
-        const product = { codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) };
-        
-        try {
-            const response = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-            if (response.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire({icon:'success',title:'Guardado',timer:1500, showConfirmButton: false}); }
-            else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
-        } catch (error) {}
-    });
-    
-    function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
-    function closeEditModal() { document.getElementById("edit-modal").classList.add("hidden"); }
-    
-    document.getElementById("edit-form").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const product = { codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) };
-        try {
-            await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
-            closeEditModal(); fetchInventory(); Swal.fire({icon:'success',title:'Actualizado',timer:1000, showConfirmButton: false});
-        } catch (error) {}
-    });
-    
-    window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
-
-    // --- VENTAS HISTÓRICAS PROTEGIDAS ---
-    function parseFecha(fechaStr) {
-        const partes = fechaStr.split(/[\s,/:]+/);
-        if(partes.length >= 5) {
-            const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`); 
-            if (!isNaN(d.getTime())) return d;
-        }
-        return new Date(fechaStr);
-    }
-
-    function formatearFechaLocal(fechaStr) {
-        const partes = fechaStr.split(/[\s,/:]+/);
-        if (partes.length >= 5) {
-            const fechaUTC = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`);
-            const dia = String(fechaUTC.getDate()).padStart(2, '0');
-            const mes = String(fechaUTC.getMonth() + 1).padStart(2, '0');
-            const anio = fechaUTC.getFullYear();
-            const horas = String(fechaUTC.getHours()).padStart(2, '0');
-            const mins = String(fechaUTC.getMinutes()).padStart(2, '0');
-            return `${dia}/${mes}/${anio} ${horas}:${mins}`;
-        }
-        return fechaStr;
-    }
-
-    async function fetchVentas() {
-        try {
-            // Nota: Aquí cambié la ruta a /ventas/historial para que pase por el candado de seguridad
-            const res = await fetchConToken(`${API_URL}/ventas/historial`);
-            todasLasVentas = await res.json();
-            aplicarFiltros(); 
-        } catch (e) {}
-    }
-
-    function aplicarFiltros() {
-        const filtro = document.getElementById("filtro-fecha").value;
-        const divManual = document.getElementById("controles-manuales");
-        divManual.classList.toggle("hidden", filtro !== "manual");
-
-        let ventasFiltradas = todasLasVentas;
-        const ahora = new Date();
-        const getInicioDia = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-
-        if (filtro === "hoy") {
-            const hoy = getInicioDia(ahora);
-            ventasFiltradas = todasLasVentas.filter(v => getInicioDia(parseFecha(v.fecha)) === hoy);
-        } else if (filtro === "semana") {
-            const hace7 = ahora.getTime() - (7 * 24 * 60 * 60 * 1000);
-            ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace7);
-        } else if (filtro === "quincena") {
-            const hace14 = ahora.getTime() - (14 * 24 * 60 * 60 * 1000);
-            ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace14);
-        } else if (filtro === "mes") {
-            ventasFiltradas = todasLasVentas.filter(v => {
-                const d = parseFecha(v.fecha);
-                return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear();
-            });
-        } else if (filtro === "manual") {
-            const fInicio = document.getElementById("fecha-inicio").value;
-            const fFin = document.getElementById("fecha-fin").value;
-            if (fInicio && fFin) {
-                const tInicio = new Date(fInicio + "T00:00:00").getTime();
-                const tFin = new Date(fFin + "T23:59:59").getTime();
-                ventasFiltradas = todasLasVentas.filter(v => {
-                    const t = parseFecha(v.fecha).getTime();
-                    return t >= tInicio && t <= tFin;
-                });
-            }
-        }
-        actualizarVistaVentas(ventasFiltradas);
-    }
-
-    function actualizarVistaVentas(ventas) {
-        const list = document.getElementById("ventas-list");
-        const granTotalElement = document.getElementById("gran-total-ventas");
-        const tablaTotalFooter = document.getElementById("tabla-total-footer");
-        
-        const sumaTotal = ventas.reduce((acc, v) => acc + v.total, 0);
-        
-        granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`;
-        if(tablaTotalFooter) tablaTotalFooter.innerText = `Q${sumaTotal.toFixed(2)}`;
-
-        if(ventas.length === 0) {
-            list.innerHTML = `<tr><td colspan="6" class="p-4 text-center">No hay ventas en este período.</td></tr>`;
-        } else {
-            list.innerHTML = ventas.map(v => {
-                let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
-                let cantHtml = ""; let prodHtml = ""; let precioUHtml = "";
-                let isSingleItem = items.length === 1;
-                
-                items.forEach(i => {
-                    let match = i.trim().match(/^(\d+)x\s*(.*)/);
-                    if (match) {
-                        let qty = parseInt(match[1]);
-                        let name = match[2].trim();
-                        let price = 0;
-                        if (isSingleItem && qty > 0) { price = v.total / qty; } 
-                        else { let p = allProducts.find(prod => prod.nombre === name); if (p) price = p.precio; }
-                        
-                        cantHtml += `<div class="py-1 font-bold text-gray-700">${qty}</div>`;
-                        prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${name}</div>`;
-                        precioUHtml += `<div class="py-1 text-gray-600 text-right">Q${price.toFixed(2)}</div>`;
-                    } else {
-                        cantHtml += `<div class="py-1 font-bold text-gray-700">-</div>`;
-                        prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${i}</div>`;
-                        precioUHtml += `<div class="py-1 text-gray-600 text-right">-</div>`;
-                    }
+        async function verificarLogin() {
+            const user = document.getElementById("user-input").value.trim();
+            const pass = document.getElementById("pass-input").value;
+            
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ usuario: user, password: pass })
                 });
 
-                const fechaHoraCompleta = formatearFechaLocal(v.fecha);
-                const partesFechaHora = fechaHoraCompleta.split(' ');
-                const fechaSolo = partesFechaHora[0];
-                const horaSolo = partesFechaHora.length > 1 ? partesFechaHora[1] : '';
+                if (res.ok) {
+                    const data = await res.json();
+                    sessionStorage.setItem("adminToken", data.token); 
+                    document.getElementById("login-overlay").style.display = "none";
+                    fetchInventory(); fetchVentas(); fetchUsuarios();
+                } else {
+                    const error = await res.json();
+                    Swal.fire('Acceso Denegado', error.detail, 'error');
+                }
+            } catch (error) { Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'); }
+        }
+        document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
-                return `
+        function switchTab(tab) {
+            document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
+            document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
+            document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
+            
+            document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            
+            if(tab === 'ventas') fetchVentas();
+            if(tab === 'usuarios') fetchUsuarios();
+        }
+
+        // --- GESTIÓN DE USUARIOS ---
+        async function fetchUsuarios() {
+            try {
+                const res = await fetchConToken(`${API_URL}/usuarios`);
+                allUsers = await res.json();
+                renderUsuarios(allUsers);
+            } catch (e) {}
+        }
+
+        function renderUsuarios(usuarios) {
+            const list = document.getElementById("usuarios-list");
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No hay usuarios.</td></tr>`;
+            list.innerHTML = usuarios.map(u => `
                 <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 text-sm font-medium text-gray-600 align-top whitespace-nowrap">${fechaSolo}</td>
-                    <td class="p-4 text-sm font-medium text-gray-500 align-top whitespace-nowrap">${horaSolo}</td>
-                    <td class="p-4 text-sm align-top text-center">${cantHtml}</td>
-                    <td class="p-4 text-sm align-top">${prodHtml}</td>
-                    <td class="p-4 text-sm align-top">${precioUHtml}</td>
-                    <td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td>
-                </tr>
-            `}).join("");
+                    <td class="p-4 font-mono text-gray-500">${u.id}</td>
+                    <td class="p-4 font-bold text-gray-800">${u.usuario}</td>
+                    <td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>
+                    <td class="p-4 text-center whitespace-nowrap"><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600">🗑️ Eliminar</button></td>
+                </tr>`).join("");
         }
-        dibujarGrafica(ventas);
-    }
 
-    function dibujarGrafica(ventas) {
-        const ctx = document.getElementById('ventasChart').getContext('2d');
-        const agrupado = {};
-        ventas.forEach(v => {
-            const fechaCorta = parseFecha(v.fecha).toLocaleDateString();
-            agrupado[fechaCorta] = (agrupado[fechaCorta] || 0) + v.total;
+        document.getElementById("add-user-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const usr = document.getElementById("new-user-name").value.trim();
+            const pwd = document.getElementById("new-user-pass").value.trim();
+            try {
+                const response = await fetchConToken(`${API_URL}/usuarios`, { 
+                    method: "POST", headers: {"Content-Type": "application/json"}, 
+                    body: JSON.stringify({ usuario: usr, password: pwd }) 
+                });
+                if (response.ok) { 
+                    document.getElementById("add-user-form").reset(); 
+                    fetchUsuarios(); 
+                    Swal.fire({icon:'success',title:'Usuario Creado',timer:1500, showConfirmButton: false}); 
+                } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
+            } catch (error) {}
         });
 
-        const etiquetas = Object.keys(agrupado).reverse();
-        const datos = Object.values(agrupado).reverse();
+        window.eliminarUsuario = function(id) { 
+            Swal.fire({title: '¿Eliminar usuario?', text: 'Esta acción no se puede deshacer', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { 
+                if(r.isConfirmed) { 
+                    try {
+                        const response = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); 
+                        if(response.ok) { fetchUsuarios(); } 
+                        else { const data = await response.json(); Swal.fire('No se pudo eliminar', data.detail, 'error'); }
+                    } catch(e){}
+                } 
+            }); 
+        };
 
-        if(miGrafico) miGrafico.destroy();
+        // --- FUNCIONES DE CÁMARA (INVENTARIO) ---
+        function verificarSiExisteProducto(codigoNuevo) {
+            const existe = allProducts.find(p => p.codigo === codigoNuevo);
+            if (existe) {
+                Swal.fire({ icon: 'warning', title: '¡Código Existente!', text: `Ese código ya le pertenece a: "${existe.nombre}".`, confirmButtonText: 'Entendido' });
+                document.getElementById("add-codigo").value = "";
+            } else { document.getElementById("add-codigo").value = codigoNuevo; document.getElementById("add-nombre").focus(); }
+        }
 
-        miGrafico = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: etiquetas.length ? etiquetas : ['Sin datos'],
-                datasets: [{
-                    label: 'Ingresos Diarios (Q)',
-                    data: datos.length ? datos : [0],
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#2563eb',
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        document.getElementById("native-admin-input").addEventListener("change", e => {
+            if (e.target.files.length == 0) return;
+            const scanner = new Html5Qrcode("lector-oculto-admin");
+            scanner.scanFile(e.target.files[0], true).then(t => { verificarSiExisteProducto(t); }).finally(() => scanner.clear());
         });
-    }
-</script>
+
+        document.getElementById("start-admin-btn").addEventListener("click", () => {
+            document.getElementById("admin-scanner-container").classList.remove("hidden");
+            adminScanner = new Html5Qrcode("admin-reader");
+            adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => {
+                stopAdminScanning(); verificarSiExisteProducto(t);
+            }).catch(e => stopAdminScanning());
+        });
+        function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
+        document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
+
+        // --- INVENTARIO CRUD ---
+        async function fetchInventory() {
+            try {
+                const res = await fetchConToken(`${API_URL}/productos`); 
+                allProducts = await res.json();
+                fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts);
+            } catch (e) {}
+        }
+        
+        function renderTable(products) {
+            const list = document.getElementById("inventory-list");
+            if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-4 text-center">No hay productos.</td></tr>`;
+            list.innerHTML = products.map(p => `
+                <tr class="hover:bg-gray-50 border-b">
+                    <td class="p-4 font-mono">${p.codigo}</td><td class="p-4 font-medium">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td>
+                    <td class="p-4 font-bold ${p.stock <= 5 ? 'text-red-600' : ''}">${p.stock}</td>
+                    <td class="p-4 text-center whitespace-nowrap"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td>
+                </tr>`).join("");
+        }
+        document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
+        
+        document.getElementById("add-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const codVal = document.getElementById("add-codigo").value.trim(); const nomVal = document.getElementById("add-nombre").value.trim();
+            const codigoRepetido = allProducts.find(p => p.codigo === codVal);
+            if (codigoRepetido) return Swal.fire({ icon: 'error', title: 'Código Duplicado', text: `En uso por "${codigoRepetido.nombre}".` });
+            const product = { codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) };
+            try {
+                const response = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) });
+                if (response.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire({icon:'success',title:'Guardado',timer:1500, showConfirmButton: false}); }
+                else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
+            } catch (error) {}
+        });
+        
+        function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
+        function closeEditModal() { document.getElementById("edit-modal").classList.add("hidden"); }
+        
+        document.getElementById("edit-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const product = { codigo: currentEditCode, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) };
+            try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(product) }); closeEditModal(); fetchInventory(); Swal.fire({icon:'success',title:'Actualizado',timer:1000, showConfirmButton: false}); } catch (error) {}
+        });
+        window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar producto?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar'}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
+
+        // --- VENTAS HISTÓRICAS ---
+        function parseFecha(fechaStr) {
+            const partes = fechaStr.split(/[\s,/:]+/);
+            if(partes.length >= 5) { const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`); if (!isNaN(d.getTime())) return d; }
+            return new Date(fechaStr);
+        }
+        function formatearFechaLocal(fechaStr) {
+            const partes = fechaStr.split(/[\s,/:]+/);
+            if (partes.length >= 5) {
+                const fechaUTC = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}:00Z`);
+                return `${String(fechaUTC.getDate()).padStart(2, '0')}/${String(fechaUTC.getMonth() + 1).padStart(2, '0')}/${fechaUTC.getFullYear()} ${String(fechaUTC.getHours()).padStart(2, '0')}:${String(fechaUTC.getMinutes()).padStart(2, '0')}`;
+            }
+            return fechaStr;
+        }
+
+        async function fetchVentas() {
+            try { const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); aplicarFiltros(); } catch (e) {}
+        }
+
+        function aplicarFiltros() {
+            const filtro = document.getElementById("filtro-fecha").value;
+            const divManual = document.getElementById("controles-manuales");
+            divManual.classList.toggle("hidden", filtro !== "manual");
+            let ventasFiltradas = todasLasVentas;
+            const ahora = new Date(); const getInicioDia = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+            if (filtro === "hoy") { const hoy = getInicioDia(ahora); ventasFiltradas = todasLasVentas.filter(v => getInicioDia(parseFecha(v.fecha)) === hoy); } 
+            else if (filtro === "semana") { const hace7 = ahora.getTime() - (7 * 24 * 60 * 60 * 1000); ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace7); } 
+            else if (filtro === "quincena") { const hace14 = ahora.getTime() - (14 * 24 * 60 * 60 * 1000); ventasFiltradas = todasLasVentas.filter(v => parseFecha(v.fecha).getTime() >= hace14); } 
+            else if (filtro === "mes") { ventasFiltradas = todasLasVentas.filter(v => { const d = parseFecha(v.fecha); return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear(); }); } 
+            else if (filtro === "manual") {
+                const fInicio = document.getElementById("fecha-inicio").value; const fFin = document.getElementById("fecha-fin").value;
+                if (fInicio && fFin) { const tInicio = new Date(fInicio + "T00:00:00").getTime(); const tFin = new Date(fFin + "T23:59:59").getTime(); ventasFiltradas = todasLasVentas.filter(v => { const t = parseFecha(v.fecha).getTime(); return t >= tInicio && t <= tFin; }); }
+            }
+            actualizarVistaVentas(ventasFiltradas);
+        }
+
+        function actualizarVistaVentas(ventas) {
+            const list = document.getElementById("ventas-list"); const granTotalElement = document.getElementById("gran-total-ventas"); const tablaTotalFooter = document.getElementById("tabla-total-footer");
+            const sumaTotal = ventas.reduce((acc, v) => acc + v.total, 0);
+            granTotalElement.innerText = `Q${sumaTotal.toFixed(2)}`; if(tablaTotalFooter) tablaTotalFooter.innerText = `Q${sumaTotal.toFixed(2)}`;
+
+            if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="6" class="p-4 text-center">No hay ventas en este período.</td></tr>`; } 
+            else {
+                list.innerHTML = ventas.map(v => {
+                    let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== "");
+                    let cantHtml = ""; let prodHtml = ""; let precioUHtml = ""; let isSingleItem = items.length === 1;
+                    
+                    items.forEach(i => {
+                        let match = i.trim().match(/^(\d+)x\s*(.*)/);
+                        if (match) {
+                            let qty = parseInt(match[1]); let name = match[2].trim(); let price = 0;
+                            if (isSingleItem && qty > 0) { price = v.total / qty; } else { let p = allProducts.find(prod => prod.nombre === name); if (p) price = p.precio; }
+                            cantHtml += `<div class="py-1 font-bold text-gray-700">${qty}</div>`; prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${name}</div>`; precioUHtml += `<div class="py-1 text-gray-600 text-right">Q${price.toFixed(2)}</div>`;
+                        } else { cantHtml += `<div class="py-1 font-bold text-gray-700">-</div>`; prodHtml += `<div class="py-1 text-gray-600 whitespace-nowrap">${i}</div>`; precioUHtml += `<div class="py-1 text-gray-600 text-right">-</div>`; }
+                    });
+
+                    const fh = formatearFechaLocal(v.fecha).split(' ');
+                    return `<tr class="hover:bg-gray-50 border-b"><td class="p-4 text-sm font-medium text-gray-600 align-top whitespace-nowrap">${fh[0]}</td><td class="p-4 text-sm font-medium text-gray-500 align-top whitespace-nowrap">${fh[1] || ''}</td><td class="p-4 text-sm align-top text-center">${cantHtml}</td><td class="p-4 text-sm align-top">${prodHtml}</td><td class="p-4 text-sm align-top">${precioUHtml}</td><td class="p-4 font-bold text-green-600 text-right align-top text-lg">Q${v.total.toFixed(2)}</td></tr>`;
+                }).join("");
+            }
+            dibujarGrafica(ventas);
+        }
+
+        function dibujarGrafica(ventas) {
+            const ctx = document.getElementById('ventasChart').getContext('2d'); const agrupado = {};
+            ventas.forEach(v => { const fechaCorta = parseFecha(v.fecha).toLocaleDateString(); agrupado[fechaCorta] = (agrupado[fechaCorta] || 0) + v.total; });
+            if(miGrafico) miGrafico.destroy();
+            miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(agrupado).reverse().length ? Object.keys(agrupado).reverse() : ['Sin datos'], datasets: [{ label: 'Ingresos Diarios (Q)', data: Object.values(agrupado).reverse().length ? Object.values(agrupado).reverse() : [0], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, pointBackgroundColor: '#2563eb', tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        }
+    </script>
 </body>
 </html>

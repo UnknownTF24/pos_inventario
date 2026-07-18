@@ -22,10 +22,6 @@ DATABASE_URL = "postgresql://postgres.vyukcvvzizubxdlximyy:u62sTgLkiRyEQvz1@aws-
 SECRET_KEY = "mi_clave_super_secreta_y_larga_cambiala_luego"
 ALGORITHM = "HS256"
 
-# Credenciales seguras en el servidor (ya no están en el HTML)
-ADMIN_USER = "admin"
-ADMIN_PASS = "1234" 
-
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
@@ -48,6 +44,20 @@ def init_db():
             articulos TEXT NOT NULL
         )
     """)
+    # NUEVA TABLA: Usuarios del sistema
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id SERIAL PRIMARY KEY,
+            usuario TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
+    
+    # Crear usuario maestro por defecto si la tabla está vacía
+    cursor.execute("SELECT COUNT(*) FROM usuarios")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES ('admin', '1234')")
+        
     conn.commit()
     conn.close()
 
@@ -73,32 +83,83 @@ class LoginRequest(BaseModel):
     usuario: str
     password: str
 
-# ---- FUNCIÓN DE VERIFICACIÓN (EL CANDADO) ----
+class UsuarioRequest(BaseModel):
+    usuario: str
+    password: str
+
+# ---- FUNCIÓN DE VERIFICACIÓN (CANDADO) ----
 def verificar_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado o token faltante")
-    
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload["sub"]
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Tu sesión ha expirado. Inicia sesión de nuevo.")
+        raise HTTPException(status_code=401, detail="Tu sesión ha expirado.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido.")
 
-# ---- RUTA DE LOGIN (NUEVA) ----
+# ---- RUTA DE LOGIN (Verifica en Base de Datos) ----
 @app.post("/api/login")
 def login(req: LoginRequest):
-    if req.usuario == ADMIN_USER and req.password == ADMIN_PASS:
-        # Generar token válido por 12 horas
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT usuario, password FROM usuarios WHERE usuario = %s AND password = %s", (req.usuario, req.password))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
         expiracion = datetime.utcnow() + timedelta(hours=12)
         token = jwt.encode({"sub": req.usuario, "exp": expiracion}, SECRET_KEY, algorithm=ALGORITHM)
-        return {"token": token}
+        return {"token": token, "usuario": req.usuario}
     
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
-# ---- RUTAS PÚBLICAS (Para que el index.html / POS siga funcionando sin login) ----
+# ---- RUTAS DE USUARIOS (Súper Admin) ----
+@app.get("/api/usuarios")
+def listar_usuarios(admin: str = Depends(verificar_token)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, usuario, password FROM usuarios ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": row[0], "usuario": row[1], "password": row[2]} for row in rows]
+
+@app.post("/api/usuarios")
+def crear_usuario(req: UsuarioRequest, admin: str = Depends(verificar_token)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (%s, %s)", (req.usuario, req.password))
+        conn.commit()
+        return {"status": "success"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="El nombre de usuario ya existe.")
+    finally:
+        conn.close()
+
+@app.delete("/api/usuarios/{id_usuario}")
+def eliminar_usuario(id_usuario: int, admin: str = Depends(verificar_token)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Prevenir que borren al último usuario y se queden sin acceso
+        cursor.execute("SELECT COUNT(*) FROM usuarios")
+        if cursor.fetchone()[0] <= 1:
+            raise HTTPException(status_code=400, detail="No puedes eliminar al último usuario del sistema.")
+            
+        cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_usuario,))
+        conn.commit()
+        return {"status": "success"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+# ---- RUTAS PÚBLICAS (POS) ----
 @app.get("/api/productos")
 def listar_productos():
     conn = get_db_connection()
@@ -150,7 +211,7 @@ def procesar_venta(venta: VentaRequest):
     finally:
         conn.close()
 
-# ---- RUTAS PROTEGIDAS (Solo el Admin con Token puede usarlas) ----
+# ---- RUTAS PROTEGIDAS (Admin) ----
 @app.post("/api/productos")
 def crear_producto(producto: Producto, admin: str = Depends(verificar_token)):
     conn = get_db_connection()
