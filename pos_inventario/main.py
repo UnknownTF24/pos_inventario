@@ -31,12 +31,10 @@ def init_db():
     cursor.execute("""CREATE TABLE IF NOT EXISTS ventas (id SERIAL PRIMARY KEY, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, total REAL NOT NULL, articulos TEXT NOT NULL)""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, usuario TEXT UNIQUE NOT NULL, password TEXT NOT NULL)""")
     
-    # Migraciones
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
     
-    # NUEVA TABLA: Auditoría para historial de cambios de nombres
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS auditoria_usuarios (
             id SERIAL PRIMARY KEY,
@@ -133,7 +131,6 @@ def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token
     finally:
         conn.close()
 
-# NUEVO: Editar usuario
 @app.put("/api/usuarios/{id_usuario}")
 def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
@@ -146,19 +143,20 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         if not target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
             
         old_usuario, old_password, old_rol, old_nombre = target
+        
+        # BLOQUEO ABSOLUTO: Nadie, ni siquiera el super admin, puede modificar al super admin desde la web.
+        if old_rol == "superadmin":
+            raise HTTPException(status_code=403, detail="El Súper Administrador no puede ser modificado desde la interfaz, solo a nivel código.")
+
         new_usuario = req.get("usuario", old_usuario)
         new_password = req.get("password", old_password)
         new_rol = req.get("rol", old_rol)
         new_nombre = req.get("nombre_completo", old_nombre)
 
-        # Restricciones para Admin Normal
         if user_info["rol"] == "admin":
             if new_usuario != old_usuario or new_password != old_password or new_rol != old_rol:
                 raise HTTPException(status_code=403, detail="Como Admin de Tienda, solo puedes modificar el Nombre en Pantalla.")
-            if old_rol == "superadmin":
-                raise HTTPException(status_code=403, detail="No puedes editar al Creador del sistema.")
 
-        # Auditoría si cambia el nombre
         if old_nombre != new_nombre:
             detalle = f"Cambio de nombre en pantalla: '{old_nombre}' a '{new_nombre}' (Modificado por {user_info['nombre_completo']})"
             cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle) VALUES (%s, %s)", (old_usuario, detalle))
@@ -193,7 +191,6 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
     finally:
         conn.close()
 
-# NUEVO: Leer Auditoría
 @app.get("/api/auditoria")
 def obtener_auditoria(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
@@ -204,7 +201,7 @@ def obtener_auditoria(user_info: dict = Depends(verificar_token)):
     conn.close()
     return [{"fecha": row[0].strftime("%d/%m/%Y %H:%M"), "usuario": row[1], "detalle": row[2]} for row in rows]
 
-# ---- RESTO (PRODUCTOS/VENTAS) SE MANTIENE IGUAL ----
+# ---- RESTO (PRODUCTOS/VENTAS) ----
 @app.get("/api/productos")
 def listar_productos():
     conn = get_db_connection()
@@ -244,12 +241,14 @@ def actualizar_producto(codigo: str, producto: Producto, user_info: dict = Depen
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("UPDATE productos SET nombre = %s, precio = %s, stock = %s WHERE codigo = %s", (producto.nombre, producto.precio, producto.stock, codigo))
+        # AHORA PERMITE ACTUALIZAR EL CODIGO DE BARRAS
+        cursor.execute("UPDATE productos SET codigo = %s, nombre = %s, precio = %s, stock = %s WHERE codigo = %s", 
+                       (producto.codigo, producto.nombre, producto.precio, producto.stock, codigo))
         conn.commit()
         return {"status": "success"}
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error al actualizar. ¿El nuevo código ya existe?")
     finally: conn.close()
 
 @app.delete("/api/productos/{codigo}")
