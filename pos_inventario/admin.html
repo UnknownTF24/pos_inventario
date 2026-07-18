@@ -12,6 +12,7 @@
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
+    <!-- LOGIN DEL PANEL -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Panel Administrativo 🔒</h2>
@@ -89,18 +90,9 @@
             <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
                 <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div>
-                        <label class="block text-xs font-bold mb-1 text-gray-600">Usuario Login <span class="text-red-500 font-normal">(Sin espacios)</span></label>
-                        <input type="text" id="new-user-name" pattern="[^\s]+" title="El usuario no debe llevar espacios." required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla <span class="text-gray-400 font-normal">(Recibo)</span></label>
-                        <input type="text" id="new-user-fullname" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. Pablo Perez">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label>
-                        <input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. clave123">
-                    </div>
+                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Usuario Login <span class="text-red-500 font-normal">(Sin espacios)</span></label><input type="text" id="new-user-name" pattern="[^\s]+" title="El usuario no debe llevar espacios." required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla <span class="text-gray-400 font-normal">(Recibo)</span></label><input type="text" id="new-user-fullname" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. Pablo Perez"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label><input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. clave123"></div>
                     <div>
                         <label class="block text-xs font-bold mb-1 text-gray-600">Nivel de Acceso</label>
                         <select id="new-user-rol" class="w-full border p-2 rounded focus:border-purple-500 outline-none bg-gray-50 font-semibold">
@@ -111,23 +103,12 @@
                     <div><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
                 </form>
             </section>
-
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
-                    <h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2>
-                    <button onclick="verAuditoria()" class="bg-gray-600 hover:bg-gray-500 text-sm px-3 py-1 rounded shadow">📜 Ver Historial de Cambios</button>
-                </div>
+                <div class="bg-gray-800 p-4 text-white flex justify-between items-center"><h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2><button onclick="verAuditoria()" class="bg-gray-600 hover:bg-gray-500 text-sm px-3 py-1 rounded shadow">📜 Ver Historial de Cambios</button></div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200">
-                            <tr>
-                                <th class="p-4 w-16">No.</th>
-                                <th class="p-4">Usuario (Login)</th>
-                                <th class="p-4 text-blue-600 font-bold">Nombre en Pantalla</th>
-                                <th class="p-4">Rol</th>
-                                <th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th>
-                                <th class="p-4 text-center">Acción</th>
-                            </tr>
+                            <tr><th class="p-4 w-16">No.</th><th class="p-4">Usuario (Login)</th><th class="p-4 text-blue-600 font-bold">Nombre en Pantalla</th><th class="p-4">Rol</th><th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th><th class="p-4 text-center">Acción</th></tr>
                         </thead>
                         <tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody>
                     </table>
@@ -136,7 +117,7 @@
         </div>
     </main>
 
-    <!-- MODAL EDITAR INVENTARIO (Ahora incluye código de barras) -->
+    <!-- MODAL EDITAR INVENTARIO (Con Lógica de Escáner Blindada) -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -151,6 +132,8 @@
                         <button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded" title="Subir foto del código">📸</button>
                     </div>
                     <input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none">
+                    <!-- Div oculto seguro para procesar imágenes en el edit -->
+                    <div id="lector-oculto-edit" style="display:none;"></div>
                 </div>
                 
                 <!-- Escáner dentro del Edit -->
@@ -172,24 +155,15 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR USUARIO -->
+    <!-- MODALES DE USUARIO Y AUDITORIA (Se mantienen igual) -->
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2>
             <form id="form-editar-usuario" class="space-y-4">
                 <input type="hidden" id="edit-usr-id">
-                <div>
-                    <label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label>
-                    <input type="text" id="edit-usr-fullname" required class="w-full border-2 border-blue-200 rounded p-2 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm">Usuario Login</label>
-                    <input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50">
-                </div>
-                <div>
-                    <label class="block text-sm">Contraseña</label>
-                    <input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50">
-                </div>
+                <div><label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label><input type="text" id="edit-usr-fullname" required class="w-full border-2 border-blue-200 rounded p-2 outline-none"></div>
+                <div><label class="block text-sm">Usuario Login</label><input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50"></div>
+                <div><label class="block text-sm">Contraseña</label><input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50"></div>
                 <div>
                     <label class="block text-sm">Nivel de Acceso</label>
                     <select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50">
@@ -206,18 +180,11 @@
         </div>
     </div>
 
-    <!-- MODAL AUDITORÍA -->
     <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2>
-                <button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2><button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button></div>
             <div class="max-h-96 overflow-y-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead>
-                    <tbody id="audit-list" class="divide-y divide-gray-100"></tbody>
-                </table>
+                <table class="w-full text-left border-collapse text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead><tbody id="audit-list" class="divide-y divide-gray-100"></tbody></table>
             </div>
         </div>
     </div>
@@ -309,28 +276,23 @@
             if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
         }
 
-        // --- GESTIÓN DE USUARIOS ---
+        // --- GESTIÓN DE USUARIOS Y AUDITORÍA ---
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
 
         function renderUsuarios(usuarios) {
             const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario");
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`;
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal registrado.</td></tr>`;
             
             list.innerHTML = usuarios.map((u, index) => {
-                let passwordHtml = ''; let actionHtml = '';
-                // EL TRUCO DEL ORDEN: Usamos el Index de la tabla (1, 2, 3...) para que siempre se vea ordenado
-                let idVisual = index + 1; 
-                let trClass = "hover:bg-gray-50 border-b";
+                let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b";
 
                 if (u.rol === 'superadmin') {
-                    // Si es Súper Admin: NUNCA mostramos botones para evitar accidentes.
                     if (rolActual === "superadmin") {
                         trClass = "bg-gray-50 border-b";
                         passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`;
                         actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`;
-                    } else { return ""; } // El Admin de tienda ni siquiera lo ve
+                    } else { return ""; } 
                 } else {
-                    // Resto de usuarios
                     if (rolActual === "superadmin") {
                         passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`;
                         actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
@@ -339,37 +301,20 @@
                         actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1" title="Editar Nombre">✏️ Nombre</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
                     }
                 }
-
                 return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>`
             }).join("");
         }
 
-        document.getElementById("add-user-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value;
-            try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {}
-        });
-        
+        document.getElementById("add-user-form").addEventListener("submit", async (e) => { e.preventDefault(); const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value; try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {} });
         window.eliminarUsuario = function(id) { Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } }); };
         window.eliminarUsuarioConfirmado = function(id) { Swal.fire({title: '¡ADVERTENCIA!', text: "Estás a punto de borrar definitivamente este usuario y no se podrá recuperar. ¿Seguro?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar para siempre', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success');} } catch(e){} } }); };
 
         window.openEditUser = function(id) {
             const u = allUsers.find(x => x.id === id);
-            document.getElementById("edit-usr-id").value = u.id;
-            document.getElementById("edit-usr-fullname").value = u.nombre_completo;
-            document.getElementById("edit-usr-name").value = u.usuario;
-            document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : '';
-            document.getElementById("edit-usr-rol").value = u.rol;
-
+            document.getElementById("edit-usr-id").value = u.id; document.getElementById("edit-usr-fullname").value = u.nombre_completo; document.getElementById("edit-usr-name").value = u.usuario; document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : ''; document.getElementById("edit-usr-rol").value = u.rol;
             const esAdminNormal = sessionStorage.getItem("rolUsuario") === "admin";
-            document.getElementById("edit-usr-name").disabled = esAdminNormal;
-            document.getElementById("edit-usr-pass").disabled = esAdminNormal;
-            document.getElementById("edit-usr-rol").disabled = esAdminNormal;
-            
-            if(esAdminNormal) {
-                document.getElementById("edit-usr-pass").placeholder = "Comunícate con Soporte para cambiar";
-                document.getElementById("edit-usr-name").title = "No modificable";
-            }
+            document.getElementById("edit-usr-name").disabled = esAdminNormal; document.getElementById("edit-usr-pass").disabled = esAdminNormal; document.getElementById("edit-usr-rol").disabled = esAdminNormal;
+            if(esAdminNormal) { document.getElementById("edit-usr-pass").placeholder = "Comunícate con Soporte para cambiar"; document.getElementById("edit-usr-name").title = "No modificable"; }
             document.getElementById("edit-user-modal").classList.remove("hidden");
         };
 
@@ -380,24 +325,64 @@
             try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); } } catch (e) {}
         });
 
-        window.verAuditoria = async function() {
-            try { const res = await fetchConToken(`${API_URL}/auditoria`); const data = await res.json(); const list = document.getElementById("audit-list"); if (data.length === 0) list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay registros de auditoría.</td></tr>`; else list.innerHTML = data.map(r => `<tr><td class="p-2 border-b whitespace-nowrap text-gray-500">${r.fecha}</td><td class="p-2 border-b font-mono">${r.usuario}</td><td class="p-2 border-b text-blue-800">${r.detalle}</td></tr>`).join(""); document.getElementById("audit-modal").classList.remove("hidden"); } catch (e) {}
-        };
+        window.verAuditoria = async function() { try { const res = await fetchConToken(`${API_URL}/auditoria`); const data = await res.json(); const list = document.getElementById("audit-list"); if (data.length === 0) list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay registros de auditoría.</td></tr>`; else list.innerHTML = data.map(r => `<tr><td class="p-2 border-b whitespace-nowrap text-gray-500">${r.fecha}</td><td class="p-2 border-b font-mono">${r.usuario}</td><td class="p-2 border-b text-blue-800">${r.detalle}</td></tr>`).join(""); document.getElementById("audit-modal").classList.remove("hidden"); } catch (e) {} };
 
-        // --- CÁMARAS Y CÓDIGOS PARA EL INVENTARIO ---
+        // --- CÁMARAS BLINDADAS (SOLUCIÓN DEL BUG DE CONGELAMIENTO) ---
         function verificarSiExisteProducto(codigoNuevo, idInput) { const existe = allProducts.find(p => p.codigo === codigoNuevo); if (existe && currentEditCode !== codigoNuevo) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById(idInput).value = ""; } else { document.getElementById(idInput).value = codigoNuevo; } }
         
-        // Escáner principal (Agregar)
-        document.getElementById("native-admin-input").addEventListener("change", e => { if (e.target.files.length == 0) return; new Html5Qrcode("lector-oculto-admin").scanFile(e.target.files[0], true).then(t => verificarSiExisteProducto(t, "add-codigo")); });
-        document.getElementById("start-admin-btn").addEventListener("click", () => { document.getElementById("admin-scanner-container").classList.remove("hidden"); adminScanner = new Html5Qrcode("admin-reader"); adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopAdminScanning(); verificarSiExisteProducto(t, "add-codigo"); }).catch(e => stopAdminScanning()); });
-        function stopAdminScanning() { if(adminScanner){ adminScanner.stop(); document.getElementById("admin-scanner-container").classList.add("hidden"); } }
+        // Agregar
+        document.getElementById("native-admin-input").addEventListener("change", e => { 
+            if (e.target.files.length == 0) return; 
+            const scanner = new Html5Qrcode("lector-oculto-admin");
+            scanner.scanFile(e.target.files[0], true)
+                .then(t => verificarSiExisteProducto(t, "add-codigo"))
+                .catch(err => Swal.fire('Error', 'No se detectó un código legible en la foto.', 'error'))
+                .finally(() => scanner.clear());
+        });
+        document.getElementById("start-admin-btn").addEventListener("click", () => { 
+            document.getElementById("admin-scanner-container").classList.remove("hidden"); 
+            adminScanner = new Html5Qrcode("admin-reader"); 
+            adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { 
+                stopAdminScanning(); verificarSiExisteProducto(t, "add-codigo"); 
+            }).catch(e => {
+                document.getElementById("admin-scanner-container").classList.add("hidden");
+                Swal.fire('Cámara no disponible', 'Verifica los permisos o asegúrate de no tener la cámara en uso.', 'error');
+            }); 
+        });
+        function stopAdminScanning() { 
+            if(adminScanner){ 
+                try { adminScanner.stop().catch(e=>{}); } catch(e){} 
+                document.getElementById("admin-scanner-container").classList.add("hidden"); 
+            } 
+        }
         document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
 
-        // Escáner de edición (Actualizar código)
+        // Editar
         let editScanner = null;
-        document.getElementById("native-edit-input").addEventListener("change", e => { if (e.target.files.length == 0) return; new Html5Qrcode("lector-oculto-admin").scanFile(e.target.files[0], true).then(t => verificarSiExisteProducto(t, "edit-codigo")); });
-        document.getElementById("start-edit-scan-btn").addEventListener("click", () => { document.getElementById("edit-scanner-container").classList.remove("hidden"); editScanner = new Html5Qrcode("edit-reader"); editScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopEditScanning(); verificarSiExisteProducto(t, "edit-codigo"); }).catch(e => stopEditScanning()); });
-        function stopEditScanning() { if(editScanner) { editScanner.stop(); document.getElementById("edit-scanner-container").classList.add("hidden"); } }
+        document.getElementById("native-edit-input").addEventListener("change", e => { 
+            if (e.target.files.length == 0) return; 
+            const scanner = new Html5Qrcode("lector-oculto-edit");
+            scanner.scanFile(e.target.files[0], true)
+                .then(t => verificarSiExisteProducto(t, "edit-codigo"))
+                .catch(err => Swal.fire('Error', 'No se detectó un código legible en la foto.', 'error'))
+                .finally(() => scanner.clear());
+        });
+        document.getElementById("start-edit-scan-btn").addEventListener("click", () => { 
+            document.getElementById("edit-scanner-container").classList.remove("hidden"); 
+            editScanner = new Html5Qrcode("edit-reader"); 
+            editScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { 
+                stopEditScanning(); verificarSiExisteProducto(t, "edit-codigo"); 
+            }).catch(e => {
+                document.getElementById("edit-scanner-container").classList.add("hidden");
+                Swal.fire('Cámara no disponible', 'Verifica los permisos o asegúrate de no tener la cámara en uso.', 'error');
+            }); 
+        });
+        function stopEditScanning() { 
+            if(editScanner) { 
+                try { editScanner.stop().catch(e=>{}); } catch(e){} 
+                document.getElementById("edit-scanner-container").classList.add("hidden"); 
+            } 
+        }
         document.getElementById("stop-edit-scan-btn").addEventListener("click", stopEditScanning);
 
         async function fetchInventory() { try { const res = await fetchConToken(`${API_URL}/productos`); allProducts = await res.json(); fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts); } catch (e) {} }
@@ -410,11 +395,8 @@
         function closeEditModal() { stopEditScanning(); document.getElementById("edit-modal").classList.add("hidden"); }
         
         document.getElementById("edit-form").addEventListener("submit", async (e) => { 
-            e.preventDefault(); 
-            const nuevoCodigo = document.getElementById("edit-codigo").value.trim();
-            // Verificar si intenta cambiar el código a uno que ya existe
+            e.preventDefault(); const nuevoCodigo = document.getElementById("edit-codigo").value.trim();
             if(nuevoCodigo !== currentEditCode && allProducts.find(p => p.codigo === nuevoCodigo)) return Swal.fire('Error', 'El nuevo código ya está en uso por otro producto.', 'error');
-            
             try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: nuevoCodigo, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) }) }); closeEditModal(); fetchInventory(); Swal.fire('Éxito', 'Actualizado', 'success'); } catch (e) {} 
         });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
@@ -423,15 +405,7 @@
         function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
         function formatearFechaLocal(f) { const p = f.split(/[\s,/:]+/); if (p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } return f; }
 
-        async function fetchVentas() {
-            try { 
-                const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); 
-                const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))];
-                const selectCajero = document.getElementById("filtro-cajero");
-                selectCajero.innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join("");
-                aplicarFiltros(); 
-            } catch (e) {}
-        }
+        async function fetchVentas() { try { const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))]; document.getElementById("filtro-cajero").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join(""); aplicarFiltros(); } catch (e) {} }
 
         function aplicarFiltros() {
             const filtroF = document.getElementById("filtro-fecha").value; const filtroC = document.getElementById("filtro-cajero").value; document.getElementById("controles-manuales").classList.toggle("hidden", filtroF !== "manual");
@@ -455,14 +429,7 @@
             const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer");
             const sum = ventas.reduce((acc, v) => acc + v.total, 0); gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`;
             if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas.</td></tr>`; } 
-            else {
-                list.innerHTML = ventas.map(v => {
-                    let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1;
-                    items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } });
-                    const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido";
-                    return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`;
-                }).join("");
-            }
+            else { list.innerHTML = ventas.map(v => { let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1; items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } }); const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido"; return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`; }).join(""); }
             dibujarGrafica(ventas);
         }
 
