@@ -11,8 +11,8 @@
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
     <!-- LOGIN OBLIGATORIO PARA CAJEROS -->
-    <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center overflow-y-auto">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">POS Cajas 🛒</h2>
             <p class="text-gray-500 text-sm mb-4">Inicia sesión para comenzar tu turno</p>
             <div class="space-y-4 text-left">
@@ -82,7 +82,6 @@
                 document.getElementById("login-overlay").style.display = "none";
                 document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
                 
-                // Si es un admin, mostramos el botón directo al panel en la barra superior
                 if (sessionStorage.getItem("rolUsuario") !== "cajero") {
                     document.getElementById("btn-admin-link").classList.remove("hidden");
                 }
@@ -100,6 +99,8 @@
                     sessionStorage.setItem("adminToken", data.token); 
                     sessionStorage.setItem("nombreUsuario", data.nombre_completo);
                     sessionStorage.setItem("rolUsuario", data.rol);
+                    document.getElementById("user-input").value = "";
+                    document.getElementById("pass-input").value = "";
                     checkSession();
                 } else { Swal.fire('Error', 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
@@ -185,7 +186,7 @@
         window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } };
         window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); };
 
-        // CHECKOUT SEGURO CON TOKEN
+        // CHECKOUT SEGURO
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
             const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
@@ -213,17 +214,36 @@
             setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        // Escáneres
+        // --- CÁMARAS BLINDADAS (SOLUCIÓN DE BUG DE CONGELAMIENTO) ---
         document.getElementById("native-cam-input").addEventListener("change", e => {
             if (e.target.files.length == 0) return;
-            new Html5Qrcode("lector-oculto").scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).finally(() => { scanner.clear(); });
+            const scanner = new Html5Qrcode("lector-oculto");
+            scanner.scanFile(e.target.files[0], true)
+                .then(t => { fetchProduct(t); })
+                .catch(err => Swal.fire('Error', 'No se detectó un código legible en la foto.', 'error'))
+                .finally(() => scanner.clear());
         });
+
         document.getElementById("start-btn").addEventListener("click", () => {
-            document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden");
+            document.getElementById("start-btn").classList.add("hidden"); 
+            document.getElementById("stop-btn").classList.remove("hidden");
             html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { fetchProduct(text); stopScanning(); }).catch(e => { stopScanning(); });
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { 
+                stopScanning(); fetchProduct(text); 
+            }).catch(e => { 
+                stopScanning();
+                Swal.fire('Cámara no disponible', 'Verifica los permisos o asegúrate de no tener la cámara en uso.', 'error');
+            });
         });
-        function stopScanning() { if (html5QrcodeScanner) { html5QrcodeScanner.stop(); document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
+
+        function stopScanning() { 
+            if (html5QrcodeScanner) { 
+                try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} 
+                document.getElementById("start-btn").classList.remove("hidden"); 
+                document.getElementById("stop-btn").classList.add("hidden"); 
+            } 
+        }
+
         document.getElementById("stop-btn").addEventListener("click", stopScanning);
         addManualBtn.addEventListener("click", () => { const c = manualInput.value.trim(); if (c) fetchProduct(c); });
         manualInput.addEventListener("keypress", (e) => { if (e.key === "Enter") addManualBtn.click(); });
