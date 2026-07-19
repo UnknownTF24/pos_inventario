@@ -191,26 +191,23 @@
                 if (res.ok) {
                     const data = await res.json();
                     
-                    // SEGURIDAD: Bloquear a cajeros si intentan ir al panel
                     if (destino === 'admin' && data.rol === 'cajero') {
                         return Swal.fire('Acceso Denegado', 'Los cajeros no tienen acceso al Panel Administrativo.', 'error');
                     }
                     
-                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
+                    // AQUÍ ESTABA EL BUG: Agregamos el guardado del tienda_id
+                    sessionStorage.setItem("adminToken", data.token); 
+                    sessionStorage.setItem("nombreUsuario", data.nombre_completo); 
+                    sessionStorage.setItem("rolUsuario", data.rol);
+                    sessionStorage.setItem("tienda_id", data.tienda_id); 
                     
                     if(destino === 'admin') {
-                        window.location.href = "admin.html"; // Redirigir al admin
+                        window.location.href = "admin.html";
                     } else {
-                        document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession(); // Entrar al POS
+                        document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession(); 
                     }
                 } else { const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
-        }
-        document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
-        
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
         }
 
         // --- 3. LÓGICA DE CAJA (MODO INVITADO INCLUIDO) ---

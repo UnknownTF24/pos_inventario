@@ -14,22 +14,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
-    
-    <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center overflow-y-auto">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Panel Administrativo 🔒</h2>
-            <div class="space-y-4 text-left mt-4">
-                <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. admin"></div>
                 
-                <!-- CAMPO CONTRASEÑA CON BOTÓN DE VER -->
-                <div>
-                    <label class="block text-sm font-bold">Contraseña</label>
-                    <div class="relative">
-                        <input type="password" id="pass-input" class="w-full border p-3 rounded outline-none focus:border-blue-500" placeholder="••••••••">
-                        <button type="button" onclick="togglePassword('pass-input')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-blue-600 transition text-lg">👁️</button>
-                    </div>
-                </div>
-                
+            <!-- NUEVO DISEÑO DE BARRA DE NAVEGACIÓN -->
+    <nav class="bg-gray-900 text-white shadow-lg border-b-4 border-blue-600">
+        <div class="max-w-screen-2xl mx-auto px-4">
+
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
@@ -214,16 +203,12 @@
 
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
-            if (input.type === "password") {
-                input.type = "text";
-            } else {
-                input.type = "password";
-            }
+            if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
         }
 
-        function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
+        // EL BOTÓN SALIR AHORA SÍ TE MANDA AL INICIO
+        function cerrarSesion() { sessionStorage.clear(); window.location.href = "index.html"; }
 
-        function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
         window.solicitarSoporte = function() { Swal.fire({ title: 'Soporte Técnico', html: '<p>Comunícate con el Creador del Sistema.</p><p><b class="text-blue-600">Teléfono:</b> 4941-1913</p>', icon: 'info' }); };
 
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); const data = await res.json(); document.getElementById("cfg-nombre").value = data.nombre || ""; document.getElementById("cfg-direccion").value = data.direccion || ""; document.getElementById("cfg-nit").value = data.nit || ""; document.getElementById("cfg-telefono").value = data.telefono || ""; document.getElementById("cfg-footer").value = data.footer || ""; } catch(e){} }
@@ -236,87 +221,58 @@
         document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Denegado', 'Solo el creador puede asignar otro administrador.', 'warning'); this.value = "cajero"; } });
 
         async function fetchConToken(url, options = {}) {
-    const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
-    try {
-        const response = await fetch(url, options);
-        // AQUI ESTABA EL ERROR: Ya no expulsa al usuario si el servidor manda un 403.
-        if (response.status === 401) { sessionStorage.clear(); document.getElementById("login-overlay").style.display = "flex"; Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning'); throw new Error("No autorizado"); }
-        return response;
-    } catch (err) { if(err.message !== "No autorizado") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); } throw err; }
-}
+            const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            try {
+                const response = await fetch(url, options);
+                if (response.status === 401) { 
+                    sessionStorage.clear(); 
+                    Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning').then(() => { window.location.href = "index.html"; });
+                    throw new Error("No autorizado"); 
+                }
+                return response;
+            } catch (err) { if(err.message !== "No autorizado") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); } throw err; }
+        }
 
         function aplicarPermisos() {
-    const rol = sessionStorage.getItem("rolUsuario"); 
-    document.getElementById("rol-display").innerText = "Modo: " + (rol === "superadmin" ? "Soporte Maestro" : "Administrador");
-    const btnUsr = document.getElementById("btn-usr");
-    const btnUsrM = document.getElementById("btn-usr-m");
-    const btnMaestro = document.getElementById("btn-maestro");
-    
-    if (rol === "cajero") { window.location.href = "index.html"; } 
-    else if (rol === "admin" || rol === "superadmin") { 
-        btnUsr.classList.remove("hidden"); btnUsrM.classList.remove("hidden");
-        document.getElementById("seccion-crear-usuario").style.display = "block"; 
-        document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo"; 
-        
-        // LOGICA DE IMPERSONATION (MODO VISITA)
-        if (sessionStorage.getItem("masterToken")) {
-            // Estás de visita en otra tienda
-            btnMaestro.classList.remove("hidden", "bg-indigo-600", "hover:bg-indigo-500", "border-indigo-400");
-            btnMaestro.classList.add("bg-red-600", "hover:bg-red-500", "border-red-400", "animate-pulse");
-            btnMaestro.innerText = "🔴 Terminar Visita";
-            btnMaestro.href = "#";
-            btnMaestro.onclick = (e) => {
-                e.preventDefault();
-                // Restaurar tu identidad original
-                sessionStorage.setItem("adminToken", sessionStorage.getItem("masterToken"));
-                sessionStorage.setItem("tienda_id", "1");
-                sessionStorage.removeItem("masterToken");
-                window.location.href = "superadmin.html"; // Regreso a la baticueva
-            };
-        } else if (rol === "superadmin" && sessionStorage.getItem("tienda_id") == "1") { 
-            // Estás en tu cuartel general, botón normal
-            btnMaestro.classList.remove("hidden"); 
+            const rol = sessionStorage.getItem("rolUsuario"); 
+            document.getElementById("rol-display").innerText = "Modo: " + (rol === "superadmin" ? "Soporte Maestro" : "Administrador");
+            const btnUsr = document.getElementById("btn-usr");
+            const btnUsrM = document.getElementById("btn-usr-m");
+            const btnMaestro = document.getElementById("btn-maestro");
+            
+            if (rol === "cajero" || !rol) { window.location.href = "index.html"; return; } 
+            else if (rol === "admin" || rol === "superadmin") { 
+                btnUsr.classList.remove("hidden"); btnUsrM.classList.remove("hidden");
+                document.getElementById("seccion-crear-usuario").style.display = "block"; 
+                document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo"; 
+                
+                if (sessionStorage.getItem("masterToken")) {
+                    btnMaestro.classList.remove("hidden", "bg-indigo-600", "hover:bg-indigo-500", "border-indigo-400");
+                    btnMaestro.classList.add("bg-red-600", "hover:bg-red-500", "border-red-400", "animate-pulse");
+                    btnMaestro.innerText = "🔴 Terminar Visita";
+                    btnMaestro.href = "#";
+                    btnMaestro.onclick = (e) => {
+                        e.preventDefault();
+                        sessionStorage.setItem("adminToken", sessionStorage.getItem("masterToken"));
+                        sessionStorage.setItem("tienda_id", "1");
+                        sessionStorage.removeItem("masterToken");
+                        window.location.href = "superadmin.html";
+                    };
+                } else if (rol === "superadmin" && sessionStorage.getItem("tienda_id") == "1") { 
+                    btnMaestro.classList.remove("hidden"); 
+                }
+            }
         }
-    }
-}
 
         if(sessionStorage.getItem("adminToken")) { 
-            document.getElementById("login-overlay").style.display = "none"; 
             aplicarPermisos(); 
-            // SOLUCION AL BUG DE PANTALLA EN BLANCO
             switchTab('inventario');
             fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
             if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios(); 
+        } else {
+            // SI INTENTAN ENTRAR AL ADMIN SIN SESIÓN, LOS PATEAMOS AL INICIO
+            window.location.href = "index.html";
         }
-        
-        async function verificarLogin() {
-    const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
-    try {
-        const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
-        if (res.ok) {
-            const data = await res.json(); 
-            if(data.rol === "cajero") { Swal.fire('Atención', 'Inicia sesión en el Punto de Venta (POS).', 'info'); return; }
-            
-            // 1. PRIMERO: Guardar TODOS los datos y tokens vitales
-            sessionStorage.setItem("adminToken", data.token); 
-            sessionStorage.setItem("nombreUsuario", data.nombre_completo); 
-            sessionStorage.setItem("rolUsuario", data.rol);
-            sessionStorage.setItem("tienda_id", data.tienda_id);
-
-            // 2. SEGUNDO: Ocultar login y cargar la interfaz
-            document.getElementById("login-overlay").style.display = "none"; 
-            aplicarPermisos(); 
-            switchTab('inventario');
-            
-            // 3. TERCERO: Ya con el token guardado, pedimos los datos al servidor
-            fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
-            if(data.rol !== "cajero") fetchUsuarios();
-            
-        } else { 
-            const errData = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', errData.detail || 'Credenciales incorrectas', 'error'); 
-        }
-    } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
-}
 
         function switchTab(tab) { 
             ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => { 
