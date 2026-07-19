@@ -29,7 +29,7 @@
                 <div class="relative z-10 mt-12 pt-6 border-t border-gray-700/50">
                     <p class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Desarrollado Exclusivamente Por</p>
                     <p class="text-xl font-black tracking-widest text-white flex items-center gap-2">
-                        UNKNOWN <span class="text-indigo-500 text-sm font-medium tracking-normal">Tech Solutions</span>
+                        Unknown <span class="text-indigo-500 text-sm font-medium tracking-normal">Tech Solutions</span>
                     </p>
                     <a href="https://wa.me/50249411913?text=Hola%20Unknown,%20necesito%20asistencia%20con%20el%20sistema" target="_blank" class="mt-4 inline-flex items-center gap-2 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition shadow-lg border border-white/5 backdrop-blur-md">
                         💬 Contactar al Creador
@@ -81,15 +81,34 @@
         </div>
     </div>
 
-    <header class="bg-blue-700 text-white p-3 shadow-md flex justify-between items-center">
-        <div class="flex items-center gap-2 md:gap-4">
-            <span id="cajero-name-display" class="text-sm font-medium hidden md:inline"></span>
-            <a href="https://wa.me/50249411913" target="_blank" class="bg-green-500 hover:bg-green-400 px-3 py-2 rounded text-sm font-bold shadow-sm transition hidden md:block">💬 Soporte</a>
-            <a href="admin.html" id="btn-admin-link" class="bg-gray-800 hover:bg-gray-900 px-3 py-2 rounded text-sm font-bold shadow-sm hidden transition">⚙️ Panel</a>
+    <!-- BARRA SUPERIOR POS RESPONSIVE -->
+    <header class="bg-blue-700 text-white shadow-md">
+        <!-- Fila Principal: Título y Botones Base -->
+        <div class="p-3 flex justify-between items-center max-w-7xl mx-auto w-full">
+            <div class="flex flex-col">
+                <h1 class="text-xl md:text-2xl font-black tracking-tight" id="header-brand-title">Punto de Venta</h1>
+                <!-- Nombre del cajero visible siempre -->
+                <span id="cajero-name-display" class="text-xs text-blue-200 font-bold truncate max-w-[150px] md:max-w-xs"></span>
+            </div>
             
-            <!-- BOTONES DINÁMICOS DE CAJA -->
-            <button id="btn-abrir-caja" onclick="document.getElementById('caja-overlay').classList.remove('hidden')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-4 py-2 rounded text-sm font-black shadow-md hidden transition animate-pulse">🔓 Abrir Caja</button>
-            <button id="btn-cerrar-caja" onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-500 px-3 py-2 rounded text-sm font-bold shadow-sm hidden transition">🔒 Cerrar Turno</button>
+            <div class="flex items-center gap-2">
+                <!-- Botón Panel (Solo visible si es Admin) -->
+                <a href="admin.html" id="btn-admin-link" class="bg-gray-800 hover:bg-gray-900 px-3 py-2 rounded text-xs md:text-sm font-bold shadow-sm hidden transition flex items-center gap-1">⚙️ <span class="hidden sm:inline">Panel</span></a>
+                
+                <!-- Botones de Caja (Abrir/Cerrar) -->
+                <button id="btn-abrir-caja" onclick="document.getElementById('caja-overlay').classList.remove('hidden')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-black shadow-md hidden transition animate-pulse flex items-center gap-1">🔓 <span class="hidden sm:inline">Abrir Caja</span></button>
+                <button id="btn-cerrar-caja" onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-500 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-bold shadow-sm hidden transition flex items-center gap-1">🔒 <span class="hidden sm:inline">Cerrar Turno</span></button>
+
+                <!-- Menú de Opciones (Salir / Soporte) -->
+                <div class="relative group ml-1">
+                    <button class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-bold transition">⋮</button>
+                    <!-- Menú Desplegable -->
+                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-xl overflow-hidden hidden group-hover:block z-50 border border-gray-100">
+                        <a href="https://wa.me/50249411913?text=Hola,%20necesito%20ayuda%20con%20la%20caja%20POS" target="_blank" class="block px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 font-bold border-b border-gray-100 transition">💬 Soporte Técnico</a>
+                        <button onclick="cerrarSesion()" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-bold transition">🚪 Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
