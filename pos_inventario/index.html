@@ -23,7 +23,7 @@
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Ingresar</button>
             </div>
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
-                <a href="#" onclick="Swal.fire({title: 'Soporte', html: '<p>Comunícate con el administrador de la tienda.</p>', icon: 'info'})" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
+                <a href="https://wa.me/50249411913?text=Hola,%20necesito%20soporte%20con%20el%20sistema%20POS" target="_blank" class="text-sm text-green-600 font-bold hover:underline">💬 Escribir a Soporte Técnico</a>
                 <a href="admin.html" class="text-sm text-gray-600 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">⚙️ Panel Administrativo</a>
             </div>
         </div>
@@ -40,14 +40,15 @@
         </div>
     </div>
 
-    <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+    <header class="bg-blue-700 text-white p-3 shadow-md flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold" id="header-brand-title">Punto de Venta</h1>
+            <h1 class="text-lg font-bold" id="header-brand-title">Punto de Venta</h1>
             <p class="text-xs text-blue-200" id="cajero-name-display">Cajero: ---</p>
         </div>
-        <div class="flex gap-2">
-            <a href="admin.html" id="btn-admin-link" class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-medium transition shadow hidden">Admin ⚙️</a>
-            <button onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm font-bold transition shadow border border-red-500">Cerrar Turno</button>
+        <div class="flex gap-2 items-center flex-wrap justify-end">
+            <a href="https://wa.me/50249411913?text=Hola,%20necesito%20soporte%20con%20el%20sistema%20POS" target="_blank" class="bg-green-500 hover:bg-green-600 px-3 py-2 rounded text-xs font-bold transition shadow hidden sm:block">💬 Soporte</a>
+            <a href="admin.html" id="btn-admin-link" class="bg-blue-900 hover:bg-gray-800 px-3 py-2 rounded text-xs font-bold transition shadow hidden">⚙️ Admin</a>
+            <button onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-xs font-bold transition shadow border border-red-500">Cerrar Turno</button>
         </div>
     </header>
 
@@ -113,10 +114,7 @@
                     const data = await res.json();
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession();
-                } else { 
-                    const data = await res.json().catch(()=>({})); 
-                    Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); 
-                }
+                } else { const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
