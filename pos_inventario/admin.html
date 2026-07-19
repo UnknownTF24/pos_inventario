@@ -265,6 +265,11 @@
                     if(rol === "superadmin" && sessionStorage.getItem("tienda_id") == "1") { 
     document.getElementById("btn-maestro").classList.remove("hidden"); 
 }
+                    if(data.rol !== "cajero") fetchUsuarios(); 
+                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("rolUsuario", data.rol);
+                } else { Swal.fire('Error', 'Usuario o contraseña incorrectos.', 'error'); }
+            } catch (e) { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); }
+        }
 
         function switchTab(tab) { 
             ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => { 
