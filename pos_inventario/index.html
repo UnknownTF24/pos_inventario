@@ -143,17 +143,27 @@
                 if(result.isConfirmed) { 
                     try { 
                         const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); 
+                        
+                        // Si el servidor responde bien (200 OK)
                         if(res.ok) { 
-                            const data = await res.json(); 
-                            try { imprimirTicketCorte(data); } catch(err) { console.error(err); }
-                            Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); 
+                            try {
+                                const data = await res.json(); 
+                                try { imprimirTicketCorte(data); } catch(err) { console.error("Error al imprimir:", err); }
+                                Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); 
+                            } catch (parseError) {
+                                // Si el servidor dice "OK" pero manda basura en vez de datos
+                                Swal.fire('Error de Datos', 'El servidor respondió, pero los datos están corruptos. Intenta de nuevo.', 'error');
+                            }
                         } else { 
-                            // Ahora captura correctamente los errores que mandamos en el "detail"
-                            const error = await res.json().catch(() => ({detail: "Error de formato devuelto por el servidor."})); 
-                            Swal.fire('Error al Cerrar', error.detail, 'error'); 
+                            // Si el servidor responde con un error controlado (ej. 400 o 500)
+                            const errorText = await res.text();
+                            let detail = "Error desconocido del servidor.";
+                            try { detail = JSON.parse(errorText).detail || errorText; } catch(e) { detail = errorText; }
+                            Swal.fire('Denegado por el Servidor', detail, 'error'); 
                         } 
                     } catch(e) { 
-                        Swal.fire('Interrupción de Red', 'Se cortó la conexión al procesar la caja. Intenta de nuevo.', 'error'); 
+                        // AQUÍ ESTÁ LA MAGIA: Ahora te mostrará el error técnico real del navegador
+                        Swal.fire('Fallo Crítico de Red', `Motivo técnico: ${e.message || String(e)}`, 'error'); 
                     } 
                 } 
             }); 
