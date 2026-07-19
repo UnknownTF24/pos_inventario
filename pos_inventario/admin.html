@@ -9,6 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- LIBRERÍA PARA EXPORTAR A EXCEL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
@@ -57,26 +59,41 @@
                     <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Guardar Producto</button></div>
                 </form>
             </section>
-            <input type="text" id="search-input" placeholder="🔍 Buscar producto..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl mb-4">
+            
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="search-input" placeholder="🔍 Buscar producto..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:outline-none focus:border-blue-500">
+                <!-- BOTÓN EXCEL INVENTARIO -->
+                <button onclick="exportarInventarioExcel()" class="bg-green-600 text-white font-bold px-6 rounded-xl shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">
+                    📊 Exportar Excel
+                </button>
+            </div>
+            
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[600px]"><thead class="bg-gray-50"><tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr></thead><tbody id="inventory-list" class="divide-y divide-gray-100"></tbody></table></div></section>
         </div>
 
         <!-- PESTAÑA: VENTAS -->
         <div id="tab-ventas" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Período:</label>
-                    <select id="filtro-fecha" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
-                        <option value="hoy">📅 Hoy</option><option value="semana">📅 Últimos 7 Días</option><option value="mes">📅 Este Mes</option><option value="todas" selected>📚 Todas</option><option value="manual">⚙️ Rango Manual...</option>
-                    </select>
+            <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end justify-between">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Período:</label>
+                        <select id="filtro-fecha" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()">
+                            <option value="hoy">📅 Hoy</option><option value="semana">📅 Últimos 7 Días</option><option value="mes">📅 Este Mes</option><option value="todas" selected>📚 Todas</option><option value="manual">⚙️ Rango Manual...</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">Cajero:</label><select id="filtro-cajero" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()"><option value="todos">Todos los cajeros</option></select></div>
+                    <div id="controles-manuales" class="hidden flex gap-2 items-end">
+                        <div><label class="block text-sm text-gray-500 mb-1">Desde</label><input type="date" id="fecha-inicio" class="border rounded p-2"></div>
+                        <div><label class="block text-sm text-gray-500 mb-1">Hasta</label><input type="date" id="fecha-fin" class="border rounded p-2"></div>
+                        <button onclick="aplicarFiltros()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Buscar</button>
+                    </div>
                 </div>
-                <div><label class="block text-sm font-bold text-gray-700 mb-1">Cajero:</label><select id="filtro-cajero" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltros()"><option value="todos">Todos los cajeros</option></select></div>
-                <div id="controles-manuales" class="hidden flex gap-2 items-end">
-                    <div><label class="block text-sm text-gray-500 mb-1">Desde</label><input type="date" id="fecha-inicio" class="border rounded p-2"></div>
-                    <div><label class="block text-sm text-gray-500 mb-1">Hasta</label><input type="date" id="fecha-fin" class="border rounded p-2"></div>
-                    <button onclick="aplicarFiltros()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Buscar</button>
-                </div>
+                <!-- BOTÓN EXCEL VENTAS -->
+                <button onclick="exportarVentasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">
+                    📊 Descargar Reporte Excel
+                </button>
             </div>
+            
             <div class="bg-white p-4 rounded-xl shadow-md"><div class="flex justify-between items-center mb-2"><h2 class="text-xl font-bold text-gray-800">Rendimiento</h2><h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3></div><div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div></div>
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b">Fecha</th><th class="p-4 border-b">Hora</th><th class="p-4 border-b text-center">Cant.</th><th class="p-4 border-b min-w-[200px]">Producto</th><th class="p-4 border-b text-right">Precio U.</th><th class="p-4 border-b font-bold text-blue-600">Cajero</th><th class="p-4 border-b text-right">Total Venta</th></tr></thead><tbody id="ventas-list" class="divide-y divide-gray-100"></tbody><tfoot class="bg-blue-50 border-t-2 border-blue-200"><tr><td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado:</td><td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td></tr></tfoot></table></div></section>
         </div>
@@ -106,18 +123,10 @@
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
             <form id="edit-form" class="space-y-4">
                 <input type="hidden" id="edit-original-code">
-                <div>
-                    <label class="block text-sm font-bold text-purple-600">Código de Barras</label>
-                    <div class="flex gap-2"><input type="text" id="edit-codigo" required class="w-full border-2 border-purple-200 rounded p-2 outline-none"><button type="button" id="start-edit-scan-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div>
-                    <input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none">
-                    <div id="lector-oculto-edit" style="display:none;"></div>
-                </div>
+                <div><label class="block text-sm font-bold text-purple-600">Código de Barras</label><div class="flex gap-2"><input type="text" id="edit-codigo" required class="w-full border-2 border-purple-200 rounded p-2 outline-none"><button type="button" id="start-edit-scan-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none"><div id="lector-oculto-edit" style="display:none;"></div></div>
                 <div id="edit-scanner-container" class="hidden bg-gray-50 p-4 rounded-lg border"><div id="edit-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-edit-scan-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div>
                 <div><label class="block text-sm">Nombre</label><input type="text" id="edit-nombre" required maxlength="80" class="w-full border rounded p-2 outline-none"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" min="0" id="edit-precio" required class="w-full border rounded p-2"></div>
-                    <div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required min="0" class="w-full border-2 border-blue-300 rounded p-2"></div>
-                </div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" min="0" id="edit-precio" required class="w-full border rounded p-2"></div><div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required min="0" class="w-full border-2 border-blue-300 rounded p-2"></div></div>
                 <div class="flex justify-end gap-2 mt-6"><button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Actualizar</button></div>
             </form>
         </div>
@@ -149,31 +158,57 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = [];
-        
+        let arrayVentasFiltradasExport = []; // Para poder exportar lo que vemos
+
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
         window.solicitarSoporte = function() {
             Swal.fire({ title: 'Soporte Técnico', html: '<p>Para recuperar o modificar contraseñas, por favor comunícate con el creador de la página.</p><br><p><b class="text-blue-600">WhatsApp / Teléfono:</b> 4941-1913<br><b class="text-blue-600">Correo:</b> isaijonatan4222@gmail.com</p>', icon: 'info', confirmButtonText: 'Entendido' });
         };
 
-        document.getElementById("new-user-rol").addEventListener("change", function(e) {
-            if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador del sistema.', 'warning'); this.value = "cajero"; }
-        });
+        // --- FUNCIONES PARA EXPORTAR A EXCEL ---
+        function exportarInventarioExcel() {
+            if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos para exportar.', 'info');
+            const dataFormateada = allProducts.map(p => ({
+                "Código de Barras": p.codigo,
+                "Nombre del Producto": p.nombre,
+                "Precio Venta (Q)": p.precio,
+                "Stock Disponible": p.stock
+            }));
+            const ws = XLSX.utils.json_to_sheet(dataFormateada);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+            XLSX.writeFile(wb, "Inventario_Tienda.xlsx");
+        }
+
+        function exportarVentasExcel() {
+            if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas en este período para exportar.', 'info');
+            const dataFormateada = arrayVentasFiltradasExport.map(v => ({
+                "ID Venta": v.id,
+                "Fecha y Hora": v.fecha,
+                "Cajero Responsable": v.cajero,
+                "Artículos Vendidos": v.articulos.replace(/ \| /g, ", "), // Limpiar formato para Excel
+                "Total Ingreso (Q)": v.total
+            }));
+            const ws = XLSX.utils.json_to_sheet(dataFormateada);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas");
+            XLSX.writeFile(wb, "Reporte_Ventas_Filtrado.xlsx");
+        }
+
+        document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador del sistema.', 'warning'); this.value = "cajero"; } });
 
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken");
             if (!options.headers) options.headers = {};
             if (token) options.headers["Authorization"] = `Bearer ${token}`;
-            
             try {
                 const response = await fetch(url, options);
                 if (response.status === 401) { sessionStorage.clear(); document.getElementById("login-overlay").style.display = "flex"; Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning'); throw new Error("No autorizado"); }
-                if (response.status === 403) { const errData = await response.json().catch(() => ({})); Swal.fire('Acceso Denegado', errData.detail || 'No tienes el Nivel de Acceso necesario.', 'error'); throw new Error("Permisos insuficientes"); }
+                if (response.status === 403) { const errData = await response.json().catch(() => ({})); Swal.fire('Acceso Denegado', errData.detail || 'No tienes permisos.', 'error'); throw new Error("Permisos insuficientes"); }
                 return response;
             } catch (err) {
-                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") {
-                    Swal.fire('Error de Conexión', 'Revisa tu internet y vuelve a intentar. Tus datos están a salvo.', 'error');
-                }
+                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet y vuelve a intentar. Tus datos están a salvo.', 'error'); }
                 throw err;
             }
         }
@@ -194,7 +229,11 @@
             }
         }
 
-        if(sessionStorage.getItem("adminToken")) { document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios(); }
+        if(sessionStorage.getItem("adminToken")) { 
+            document.getElementById("login-overlay").style.display = "none";
+            aplicarPermisos(); fetchInventory(); fetchVentas(); 
+            if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios();
+        }
         
         async function verificarLogin() {
             const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
@@ -204,7 +243,9 @@
                     const data = await res.json();
                     if(data.rol === "cajero") { Swal.fire('Atención Cajero', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS), no aquí en Administración.', 'info'); return; }
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
-                    document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); if(data.rol !== "cajero") fetchUsuarios();
+                    document.getElementById("login-overlay").style.display = "none";
+                    aplicarPermisos(); fetchInventory(); fetchVentas(); 
+                    if(data.rol !== "cajero") fetchUsuarios();
                 } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
@@ -226,15 +267,9 @@
             list.innerHTML = usuarios.map((u, index) => {
                 let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b";
                 if (u.rol === 'superadmin') {
-                    if (rolActual === "superadmin") {
-                        trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`;
-                    } else { return ""; } 
+                    if (rolActual === "superadmin") { trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`; } else { return ""; } 
                 } else {
-                    if (rolActual === "superadmin") {
-                        passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
-                    } else {
-                        passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1" title="Editar Nombre">✏️ Nombre</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
-                    }
+                    if (rolActual === "superadmin") { passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } else { passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1" title="Editar Nombre">✏️ Nombre</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; }
                 }
                 return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>`
             }).join("");
@@ -262,7 +297,7 @@
 
         window.verAuditoria = async function() { try { const res = await fetchConToken(`${API_URL}/auditoria`); const data = await res.json(); const list = document.getElementById("audit-list"); if (data.length === 0) list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay registros.</td></tr>`; else list.innerHTML = data.map(r => `<tr><td class="p-2 border-b whitespace-nowrap text-gray-500">${r.fecha}</td><td class="p-2 border-b font-mono">${r.usuario}</td><td class="p-2 border-b text-blue-800">${r.detalle}</td></tr>`).join(""); document.getElementById("audit-modal").classList.remove("hidden"); } catch (e) {} };
 
-        // --- CÁMARAS Y CÓDIGOS PARA EL INVENTARIO ---
+        // --- INVENTARIO ---
         function verificarSiExisteProducto(codigoNuevo, idInput) { const existe = allProducts.find(p => p.codigo === codigoNuevo); if (existe && currentEditCode !== codigoNuevo) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById(idInput).value = ""; } else { document.getElementById(idInput).value = codigoNuevo; } }
         document.getElementById("native-admin-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto-admin"); scanner.scanFile(e.target.files[0], true).then(t => verificarSiExisteProducto(t, "add-codigo")).catch(err => Swal.fire('Error', 'No se detectó un código legible.', 'error')).finally(() => scanner.clear()); });
         document.getElementById("start-admin-btn").addEventListener("click", () => { document.getElementById("admin-scanner-container").classList.remove("hidden"); adminScanner = new Html5Qrcode("admin-reader"); adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopAdminScanning(); verificarSiExisteProducto(t, "add-codigo"); }).catch(e => { document.getElementById("admin-scanner-container").classList.add("hidden"); Swal.fire('Error', 'Cámara no disponible.', 'error'); }); });
@@ -307,6 +342,7 @@
                 }
             }
             if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC);
+            arrayVentasFiltradasExport = filtradas; // Guardamos para exportar a Excel
             actualizarVistaVentas(filtradas);
         }
 

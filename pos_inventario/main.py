@@ -34,8 +34,20 @@ def init_db():
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
     cursor.execute("""CREATE TABLE IF NOT EXISTS auditoria_usuarios (id SERIAL PRIMARY KEY, usuario_modificado TEXT NOT NULL, detalle TEXT NOT NULL, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-    cursor.execute("UPDATE usuarios SET nombre_completo = usuario WHERE nombre_completo IS NULL")
     
+    # NUEVA TABLA: Control de Caja
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS caja_sesiones (
+            id SERIAL PRIMARY KEY,
+            cajero TEXT NOT NULL,
+            fondo_inicial REAL NOT NULL,
+            fecha_apertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            fecha_cierre TIMESTAMP,
+            estado TEXT DEFAULT 'abierta'
+        )
+    """)
+    
+    cursor.execute("UPDATE usuarios SET nombre_completo = usuario WHERE nombre_completo IS NULL")
     cursor.execute("SELECT COUNT(*) FROM usuarios WHERE usuario = 'admin'")
     if cursor.fetchone()[0] == 0: cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo) VALUES ('admin', '1234', 'superadmin', 'Creador del Sistema')")
     else: cursor.execute("UPDATE usuarios SET rol = 'superadmin' WHERE usuario = 'admin'")
@@ -45,16 +57,12 @@ def init_db():
 @app.on_event("startup")
 def startup_event(): init_db()
 
-class Producto(BaseModel):
-    codigo: str; nombre: str; precio: float; stock: int
-class ItemVenta(BaseModel):
-    codigo: str; cantidad: int
-class VentaRequest(BaseModel):
-    items: List[ItemVenta]
-class LoginRequest(BaseModel):
-    usuario: str; password: str
-class UsuarioRequest(BaseModel):
-    usuario: str; password: str; rol: str; nombre_completo: str
+class Producto(BaseModel): codigo: str; nombre: str; precio: float; stock: int
+class ItemVenta(BaseModel): codigo: str; cantidad: int
+class VentaRequest(BaseModel): items: List[ItemVenta]
+class LoginRequest(BaseModel): usuario: str; password: str
+class UsuarioRequest(BaseModel): usuario: str; password: str; rol: str; nombre_completo: str
+class CajaAbrir(BaseModel): fondo_inicial: float
 
 def verificar_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "): raise HTTPException(status_code=401, detail="No autorizado")
@@ -76,6 +84,58 @@ def login(req: LoginRequest):
         return {"token": token, "usuario": user[0], "rol": user[2], "nombre_completo": user[3]}
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
+# ---- RUTAS DE CAJA (CORTE Z) ----
+@app.get("/api/caja/estado")
+def estado_caja(user_info: dict = Depends(verificar_token)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, fondo_inicial FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta'", (user_info["nombre_completo"],))
+    row = cursor.fetchone()
+    conn.close()
+    if row: return {"abierta": True, "id": row[0], "fondo_inicial": row[1]}
+    return {"abierta": False}
+
+@app.post("/api/caja/abrir")
+def abrir_caja(req: CajaAbrir, user_info: dict = Depends(verificar_token)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta'", (user_info["nombre_completo"],))
+    if cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=400, detail="Ya tienes un turno abierto.")
+    cursor.execute("INSERT INTO caja_sesiones (cajero, fondo_inicial) VALUES (%s, %s)", (user_info["nombre_completo"], req.fondo_inicial))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.post("/api/caja/cerrar")
+def cerrar_caja(user_info: dict = Depends(verificar_token)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, fondo_inicial, fecha_apertura FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta'", (user_info["nombre_completo"],))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=400, detail="No tienes un turno abierto para cerrar.")
+    
+    caja_id, fondo_inicial, fecha_apertura = row
+    
+    # Calcular las ventas hechas por este cajero desde que abrió la caja
+    cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s", (user_info["nombre_completo"], fecha_apertura))
+    total_ventas = cursor.fetchone()[0]
+    
+    cursor.execute("UPDATE caja_sesiones SET estado = 'cerrada', fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s", (caja_id,))
+    conn.commit()
+    conn.close()
+    
+    return {
+        "fondo_inicial": fondo_inicial,
+        "total_ventas": total_ventas,
+        "total_esperado": fondo_inicial + total_ventas,
+        "fecha_apertura": fecha_apertura.strftime("%d/%m/%Y %H:%M")
+    }
+
+# ---- RUTAS DE USUARIOS ----
 @app.get("/api/usuarios")
 def listar_usuarios(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Acceso denegado.")
@@ -112,19 +172,12 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         target = cursor.fetchone()
         if not target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
         old_usuario, old_password, old_rol, old_nombre = target
-        if old_rol == "superadmin": raise HTTPException(status_code=403, detail="El Súper Administrador no puede ser modificado desde la interfaz, solo a nivel código.")
-        
-        new_usuario = req.get("usuario", old_usuario)
-        new_password = req.get("password", old_password)
-        new_rol = req.get("rol", old_rol)
-        new_nombre = req.get("nombre_completo", old_nombre)
-
+        if old_rol == "superadmin": raise HTTPException(status_code=403, detail="El Súper Administrador no puede ser modificado desde la interfaz.")
+        new_usuario, new_password, new_rol, new_nombre = req.get("usuario", old_usuario), req.get("password", old_password), req.get("rol", old_rol), req.get("nombre_completo", old_nombre)
         if user_info["rol"] == "admin":
             if new_usuario != old_usuario or new_password != old_password or new_rol != old_rol: raise HTTPException(status_code=403, detail="Solo puedes modificar el Nombre en Pantalla.")
-
         if old_nombre != new_nombre:
             cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle) VALUES (%s, %s)", (old_usuario, f"Cambio de nombre en pantalla: '{old_nombre}' a '{new_nombre}' (Por {user_info['nombre_completo']})"))
-        
         cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s WHERE id=%s", (new_usuario, new_password, new_rol, new_nombre, id_usuario))
         conn.commit()
         return {"status": "success"}
@@ -162,6 +215,7 @@ def obtener_auditoria(user_info: dict = Depends(verificar_token)):
     conn.close()
     return [{"fecha": row[0].strftime("%d/%m/%Y %H:%M"), "usuario": row[1], "detalle": row[2]} for row in rows]
 
+# ---- RESTO (PRODUCTOS/VENTAS) ----
 @app.get("/api/productos")
 def listar_productos():
     conn = get_db_connection()
@@ -186,7 +240,6 @@ def crear_producto(producto: Producto, user_info: dict = Depends(verificar_token
     if user_info["rol"] == "cajero": raise HTTPException(status_code=403, detail="Los cajeros no pueden editar inventario.")
     if producto.precio < 0: raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
     if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo (máx. 80 caracteres).")
-    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -203,7 +256,6 @@ def actualizar_producto(codigo: str, producto: Producto, user_info: dict = Depen
     if user_info["rol"] == "cajero": raise HTTPException(status_code=403, detail="Los cajeros no pueden editar inventario.")
     if producto.precio < 0: raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
     if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo (máx. 80 caracteres).")
-    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -242,8 +294,7 @@ def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_toke
             if row[0] < item.cantidad: raise HTTPException(status_code=400, detail=f"Stock insuficiente para {row[1]}.")
             total_venta += row[2] * item.cantidad
             detalles_lista.append(f"{item.cantidad}x {row[1]}")
-        for item in venta.items:
-            cursor.execute("UPDATE productos SET stock = stock - %s WHERE codigo = %s", (item.cantidad, item.codigo))
+        for item in venta.items: cursor.execute("UPDATE productos SET stock = stock - %s WHERE codigo = %s", (item.cantidad, item.codigo))
         detalles_str = " | ".join(detalles_lista)
         cursor.execute("INSERT INTO ventas (total, articulos, cajero) VALUES (%s, %s, %s)", (total_venta, detalles_str, user_info["nombre_completo"]))
         conn.commit()
