@@ -41,6 +41,10 @@
             <button onclick="switchTab('cajas')" id="btn-caj" class="bg-gray-700 px-4 py-2 rounded transition">🗄️ Cortes Z</button>
             <button onclick="switchTab('ajustes')" id="btn-cfg" class="bg-gray-700 px-4 py-2 rounded transition">⚙️ Ajustes</button>
             <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded transition hidden">👥 Usuarios</button>
+            
+            <!-- BOTON SAAS SUPERADMIN -->
+            <button onclick="switchTab('saas')" id="btn-saa" class="bg-indigo-600 px-4 py-2 rounded transition font-bold shadow hidden">🏢 Mis Clientes</button>
+            
             <div class="w-px h-8 bg-gray-600 mx-2"></div>
             <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
             <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition ml-2">Salir</button>
@@ -48,6 +52,29 @@
     </nav>
 
     <main class="max-w-7xl mx-auto p-4 mt-4 w-full">
+        
+        <!-- PESTAÑA: SAAS (SOLO SÚPER ADMIN) -->
+        <div id="tab-saas" class="hidden space-y-4">
+            <section class="bg-white p-6 rounded-xl shadow-md mb-6 border-t-4 border-indigo-600">
+                <h2 class="text-lg font-bold mb-4 text-gray-800">🏢 Registrar Nueva Tienda Cliente</h2>
+                <form id="add-tienda-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" onsubmit="crearTiendaSaaS(event)">
+                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Nombre del Negocio</label><input type="text" id="saas-nombre" required class="w-full border p-2 rounded focus:border-indigo-500 outline-none" placeholder="Ej. Farmacia San Juan"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Usuario del Dueño</label><input type="text" id="saas-admin-user" required pattern="[^\s]+" title="Sin espacios" class="w-full border p-2 rounded focus:border-indigo-500 outline-none" placeholder="Ej. juan_admin"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label><input type="text" id="saas-admin-pass" required class="w-full border p-2 rounded focus:border-indigo-500 outline-none" placeholder="Ej. 12345"></div>
+                    <div><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-indigo-700 shadow">Crear Tienda</button></div>
+                </form>
+            </section>
+            <section class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gray-800 p-4 text-white"><h2 class="font-bold text-lg">Cartera de Clientes Activos</h2></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200"><tr><th class="p-4 w-16">ID</th><th class="p-4">Nombre de la Tienda</th><th class="p-4 text-center">Estado de Suscripción</th><th class="p-4 text-center">Acciones Maestras</th></tr></thead>
+                        <tbody id="saas-list" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+        
         <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
@@ -162,8 +189,12 @@
                 <div><label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label><input type="text" id="edit-usr-fullname" required maxlength="50" class="w-full border-2 border-blue-200 rounded p-2 outline-none"></div>
                 <div><label class="block text-sm">Usuario Login</label><input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50"></div>
                 
-                <!-- NUEVO: Campo de contraseña desbloqueado -->
-                <div><label class="block text-sm">Contraseña</label><input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50"></div>
+                <!-- CAMPO CONTRASEÑA CON AVISO DE LIMITE -->
+                <div>
+                    <label class="block text-sm">Contraseña</label>
+                    <input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50 font-mono">
+                    <p id="pass-warning" class="text-xs text-red-500 font-bold mt-1 hidden"></p>
+                </div>
                 
                 <div><label class="block text-sm">Nivel de Acceso</label><select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50"><option value="cajero">🛒 Cajero</option><option value="admin">🏢 Admin de Tienda</option><option value="superadmin">👑 Súper Admin</option></select></div>
                 <div class="flex justify-end gap-2 mt-6"><button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold">Guardar Cambios</button></div>
@@ -203,7 +234,16 @@
             const rol = sessionStorage.getItem("rolUsuario"); document.getElementById("rol-display").innerText = "Rol: " + (rol === "superadmin" ? "👑 Súper Admin (Creador)" : "🏢 Admin de Tienda");
             const btnUsr = document.getElementById("btn-usr");
             if (rol === "cajero") { window.location.href = "index.html"; } 
-            else if (rol === "admin" || rol === "superadmin") { btnUsr.classList.remove("hidden"); btnUsr.innerText = rol === "admin" ? "👥 Mi Personal" : "👥 Usuarios (Global)"; document.getElementById("seccion-crear-usuario").style.display = "block"; document.getElementById("titulo-tabla-usuarios").innerText = rol === "admin" ? "Mi Equipo de Trabajo" : "Gestión Global"; }
+            else if (rol === "admin" || rol === "superadmin") { 
+                btnUsr.classList.remove("hidden"); btnUsr.innerText = rol === "admin" ? "👥 Mi Personal" : "👥 Usuarios"; 
+                document.getElementById("seccion-crear-usuario").style.display = "block"; document.getElementById("titulo-tabla-usuarios").innerText = rol === "admin" ? "Mi Equipo de Trabajo" : "Gestión de Personal"; 
+                
+                // MOSTRAR PESTAÑA SAAS SOLO AL SUPERADMIN
+                if (rol === "superadmin") {
+                    document.getElementById("btn-saa").classList.remove("hidden");
+                    fetchSaaS();
+                }
+            }
         }
 
         if(sessionStorage.getItem("adminToken")) { document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios(); }
@@ -222,14 +262,41 @@
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
 
-        function switchTab(tab) { ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => { document.getElementById(`tab-${t}`).classList.toggle('hidden', tab !== t); const btn = document.getElementById(t === 'ajustes' ? 'btn-cfg' : (t === 'usuarios' ? 'btn-usr' : `btn-${t.substring(0,3)}`)); if(btn) btn.className = tab === t ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }); }
+        function switchTab(tab) { 
+            ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes', 'saas'].forEach(t => { 
+                const section = document.getElementById(`tab-${t}`);
+                if(section) section.classList.toggle('hidden', tab !== t); 
+                const btn = document.getElementById(t === 'ajustes' ? 'btn-cfg' : (t === 'usuarios' ? 'btn-usr' : (t === 'saas' ? 'btn-saa' : `btn-${t.substring(0,3)}`))); 
+                if(btn && t !== 'saas') btn.className = tab === t ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; 
+            }); 
+            // Color especial para SaaS
+            if(document.getElementById('btn-saa')) document.getElementById('btn-saa').className = tab === 'saas' ? "bg-indigo-600 px-4 py-2 rounded font-bold shadow" : "bg-gray-700 px-4 py-2 rounded font-bold shadow opacity-80";
+        }
         function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
 
         async function fetchCajas() { try { const res = await fetchConToken(`${API_URL}/caja/historial`); todasLasCajas = await res.json(); const cajerosUnicos = [...new Set(todasLasCajas.map(c => c.cajero || "Desconocido"))]; document.getElementById("filtro-cajero-cajas").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join(""); aplicarFiltrosCajas(); } catch (e) {} }
         function aplicarFiltrosCajas() { const filtroF = document.getElementById("filtro-fecha-cajas").value; const filtroC = document.getElementById("filtro-cajero-cajas").value; document.getElementById("controles-manuales-cajas").classList.toggle("hidden", filtroF !== "manual"); let filtradas = todasLasCajas; const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime(); if (filtroF === "hoy") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && new Date(parseFecha(c.fecha_apertura).getFullYear(), parseFecha(c.fecha_apertura).getMonth(), parseFecha(c.fecha_apertura).getDate()).getTime() === dHoy); else if (filtroF === "semana") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= ahora.getTime() - (7 * 86400000)); else if (filtroF === "mes") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getMonth() === ahora.getMonth() && parseFecha(c.fecha_apertura).getFullYear() === ahora.getFullYear()); else if (filtroF === "manual") { const fI = document.getElementById("fecha-inicio-cajas").value; const fF = document.getElementById("fecha-fin-cajas").value; if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'Máximo 6 meses.', 'warning'); return; } filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= tI && parseFecha(c.fecha_apertura).getTime() <= tF); } } if (filtroC !== "todos") filtradas = filtradas.filter(c => (c.cajero || "Desconocido") === filtroC); arrayCajasFiltradasExport = filtradas; renderCajas(filtradas); }
         function renderCajas(cajas) { const list = document.getElementById("cajas-list"); if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros en este período.</td></tr>`; list.innerHTML = cajas.map(c => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-mono text-gray-500">${c.id}</td><td class="p-4 font-bold text-gray-800">${c.cajero}</td><td class="p-4">${c.fecha_apertura}</td><td class="p-4 font-bold ${c.estado === 'abierta' ? 'text-green-500' : 'text-gray-600'}">${c.fecha_cierre}</td><td class="p-4 text-right text-gray-500">Q${c.fondo_inicial.toFixed(2)}</td><td class="p-4 text-right text-green-600">Q${c.total_ventas.toFixed(2)}</td><td class="p-4 font-black text-blue-600 text-right text-lg">Q${c.total_esperado.toFixed(2)}</td><td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${c.estado==='abierta'?'bg-green-100 text-green-700':'bg-gray-200 text-gray-600'}">${c.estado.toUpperCase()}</span></td></tr>`).join(""); }
 
-        // --- GESTIÓN DE USUARIOS ACTUALIZADA ---
+        // --- GESTIÓN SAAS (SÚPER ADMIN) ---
+        async function fetchSaaS() { try { const res = await fetchConToken(`${API_URL}/saas/tiendas`); const data = await res.json(); renderSaaS(data); } catch(e){} }
+        function renderSaaS(tiendas) {
+            const list = document.getElementById("saas-list"); if(tiendas.length === 0) return list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No hay tiendas.</td></tr>`;
+            list.innerHTML = tiendas.map(t => {
+                const estadoHtml = t.estado === 'activo' ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold text-xs">ACTIVO</span>` : `<span class="bg-red-100 text-red-700 px-2 py-1 rounded font-bold text-xs">SUSPENDIDO</span>`;
+                const toggleBtn = t.estado === 'activo' ? `<button onclick="toggleEstadoTienda(${t.id}, 'suspendido')" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600 text-xs font-bold mr-2">🚫 Suspender</button>` : `<button onclick="toggleEstadoTienda(${t.id}, 'activo')" class="bg-green-500 text-white px-3 py-1 rounded shadow hover:bg-green-600 text-xs font-bold mr-2">✅ Activar</button>`;
+                return `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-gray-500">#${t.id}</td><td class="p-4 font-bold text-gray-800">${t.nombre}</td><td class="p-4 text-center">${estadoHtml}</td><td class="p-4 text-center">${toggleBtn} <button onclick="crearBackdoor(${t.id})" class="bg-indigo-600 text-white px-3 py-1 rounded shadow hover:bg-indigo-700 text-xs font-bold">🗝️ Llave Maestra</button></td></tr>`;
+            }).join("");
+        }
+        async function crearTiendaSaaS(e) {
+            e.preventDefault(); const payload = { nombre: document.getElementById("saas-nombre").value.trim(), admin_user: document.getElementById("saas-admin-user").value.trim(), admin_pass: document.getElementById("saas-admin-pass").value.trim(), admin_nombre: "Dueño " + document.getElementById("saas-nombre").value.trim() };
+            try { const res = await fetchConToken(`${API_URL}/saas/tiendas`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) }); if(res.ok) { document.getElementById("add-tienda-form").reset(); fetchSaaS(); Swal.fire('¡Tienda Creada!', 'El cliente ya puede iniciar sesión.', 'success'); } } catch(e){}
+        }
+        async function toggleEstadoTienda(id, estadoNuevo) { Swal.fire({title: '¿Confirmar?', text: `¿Pasar esta tienda a estado: ${estadoNuevo.toUpperCase()}?`, icon: 'warning', showCancelButton: true}).then(async r => { if(r.isConfirmed) { try { await fetchConToken(`${API_URL}/saas/tiendas/${id}/estado`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify({estado: estadoNuevo}) }); fetchSaaS(); Swal.fire('Actualizado', `Tienda ${estadoNuevo}`, 'success'); } catch(e){} } }); }
+        async function crearBackdoor(id) { try { const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}/backdoor`, { method: "POST" }); if(res.ok){ const data = await res.json(); Swal.fire({title: 'Llave Maestra Creada', html: `Puedes entrar a su tienda para dar soporte con estas credenciales:<br><br><b>Usuario:</b> ${data.user}<br><b>Clave:</b> ${data.pass}`, icon: 'success'}); } else { const err = await res.json(); Swal.fire('Aviso', err.detail, 'info'); } } catch(e){} }
+
+
+        // --- GESTIÓN DE USUARIOS ACTUALIZADA (LÍMITE DE CONTRASEÑA) ---
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
         
         function renderUsuarios(usuarios) { 
@@ -261,15 +328,34 @@
             document.getElementById("edit-usr-rol").value = u.rol; 
             
             const esAdminNormal = sessionStorage.getItem("rolUsuario") === "admin"; 
+            const passInput = document.getElementById("edit-usr-pass");
+            const passWarning = document.getElementById("pass-warning");
+            
             document.getElementById("edit-usr-name").disabled = esAdminNormal; 
-            // MODIFICACIÓN CRUCIAL: El Admin de Tienda AHORA PUEDE modificar contraseñas
-            document.getElementById("edit-usr-pass").disabled = false; 
             document.getElementById("edit-usr-rol").disabled = esAdminNormal; 
             
+            passWarning.classList.remove("hidden");
+            
             if(esAdminNormal) { 
-                document.getElementById("edit-usr-pass").placeholder = "Escribe una nueva contraseña"; 
                 document.getElementById("edit-usr-name").title = "El login no es modificable"; 
-            } 
+                if(u.password_cambiada) {
+                    passInput.disabled = true;
+                    passInput.placeholder = "Contacta a Soporte para cambiarla";
+                    passInput.value = "";
+                    passWarning.innerText = "🔒 Ya se usó el único cambio permitido de contraseña.";
+                    passWarning.className = "text-xs text-red-600 font-bold mt-1";
+                } else {
+                    passInput.disabled = false;
+                    passInput.placeholder = "Escribe una nueva contraseña";
+                    passWarning.innerText = "⚠️ Aviso: Solo podrás cambiar esta contraseña 1 vez.";
+                    passWarning.className = "text-xs text-yellow-600 font-bold mt-1";
+                }
+            } else {
+                passInput.disabled = false;
+                passWarning.innerText = "👑 Eres Soporte. Si la cambias, el usuario tendrá 1 oportunidad nueva.";
+                passWarning.className = "text-xs text-indigo-600 font-bold mt-1";
+            }
+            
             document.getElementById("edit-user-modal").classList.remove("hidden"); 
         };
         
@@ -279,7 +365,6 @@
             if(sessionStorage.getItem("rolUsuario") === "admin") { 
                 delete payload.usuario; 
                 delete payload.rol; 
-                // AHORA MANDAMOS LA CONTRASEÑA EN EL PAYLOAD
             } 
             try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); } else { const data = await res.json(); Swal.fire('Error', data.detail, 'error'); } } catch (e) {} 
         });

