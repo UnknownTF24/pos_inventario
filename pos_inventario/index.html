@@ -5,39 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS Móvil & Inventario</title>
     <link rel="manifest" href="manifest.json">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                .then(reg => console.log('App instalable lista'))
-                .catch(err => console.log('Error de instalación: ', err));
-            });
-        }
-    </script>
+    <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').catch(err => console.log(err)); }); }</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
-    <style>
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
-    </style>
+    <style>input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; } input[type=number] { -moz-appearance: textfield; appearance: textfield; }</style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-2" id="login-title-display">POS Cajas 🛒</h2>
-            <p class="text-gray-500 text-sm mb-4">Inicia sesión para comenzar tu turno</p>
-            <div class="space-y-4 text-left">
+            <div class="space-y-4 text-left mt-4">
                 <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. juan_cajero"></div>
                 <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Ingresar</button>
             </div>
-            
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
-                <a href="#" onclick="Swal.fire({title: 'Soporte Técnico', html: '<p>Para recuperar o modificar contraseñas, por favor comunícate con el creador de la página.</p><br><p><b class=\'text-blue-600\'>WhatsApp / Teléfono:</b> 4941-1913<br><b class=\'text-blue-600\'>Correo:</b> isaijonatan4222@gmail.com</p>', icon: 'info', confirmButtonText: 'Entendido'})" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
-                <a href="admin.html" class="text-sm text-gray-600 hover:text-gray-900 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">⚙️ Ir al Panel Administrativo</a>
+                <a href="#" onclick="Swal.fire({title: 'Soporte', html: '<p>Comunícate con el administrador de la tienda.</p>', icon: 'info'})" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
+                <a href="admin.html" class="text-sm text-gray-600 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">⚙️ Panel Administrativo</a>
             </div>
         </div>
     </div>
@@ -45,12 +32,9 @@
     <div id="caja-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-40 hidden flex justify-center items-center overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto border-t-4 border-green-500">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Apertura de Caja 💵</h2>
-            <p class="text-gray-500 text-sm mb-6">Para registrar ventas, debes declarar con cuánto efectivo en billetes/monedas vas a abrir la caja.</p>
+            <p class="text-gray-500 text-sm mb-6">Declara el efectivo base de tu caja.</p>
             <div class="space-y-4 text-left">
-                <div>
-                    <label class="block text-sm font-bold text-green-700">Fondo de Caja (Q)</label>
-                    <input type="number" step="0.01" min="0" id="fondo-caja-input" class="w-full border-2 border-green-300 focus:border-green-600 outline-none p-3 rounded font-bold text-xl text-center" placeholder="Ej. 100.00">
-                </div>
+                <input type="number" step="0.01" min="0" id="fondo-caja-input" class="w-full border-2 border-green-300 focus:border-green-600 outline-none p-3 rounded font-bold text-xl text-center" placeholder="Ej. 100.00">
                 <button onclick="abrirCaja()" class="w-full bg-green-600 hover:bg-green-700 transition text-white font-bold py-3 rounded shadow-lg">Comenzar a Vender</button>
             </div>
         </div>
@@ -63,17 +47,14 @@
         </div>
         <div class="flex gap-2">
             <a href="admin.html" id="btn-admin-link" class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-medium transition shadow hidden">Admin ⚙️</a>
-            <button onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm font-bold transition shadow border border-red-500">Cerrar Turno (Z)</button>
+            <button onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm font-bold transition shadow border border-red-500">Cerrar Turno</button>
         </div>
     </header>
 
     <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
-        
         <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
-            <h2 class="text-lg font-semibold text-gray-700">Escanear Producto</h2>
             <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
             <div id="lector-oculto" style="display: none;"></div>
-            
             <div class="grid grid-cols-2 gap-2">
                 <button id="start-btn" class="bg-green-500 text-white py-2 rounded-lg font-medium shadow">📷 Cámara Vivo</button>
                 <button id="stop-btn" class="bg-red-500 text-white py-2 rounded-lg font-medium shadow hidden col-span-2">Apagar Cámara</button>
@@ -84,16 +65,13 @@
 
         <div class="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2">
             <div class="flex gap-2">
-                <input id="manual-code" type="text" placeholder="Cód. de barras / Lector Físico" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input id="manual-code" type="text" placeholder="Cód. de barras / Físico" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
             </div>
-            <button onclick="openCatalog()" class="bg-gray-800 text-white py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition flex items-center justify-center gap-2">
-                🔍 Buscar en Catálogo (Manual)
-            </button>
+            <button onclick="openCatalog()" class="bg-gray-800 text-white py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition flex items-center justify-center gap-2">🔍 Buscar en Catálogo</button>
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
-            <h2 class="text-lg font-semibold text-gray-700">Detalle de la Venta</h2>
             <div id="cart-items" class="space-y-2 max-h-64 overflow-y-auto pr-1"><p class="text-gray-400 text-center py-4">No hay productos</p></div>
             <div class="flex justify-between items-center pt-4 border-t border-gray-200">
                 <span class="text-lg font-bold text-gray-800">Total:</span>
@@ -105,10 +83,7 @@
 
     <div id="catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-4 rounded-xl shadow-lg w-full max-w-md flex flex-col h-[80vh]">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Catálogo de Productos</h2>
-                <button onclick="closeCatalog()" class="text-red-500 font-bold text-xl">✕</button>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Catálogo</h2><button onclick="closeCatalog()" class="text-red-500 font-bold text-xl">✕</button></div>
             <input type="text" id="catalog-search" placeholder="Escribe el nombre del producto..." class="w-full p-3 border-2 border-blue-200 rounded-xl mb-4 focus:outline-none focus:border-blue-500 text-lg">
             <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="catalog-list"></div>
         </div>
@@ -116,24 +91,20 @@
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
-        let cart = []; let html5QrcodeScanner = null;
-        let posProducts = []; let posFuse = null;
+        let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
 
-        // Cargar Branding visual de la app al iniciar
-        function aplicarBrandingUI() {
-            const nombre = localStorage.getItem("cfg_nombre") || "Mi Tienda";
-            document.getElementById("login-title-display").innerText = nombre + " 🛒";
-            document.getElementById("header-brand-title").innerText = nombre;
+        async function fetchAjustesCloud() {
+            try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); 
+            document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre;
+            } catch(e) {}
         }
 
         function checkSession() {
-            aplicarBrandingUI();
             if(sessionStorage.getItem("adminToken")) {
                 document.getElementById("login-overlay").style.display = "none";
                 document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
                 if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById("btn-admin-link").classList.remove("hidden"); }
-                fetchEstadoCaja();
-                fetchPosProducts();
+                fetchAjustesCloud(); fetchEstadoCaja(); fetchPosProducts();
             } else { document.getElementById("login-overlay").style.display = "flex"; }
         }
         checkSession();
@@ -150,68 +121,23 @@
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
-
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
         async function fetchConToken(url, options = {}) {
-            const token = sessionStorage.getItem("adminToken");
-            if (!options.headers) options.headers = {};
-            if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
             try {
                 const res = await fetch(url, options);
                 if (res.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
                 return res;
-            } catch (err) {
-                if(err.message !== "No autorizado") { Swal.fire('Fallo de Red', 'Verifica tu conexión a internet.', 'error'); }
-                throw err;
-            }
+            } catch (err) { if(err.message !== "No autorizado") { Swal.fire('Fallo de Red', 'Verifica tu conexión.', 'error'); } throw err; }
         }
 
-        async function fetchEstadoCaja() {
-            try {
-                const res = await fetchConToken(`${API_URL}/caja/estado`);
-                const data = await res.json();
-                if(!data.abierta) {
-                    document.getElementById("caja-overlay").classList.remove("hidden");
-                    setTimeout(()=> document.getElementById("fondo-caja-input").focus(), 100);
-                }
-            } catch(e) {}
-        }
+        async function fetchEstadoCaja() { try { const res = await fetchConToken(`${API_URL}/caja/estado`); const data = await res.json(); if(!data.abierta) { document.getElementById("caja-overlay").classList.remove("hidden"); setTimeout(()=> document.getElementById("fondo-caja-input").focus(), 100); } } catch(e) {} }
+        async function abrirCaja() { const fondo = parseFloat(document.getElementById("fondo-caja-input").value); if(isNaN(fondo) || fondo < 0) return Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning'); try { const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) }); if(res.ok) { document.getElementById("caja-overlay").classList.add("hidden"); Swal.fire({title: 'Turno Abierto', text: `Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } } catch(e) {} }
+        async function cerrarCajaTurno() { Swal.fire({ title: '¿Cerrar Turno?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, imprimir Corte Z', confirmButtonColor: '#d33' }).then(async (result) => { if(result.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); if(res.ok) { const data = await res.json(); imprimirTicketCorte(data); Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } } catch(e) {} } }); }
 
-        async function abrirCaja() {
-            const fondoStr = document.getElementById("fondo-caja-input").value; const fondo = parseFloat(fondoStr);
-            if(isNaN(fondo) || fondo < 0) return Swal.fire('Dato Inválido', 'Ingresa una cantidad válida de fondo de caja.', 'warning');
-            try {
-                const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) });
-                if(res.ok) {
-                    document.getElementById("caja-overlay").classList.add("hidden");
-                    Swal.fire({title: 'Turno Abierto', text: `Inicias con Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false});
-                } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); }
-            } catch(e) {}
-        }
-
-        async function cerrarCajaTurno() {
-            Swal.fire({ title: '¿Cerrar Turno?', text: "Se calcularán todas las ventas y se cerrará tu sesión.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, imprimir Corte Z', confirmButtonColor: '#d33' }).then(async (result) => {
-                if(result.isConfirmed) {
-                    try {
-                        const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" });
-                        if(res.ok) {
-                            const data = await res.json();
-                            imprimirTicketCorte(data);
-                            Swal.fire({title: 'Corte Z Exitoso', text: `Caja cerrada. Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion());
-                        } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); }
-                    } catch(e) {}
-                }
-            });
-        }
-
-        // TICKET DE CORTE CON DATOS DE EMPRESA DINÁMICOS
         function imprimirTicketCorte(data) {
-            let tNombre = localStorage.getItem("cfg_nombre") || "MI TIENDA";
-            let tDireccion = localStorage.getItem("cfg_direccion") || "Ciudad de Guatemala";
-            let tNit = localStorage.getItem("cfg_nit") || "C/F";
-            let tTel = localStorage.getItem("cfg_telefono") || "---";
-
+            let tNombre = cfgTienda.nombre || "MI TIENDA"; let tDireccion = cfgTienda.direccion || ""; let tNit = cfgTienda.nit || ""; let tTel = cfgTienda.telefono || "";
             let cajero = sessionStorage.getItem("nombreUsuario"); let ventana = window.open('', 'PRINT', 'height=600,width=400'); let fechaCierre = new Date().toLocaleString();
             let html = `<html><head><style>body { font-family: monospace; font-size: 14px; width: 300px; padding: 10px; margin: 0;} h2, p { text-align: center; margin: 2px 0; } h2 { font-size: 16px; font-weight: bold; } .dashed { border-bottom: 1px dashed #000; margin: 8px 0; } table { width: 100%; border-collapse: collapse; margin-top: 10px; } td { padding: 4px 0; } .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; }</style></head><body><h2>${tNombre.toUpperCase()}</h2><p>${tDireccion}</p><p>NIT: ${tNit}</p><p>TEL: ${tTel}</p><div class="dashed"></div><p>*** CORTE DE CAJA Z ***</p><p>Cierre: ${fechaCierre}</p><p>Cajero: ${cajero}</p><table><tr><td>Fondo Inicial:</td><td style="text-align:right">Q${data.fondo_inicial.toFixed(2)}</td></tr><tr><td>Ventas del Turno:</td><td style="text-align:right">Q${data.total_ventas.toFixed(2)}</td></tr></table><div class="dashed"></div><div class="total">TOTAL ESPERADO: Q${data.total_esperado.toFixed(2)}</div></body></html>`;
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
@@ -220,65 +146,34 @@
         async function fetchPosProducts() { try { const res = await fetchConToken(`${API_URL}/productos`); posProducts = await res.json(); posFuse = new Fuse(posProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); } catch (e) {} }
         function openCatalog() { fetchPosProducts().then(() => { renderCatalog(posProducts); document.getElementById("catalog-modal").classList.remove("hidden"); setTimeout(() => document.getElementById("catalog-search").focus(), 100); }); }
         function closeCatalog() { document.getElementById("catalog-modal").classList.add("hidden"); document.getElementById("catalog-search").value = ""; }
-
-        function renderCatalog(products) {
-            const list = document.getElementById("catalog-list"); if (products.length === 0) { list.innerHTML = `<p class="text-center text-gray-400 py-4 font-bold">No se encontraron productos.</p>`; return; }
-            list.innerHTML = products.map(p => `<div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg ${p.stock < 1 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-blue-50 active:bg-blue-100 cursor-pointer shadow-sm bg-white'} transition"><div><p class="font-bold text-gray-800 text-sm">${p.nombre}</p><p class="text-xs text-gray-500">Stock: <span class="font-bold ${p.stock <= 5 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></p></div><div class="font-black text-blue-600 text-lg">Q${p.precio.toFixed(2)}</div></div>`).join("");
-        }
-
+        function renderCatalog(products) { const list = document.getElementById("catalog-list"); if (products.length === 0) { list.innerHTML = `<p class="text-center text-gray-400 py-4 font-bold">Sin productos.</p>`; return; } list.innerHTML = products.map(p => `<div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg ${p.stock < 1 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-blue-50 active:bg-blue-100 cursor-pointer shadow-sm bg-white'} transition"><div><p class="font-bold text-gray-800 text-sm">${p.nombre}</p><p class="text-xs text-gray-500">Stock: <span class="font-bold ${p.stock <= 5 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></p></div><div class="font-black text-blue-600 text-lg">Q${p.precio.toFixed(2)}</div></div>`).join(""); }
         document.getElementById("catalog-search").addEventListener("input", (e) => { const term = e.target.value.trim(); renderCatalog(term ? posFuse.search(term).map(r => r.item) : posProducts); });
-        function addFromCatalog(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) { return Swal.fire('Agotado', `No hay inventario de ${prod.nombre}.`, 'warning'); } addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
+        function addFromCatalog(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) { return Swal.fire('Agotado', 'No hay inventario.', 'warning'); } addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
 
         const manualInput = document.getElementById("manual-code"); const addManualBtn = document.getElementById("add-manual-btn"); const cartItemsContainer = document.getElementById("cart-items"); const cartTotalElement = document.getElementById("cart-total"); const checkoutBtn = document.getElementById("checkout-btn");
-
-        async function fetchProduct(code) { try { const response = await fetchConToken(`${API_URL}/productos/${code}`); if (!response.ok) { Swal.fire('Oops...', "Producto no encontrado", 'error'); manualInput.value = ""; return; } const product = await response.json(); addToCart(product); manualInput.value = ""; } catch (error) {} }
-
-        function addToCart(product) {
-            if (product.stock < 1) { return Swal.fire('Agotado', `El producto "${product.nombre}" no tiene stock disponible.`, 'warning'); }
-            const existingItem = cart.find(item => item.codigo === product.codigo);
-            if (existingItem) { if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } else { return Swal.fire('Límite', `Solo hay ${product.stock} unidades en inventario.`, 'warning'); } } else { cart.push({ ...product, cantidad: 1 }); }
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">No hay productos en la lista</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; }
-            cartItemsContainer.innerHTML = cart.map((item, index) => {
-                const stockRestante = item.stock - item.cantidad; 
-                return `<div class="flex flex-col py-3 border-b border-gray-100 last:border-0"><div class="flex justify-between items-start mb-2"><div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button></div><div class="flex justify-between items-center mt-1"><div class="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-sm"><button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold hover:bg-gray-200 transition">-</button><input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold text-gray-800 border-none outline-none focus:ring-2 focus:ring-blue-500 py-1 bg-white"><button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold hover:bg-gray-200 transition" ${stockRestante === 0 ? 'disabled' : ''}>+</button></div><div class="text-right"><span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span><span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span></div></div></div>`
-            }).join("");
-            const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); cartTotalElement.innerText = `Q${total.toFixed(2)}`; checkoutBtn.disabled = false;
-        }
-
-        window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } }; window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } }; window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); };
-        window.setQuantity = function(index, value) { let val = parseInt(value); if (isNaN(val) || val < 1) { val = 1; } if (val > cart[index].stock) { Swal.fire('Límite', `Solo hay ${cart[index].stock} unidades en inventario.`, 'warning'); val = cart[index].stock; } cart[index].cantidad = val; updateCartUI(); };
+        async function fetchProduct(code) { try { const response = await fetchConToken(`${API_URL}/productos/${code}`); if (!response.ok) { Swal.fire('Oops...', "No encontrado", 'error'); manualInput.value = ""; return; } const product = await response.json(); addToCart(product); manualInput.value = ""; } catch (error) {} }
+        
+        function addToCart(product) { if (product.stock < 1) { return Swal.fire('Agotado', 'Sin stock.', 'warning'); } const existingItem = cart.find(item => item.codigo === product.codigo); if (existingItem) { if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } else { return Swal.fire('Límite', 'No hay más unidades.', 'warning'); } } else { cart.push({ ...product, cantidad: 1 }); } updateCartUI(); }
+        function updateCartUI() { if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Carrito vacío</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } cartItemsContainer.innerHTML = cart.map((item, index) => { const stockRestante = item.stock - item.cantidad; return `<div class="flex flex-col py-3 border-b border-gray-100 last:border-0"><div class="flex justify-between items-start mb-2"><div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button></div><div class="flex justify-between items-center mt-1"><div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm"><button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button><input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold border-none py-1"><button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button></div><div class="text-right"><span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span><span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span></div></div></div>` }).join(""); const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); cartTotalElement.innerText = `Q${total.toFixed(2)}`; checkoutBtn.disabled = false; }
+        window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } }; window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } }; window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); }; window.setQuantity = function(index, value) { let val = parseInt(value); if (isNaN(val) || val < 1) { val = 1; } if (val > cart[index].stock) { Swal.fire('Límite', 'Stock superado.', 'warning'); val = cart[index].stock; } cart[index].cantidad = val; updateCartUI(); };
 
         checkoutBtn.addEventListener("click", async () => {
-            if (cart.length === 0) return;
-            const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) }; const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); const cartCopia = [...cart];
+            if (cart.length === 0) return; const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) }; const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); const cartCopia = [...cart];
             try {
                 const response = await fetchConToken(`${API_URL}/ventas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-                if (response.ok) {
-                    cart = []; updateCartUI(); fetchPosProducts(); 
-                    Swal.fire({ title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success', showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar' }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); });
-                } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
+                if (response.ok) { cart = []; updateCartUI(); fetchPosProducts(); Swal.fire({ title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success', showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar' }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); }); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
             } catch (error) {} 
         });
 
-        // TICKET DE VENTA DE PRODUCTOS CON BRANDING DINÁMICO
         function imprimirTicket(items, total) {
-            let tNombre = localStorage.getItem("cfg_nombre") || "MI TIENDA";
-            let tDireccion = localStorage.getItem("cfg_direccion") || "Ciudad de Guatemala";
-            let tNit = localStorage.getItem("cfg_nit") || "C/F";
-            let tTel = localStorage.getItem("cfg_telefono") || "---";
-            let tFooter = localStorage.getItem("cfg_footer") || "¡Gracias por su compra!";
-
+            let tNombre = cfgTienda.nombre || "MI TIENDA"; let tDireccion = cfgTienda.direccion || ""; let tNit = cfgTienda.nit || ""; let tTel = cfgTienda.telefono || ""; let tFooter = cfgTienda.footer || "¡Gracias por su compra!";
             let cajero = sessionStorage.getItem("nombreUsuario"); let ventana = window.open('', 'PRINT', 'height=600,width=400'); let fecha = new Date().toLocaleString();
             let html = `<html><head><style>body { font-family: monospace; font-size: 14px; width: 300px; padding: 10px; margin: 0;} h2, p { text-align: center; margin: 2px 0; } h2 { font-size: 16px; font-weight: bold; } .dashed { border-bottom: 1px dashed #000; margin: 8px 0; } table { width: 100%; border-collapse: collapse; margin-top: 10px; } th, td { text-align: left; padding: 4px 0; border-bottom: 1px dashed #eee; } .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; } .footer { text-align: center; margin-top: 20px; font-size: 12px; font-style: italic; }</style></head><body><h2>${tNombre.toUpperCase()}</h2><p>${tDireccion}</p><p>NIT: ${tNit}</p><p>TEL: ${tTel}</p><div class="dashed"></div><p>Recibo de Venta</p><p>${fecha}</p><p>Cajero: ${cajero}</p><table><tr><th>Cant</th><th>Artículo</th><th style="text-align:right">Sub</th></tr>${items.map(item => `<tr><td>${item.cantidad}</td><td>${item.nombre.substring(0, 16)}</td><td style="text-align:right">Q${(item.precio * item.cantidad).toFixed(2)}</td></tr>`).join('')}</table><div class="total">TOTAL: Q${total.toFixed(2)}</div><div class="dashed"></div><div class="footer">${tFooter}</div></body></html>`;
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        document.getElementById("native-cam-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto"); scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No se detectó un código legible.', 'error')).finally(() => scanner.clear()); });
-        document.getElementById("start-btn").addEventListener("click", () => { document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden"); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { stopScanning(); fetchProduct(text); }).catch(e => { stopScanning(); Swal.fire('Cámara no disponible', 'Verifica los permisos.', 'error'); }); });
+        document.getElementById("native-cam-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto"); scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No legible.', 'error')).finally(() => scanner.clear()); });
+        document.getElementById("start-btn").addEventListener("click", () => { document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden"); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { stopScanning(); fetchProduct(text); }).catch(e => { stopScanning(); Swal.fire('Error', 'Cámara no disponible', 'error'); }); });
         function stopScanning() { if (html5QrcodeScanner) { try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
         document.getElementById("stop-btn").addEventListener("click", stopScanning); addManualBtn.addEventListener("click", () => { const c = manualInput.value.trim(); if (c) fetchProduct(c); }); manualInput.addEventListener("keypress", (e) => { if (e.key === "Enter") addManualBtn.click(); });
     </script>
