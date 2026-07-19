@@ -212,6 +212,17 @@
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = []; let arrayVentasFiltradasExport = []; let todasLasCajas = []; let arrayCajasFiltradasExport = [];
 
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+
+        function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
+
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
         window.solicitarSoporte = function() { Swal.fire({ title: 'Soporte Técnico', html: '<p>Comunícate con el Creador del Sistema.</p><p><b class="text-blue-600">Teléfono:</b> 4941-1913</p>', icon: 'info' }); };
 
