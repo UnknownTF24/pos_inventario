@@ -182,26 +182,53 @@ def guardar_ajustes(req: dict, user_info: dict = Depends(verificar_token)):
 
 @app.get("/api/caja/estado")
 def estado_caja(user_info: dict = Depends(verificar_token)):
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT id, fondo_inicial FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"])); row = cursor.fetchone(); conn.close()
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("SELECT id, fondo_inicial FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
+    row = cursor.fetchone()
+    
+    # Súper Admins y Admins pueden ver si hay CUALQUIER caja abierta para gestionarla
+    if not row and user_info["rol"] in ["superadmin", "admin"]:
+        cursor.execute("SELECT id, fondo_inicial FROM caja_sesiones WHERE estado = 'abierta' AND tienda_id = %s LIMIT 1", (user_info["tienda_id"],))
+        row = cursor.fetchone()
+        
+    conn.close()
     if row: return {"abierta": True, "id": row[0], "fondo_inicial": row[1]}
     return {"abierta": False}
 
 @app.post("/api/caja/abrir")
 def abrir_caja(req: CajaAbrir, user_info: dict = Depends(verificar_token)):
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT id FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("SELECT id FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
     if cursor.fetchone(): conn.close(); raise HTTPException(status_code=400, detail="Ya tienes un turno abierto.")
     cursor.execute("INSERT INTO caja_sesiones (cajero, fondo_inicial, tienda_id) VALUES (%s, %s, %s)", (user_info["nombre_completo"], req.fondo_inicial, user_info["tienda_id"])); conn.commit(); conn.close()
     return {"status": "success"}
 
 @app.post("/api/caja/cerrar")
 def cerrar_caja(user_info: dict = Depends(verificar_token)):
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT id, fondo_inicial, fecha_apertura FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"])); row = cursor.fetchone()
+    conn = get_db_connection(); cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
+    row = cursor.fetchone()
+    
+    # Permiso Maestro: Forzar cierre de caja ajena si eres Admin/Superadmin
+    if not row and user_info["rol"] in ["superadmin", "admin"]:
+        cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE estado = 'abierta' AND tienda_id = %s LIMIT 1", (user_info["tienda_id"],))
+        row = cursor.fetchone()
+        
     if not row: conn.close(); raise HTTPException(status_code=400, detail="No tienes un turno abierto para cerrar.")
-    caja_id, fondo_inicial, fecha_apertura = row
-    cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s AND tienda_id = %s", (user_info["nombre_completo"], fecha_apertura, user_info["tienda_id"])); total_ventas = cursor.fetchone()[0]
-    cursor.execute("UPDATE caja_sesiones SET estado = 'cerrada', fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s", (caja_id,)); conn.commit(); conn.close()
-    return {"fondo_inicial": fondo_inicial, "total_ventas": total_ventas, "total_esperado": fondo_inicial + total_ventas, "fecha_apertura": fecha_apertura.strftime("%d/%m/%Y %H:%M")}
-
+    
+    caja_id, fondo_inicial, fecha_apertura, cajero_turno = row
+    
+    # Calcula las ventas sumando los datos del cajero original, NO del admin que fuerza el cierre
+    cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s AND tienda_id = %s", (cajero_turno, fecha_apertura, user_info["tienda_id"]))
+    total_ventas = cursor.fetchone()[0]
+    
+    cursor.execute("UPDATE caja_sesiones SET estado = 'cerrada', fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s", (caja_id,))
+    conn.commit(); conn.close()
+    
+    # Devolvemos el nombre del cajero_turno para la factura
+    return {"fondo_inicial": fondo_inicial, "total_ventas": total_ventas, "total_esperado": fondo_inicial + total_ventas, "fecha_apertura": fecha_apertura.strftime("%d/%m/%Y %H:%M"), "cajero": cajero_turno}
+    
 @app.get("/api/caja/historial")
 def historial_cajas(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")

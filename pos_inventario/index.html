@@ -138,11 +138,33 @@
 
         async function fetchEstadoCaja() { try { const res = await fetchConToken(`${API_URL}/caja/estado`); const data = await res.json(); if(!data.abierta) { document.getElementById("caja-overlay").classList.remove("hidden"); setTimeout(()=> document.getElementById("fondo-caja-input").focus(), 100); } } catch(e) {} }
         async function abrirCaja() { const fondo = parseFloat(document.getElementById("fondo-caja-input").value); if(isNaN(fondo) || fondo < 0) return Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning'); try { const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) }); if(res.ok) { document.getElementById("caja-overlay").classList.add("hidden"); Swal.fire({title: 'Turno Abierto', text: `Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } } catch(e) {} }
-        async function cerrarCajaTurno() { Swal.fire({ title: '¿Cerrar Turno?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, imprimir Corte Z', confirmButtonColor: '#d33' }).then(async (result) => { if(result.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); if(res.ok) { const data = await res.json(); imprimirTicketCorte(data); Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } } catch(e) {} } }); }
+        async function cerrarCajaTurno() { 
+            Swal.fire({ title: '¿Cerrar Turno?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, imprimir Corte Z', confirmButtonColor: '#d33' }).then(async (result) => { 
+                if(result.isConfirmed) { 
+                    try { 
+                        const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); 
+                        if(res.ok) { 
+                            const data = await res.json(); 
+                            // Evitar fallos silenciosos al abrir la ventana de impresión
+                            try { imprimirTicketCorte(data); } catch(err) { console.error(err); }
+                            Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); 
+                        } else { 
+                            const error = await res.json(); Swal.fire('Error', error.detail, 'error'); 
+                        } 
+                    } catch(e) { 
+                        Swal.fire('Error', 'Fallo de conexión al intentar cerrar la caja.', 'error'); 
+                    } 
+                } 
+            }); 
+        }
 
         function imprimirTicketCorte(data) {
             let tNombre = cfgTienda.nombre || "MI TIENDA"; let tDireccion = cfgTienda.direccion || ""; let tNit = cfgTienda.nit || ""; let tTel = cfgTienda.telefono || "";
-            let cajero = sessionStorage.getItem("nombreUsuario"); let ventana = window.open('', 'PRINT', 'height=600,width=400'); let fechaCierre = new Date().toLocaleString();
+            
+            // PRIORIDAD: Usa el nombre del cajero que viene de la base de datos
+            let cajero = data.cajero || sessionStorage.getItem("nombreUsuario"); 
+            
+            let ventana = window.open('', 'PRINT', 'height=600,width=400'); let fechaCierre = new Date().toLocaleString();
             let html = `<html><head><style>body { font-family: monospace; font-size: 14px; width: 300px; padding: 10px; margin: 0;} h2, p { text-align: center; margin: 2px 0; } h2 { font-size: 16px; font-weight: bold; } .dashed { border-bottom: 1px dashed #000; margin: 8px 0; } table { width: 100%; border-collapse: collapse; margin-top: 10px; } td { padding: 4px 0; } .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; }</style></head><body><h2>${tNombre.toUpperCase()}</h2><p>${tDireccion}</p><p>NIT: ${tNit}</p><p>TEL: ${tTel}</p><div class="dashed"></div><p>*** CORTE DE CAJA Z ***</p><p>Cierre: ${fechaCierre}</p><p>Cajero: ${cajero}</p><table><tr><td>Fondo Inicial:</td><td style="text-align:right">Q${data.fondo_inicial.toFixed(2)}</td></tr><tr><td>Ventas del Turno:</td><td style="text-align:right">Q${data.total_ventas.toFixed(2)}</td></tr></table><div class="dashed"></div><div class="total">TOTAL ESPERADO: Q${data.total_esperado.toFixed(2)}</div></body></html>`;
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
