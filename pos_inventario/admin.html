@@ -117,12 +117,11 @@
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-800 text-white"><tr><th class="p-4 border-b">ID</th><th class="p-4 border-b">Cajero</th><th class="p-4 border-b">Apertura</th><th class="p-4 border-b">Cierre</th><th class="p-4 border-b text-right text-gray-300">Fondo Inicial</th><th class="p-4 border-b text-right text-green-300">Ventas Turno</th><th class="p-4 border-b text-right font-bold text-yellow-300">Efectivo en Gaveta</th><th class="p-4 border-b text-center">Estado</th></tr></thead><tbody id="cajas-list" class="divide-y divide-gray-200"></tbody></table></div></section>
         </div>
 
-        <!-- PESTAÑA: AJUSTES (NUBE) -->
+        <!-- PESTAÑA: AJUSTES -->
         <div id="tab-ajustes" class="hidden">
             <section class="bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto border-t-4 border-blue-600">
                 <h2 class="text-xl font-bold mb-2 text-gray-800">⚙️ Configuración de la Tienda (Nube)</h2>
                 <p class="text-gray-500 text-xs mb-6">Los datos ingresados se guardan en el servidor para tu sucursal. Se mostrarán en los tickets físicos de todos tus cajeros.</p>
-                
                 <form id="branding-form" class="space-y-4" onsubmit="guardarBrandingCloud(event)">
                     <div><label class="block text-sm font-bold text-gray-700">Nombre Comercial</label><input type="text" id="cfg-nombre" required maxlength="40" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none"></div>
                     <div><label class="block text-sm font-bold text-gray-700">Dirección Física</label><input type="text" id="cfg-direccion" maxlength="80" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none"></div>
@@ -154,7 +153,24 @@
 
     <!-- MODALES VARIOS OCULTOS -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto"><h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2><form id="edit-form" class="space-y-4"><input type="hidden" id="edit-original-code"><div><label class="block text-sm font-bold text-purple-600">Código</label><div class="flex gap-2"><input type="text" id="edit-codigo" required class="w-full border-2 border-purple-200 rounded p-2 outline-none"><button type="button" id="start-edit-scan-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none"><div id="lector-oculto-edit" style="display:none;"></div></div><div id="edit-scanner-container" class="hidden bg-gray-50 p-4 rounded-lg border"><div id="edit-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-edit-scan-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div><div><label class="block text-sm">Nombre</label><input type="text" id="edit-nombre" required maxlength="80" class="w-full border rounded p-2 outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" min="0" id="edit-precio" required class="w-full border rounded p-2"></div><div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required min="0" class="w-full border-2 border-blue-300 rounded p-2"></div></div><div class="flex justify-end gap-2 mt-6"><button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Actualizar</button></div></form></div></div>
-    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"><h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2><form id="form-editar-usuario" class="space-y-4"><input type="hidden" id="edit-usr-id"><div><label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label><input type="text" id="edit-usr-fullname" required maxlength="50" class="w-full border-2 border-blue-200 rounded p-2 outline-none"></div><div><label class="block text-sm">Usuario Login</label><input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50"></div><div><label class="block text-sm">Contraseña</label><input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50"></div><div><label class="block text-sm">Nivel de Acceso</label><select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50"><option value="cajero">🛒 Cajero</option><option value="admin">🏢 Admin de Tienda</option><option value="superadmin">👑 Súper Admin</option></select></div><div class="flex justify-end gap-2 mt-6"><button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold">Guardar Cambios</button></div></form></div></div>
+    
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2>
+            <form id="form-editar-usuario" class="space-y-4">
+                <input type="hidden" id="edit-usr-id">
+                <div><label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label><input type="text" id="edit-usr-fullname" required maxlength="50" class="w-full border-2 border-blue-200 rounded p-2 outline-none"></div>
+                <div><label class="block text-sm">Usuario Login</label><input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50"></div>
+                
+                <!-- NUEVO: Campo de contraseña desbloqueado -->
+                <div><label class="block text-sm">Contraseña</label><input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50"></div>
+                
+                <div><label class="block text-sm">Nivel de Acceso</label><select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50"><option value="cajero">🛒 Cajero</option><option value="admin">🏢 Admin de Tienda</option><option value="superadmin">👑 Súper Admin</option></select></div>
+                <div class="flex justify-end gap-2 mt-6"><button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold">Guardar Cambios</button></div>
+            </form>
+        </div>
+    </div>
+    
     <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2><button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button></div><div class="max-h-96 overflow-y-auto"><table class="w-full text-left border-collapse text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead><tbody id="audit-list" class="divide-y divide-gray-100"></tbody></table></div></div></div>
 
     <script>
@@ -164,27 +180,9 @@
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
         window.solicitarSoporte = function() { Swal.fire({ title: 'Soporte Técnico', html: '<p>Comunícate con el Creador del Sistema.</p><p><b class="text-blue-600">Teléfono:</b> 4941-1913</p>', icon: 'info' }); };
 
-        // --- MANEJO DE AJUSTES EN LA NUBE ---
-        async function fetchAjustesCloud() {
-            try {
-                const res = await fetchConToken(`${API_URL}/ajustes`); const data = await res.json();
-                document.getElementById("cfg-nombre").value = data.nombre || ""; document.getElementById("cfg-direccion").value = data.direccion || ""; document.getElementById("cfg-nit").value = data.nit || ""; document.getElementById("cfg-telefono").value = data.telefono || ""; document.getElementById("cfg-footer").value = data.footer || "";
-            } catch(e){}
-        }
+        async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); const data = await res.json(); document.getElementById("cfg-nombre").value = data.nombre || ""; document.getElementById("cfg-direccion").value = data.direccion || ""; document.getElementById("cfg-nit").value = data.nit || ""; document.getElementById("cfg-telefono").value = data.telefono || ""; document.getElementById("cfg-footer").value = data.footer || ""; } catch(e){} }
+        async function guardarBrandingCloud(e) { e.preventDefault(); const payload = { nombre: document.getElementById("cfg-nombre").value.trim(), direccion: document.getElementById("cfg-direccion").value.trim(), nit: document.getElementById("cfg-nit").value.trim(), telefono: document.getElementById("cfg-telefono").value.trim(), footer: document.getElementById("cfg-footer").value.trim() }; try { const res = await fetchConToken(`${API_URL}/ajustes`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if(res.ok) Swal.fire('¡Guardado en la Nube!', 'La configuración de tu tienda se aplicará en todos los dispositivos.', 'success'); } catch(e) {} }
 
-        async function guardarBrandingCloud(e) {
-            e.preventDefault();
-            const payload = {
-                nombre: document.getElementById("cfg-nombre").value.trim(), direccion: document.getElementById("cfg-direccion").value.trim(),
-                nit: document.getElementById("cfg-nit").value.trim(), telefono: document.getElementById("cfg-telefono").value.trim(), footer: document.getElementById("cfg-footer").value.trim()
-            };
-            try {
-                const res = await fetchConToken(`${API_URL}/ajustes`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
-                if(res.ok) Swal.fire('¡Guardado en la Nube!', 'La configuración de tu tienda se aplicará en todos los dispositivos.', 'success');
-            } catch(e) {}
-        }
-
-        // --- EXPORTACIONES ---
         function exportarInventarioExcel() { if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos.', 'info'); const ws = XLSX.utils.json_to_sheet(allProducts.map(p => ({"Código de Barras": p.codigo, "Nombre del Producto": p.nombre, "Precio Venta (Q)": p.precio, "Stock Disponible": p.stock}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Inventario"); XLSX.writeFile(wb, "Inventario_Tienda.xlsx"); }
         function exportarVentasExcel() { if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas.', 'info'); const ws = XLSX.utils.json_to_sheet(arrayVentasFiltradasExport.map(v => ({"ID Venta": v.id, "Fecha y Hora": v.fecha, "Cajero": v.cajero, "Artículos": v.articulos.replace(/ \| /g, ", "), "Total (Q)": v.total}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas_Filtrado.xlsx"); }
         function exportarCajasExcel() { if(arrayCajasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay turnos registrados en este período.', 'info'); const ws = XLSX.utils.json_to_sheet(arrayCajasFiltradasExport.map(c => ({"ID Turno": c.id, "Cajero": c.cajero, "Apertura": c.fecha_apertura, "Cierre": c.fecha_cierre, "Fondo Inicial (Q)": c.fondo_inicial, "Ventas (Q)": c.total_ventas, "Total Esperado (Q)": c.total_esperado, "Estado": c.estado}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cortes_Caja"); XLSX.writeFile(wb, "Reporte_Turnos_Filtrado.xlsx"); }
@@ -219,32 +217,73 @@
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); if(data.rol !== "cajero") fetchUsuarios();
                 } else { 
-                    const data = await res.json().catch(()=>({})); 
-                    Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); 
+                    const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); 
                 }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
 
-        function switchTab(tab) {
-            ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.toggle('hidden', tab !== t);
-                const btn = document.getElementById(t === 'ajustes' ? 'btn-cfg' : (t === 'usuarios' ? 'btn-usr' : `btn-${t.substring(0,3)}`));
-                if(btn) btn.className = tab === t ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-            });
-        }
+        function switchTab(tab) { ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => { document.getElementById(`tab-${t}`).classList.toggle('hidden', tab !== t); const btn = document.getElementById(t === 'ajustes' ? 'btn-cfg' : (t === 'usuarios' ? 'btn-usr' : `btn-${t.substring(0,3)}`)); if(btn) btn.className = tab === t ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }); }
         function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
 
         async function fetchCajas() { try { const res = await fetchConToken(`${API_URL}/caja/historial`); todasLasCajas = await res.json(); const cajerosUnicos = [...new Set(todasLasCajas.map(c => c.cajero || "Desconocido"))]; document.getElementById("filtro-cajero-cajas").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join(""); aplicarFiltrosCajas(); } catch (e) {} }
         function aplicarFiltrosCajas() { const filtroF = document.getElementById("filtro-fecha-cajas").value; const filtroC = document.getElementById("filtro-cajero-cajas").value; document.getElementById("controles-manuales-cajas").classList.toggle("hidden", filtroF !== "manual"); let filtradas = todasLasCajas; const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime(); if (filtroF === "hoy") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && new Date(parseFecha(c.fecha_apertura).getFullYear(), parseFecha(c.fecha_apertura).getMonth(), parseFecha(c.fecha_apertura).getDate()).getTime() === dHoy); else if (filtroF === "semana") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= ahora.getTime() - (7 * 86400000)); else if (filtroF === "mes") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getMonth() === ahora.getMonth() && parseFecha(c.fecha_apertura).getFullYear() === ahora.getFullYear()); else if (filtroF === "manual") { const fI = document.getElementById("fecha-inicio-cajas").value; const fF = document.getElementById("fecha-fin-cajas").value; if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'Máximo 6 meses.', 'warning'); return; } filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= tI && parseFecha(c.fecha_apertura).getTime() <= tF); } } if (filtroC !== "todos") filtradas = filtradas.filter(c => (c.cajero || "Desconocido") === filtroC); arrayCajasFiltradasExport = filtradas; renderCajas(filtradas); }
         function renderCajas(cajas) { const list = document.getElementById("cajas-list"); if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros en este período.</td></tr>`; list.innerHTML = cajas.map(c => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-mono text-gray-500">${c.id}</td><td class="p-4 font-bold text-gray-800">${c.cajero}</td><td class="p-4">${c.fecha_apertura}</td><td class="p-4 font-bold ${c.estado === 'abierta' ? 'text-green-500' : 'text-gray-600'}">${c.fecha_cierre}</td><td class="p-4 text-right text-gray-500">Q${c.fondo_inicial.toFixed(2)}</td><td class="p-4 text-right text-green-600">Q${c.total_ventas.toFixed(2)}</td><td class="p-4 font-black text-blue-600 text-right text-lg">Q${c.total_esperado.toFixed(2)}</td><td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${c.estado==='abierta'?'bg-green-100 text-green-700':'bg-gray-200 text-gray-600'}">${c.estado.toUpperCase()}</span></td></tr>`).join(""); }
 
+        // --- GESTIÓN DE USUARIOS ACTUALIZADA ---
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
-        function renderUsuarios(usuarios) { const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario"); if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; list.innerHTML = usuarios.map((u, index) => { let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; if (u.rol === 'superadmin') { if (rolActual === "superadmin") { trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`; } else { return ""; } } else { if (rolActual === "superadmin") { passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } else { passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1" title="Editar Nombre">✏️ Nombre</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } } return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` }).join(""); }
+        
+        function renderUsuarios(usuarios) { 
+            const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario"); 
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; 
+            list.innerHTML = usuarios.map((u, index) => { 
+                let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; 
+                if (u.rol === 'superadmin') { 
+                    if (rolActual === "superadmin") { trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`; } 
+                    else { return ""; } 
+                } else { 
+                    if (rolActual === "superadmin") { passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } 
+                    else { passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } 
+                } 
+                return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` 
+            }).join(""); 
+        }
+        
         document.getElementById("add-user-form").addEventListener("submit", async (e) => { e.preventDefault(); const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value; try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {} });
         window.eliminarUsuario = function(id) { Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } }); };
         window.eliminarUsuarioConfirmado = function(id) { Swal.fire({title: '¡ADVERTENCIA!', text: "¿Estás absolutamente seguro de eliminar esta cuenta?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success');} } catch(e){} } }); };
-        window.openEditUser = function(id) { const u = allUsers.find(x => x.id === id); document.getElementById("edit-usr-id").value = u.id; document.getElementById("edit-usr-fullname").value = u.nombre_completo; document.getElementById("edit-usr-name").value = u.usuario; document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : ''; document.getElementById("edit-usr-rol").value = u.rol; const esAdminNormal = sessionStorage.getItem("rolUsuario") === "admin"; document.getElementById("edit-usr-name").disabled = esAdminNormal; document.getElementById("edit-usr-pass").disabled = esAdminNormal; document.getElementById("edit-usr-rol").disabled = esAdminNormal; if(esAdminNormal) { document.getElementById("edit-usr-pass").placeholder = "Comunícate con Soporte para cambiar"; document.getElementById("edit-usr-name").title = "No modificable"; } document.getElementById("edit-user-modal").classList.remove("hidden"); };
-        document.getElementById("form-editar-usuario").addEventListener("submit", async (e) => { e.preventDefault(); const id = document.getElementById("edit-usr-id").value; const payload = { nombre_completo: document.getElementById("edit-usr-fullname").value.trim(), usuario: document.getElementById("edit-usr-name").value.trim(), password: document.getElementById("edit-usr-pass").value.trim(), rol: document.getElementById("edit-usr-rol").value }; if(sessionStorage.getItem("rolUsuario") === "admin") { delete payload.usuario; delete payload.password; delete payload.rol; } try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); } } catch (e) {} });
+        
+        window.openEditUser = function(id) { 
+            const u = allUsers.find(x => x.id === id); 
+            document.getElementById("edit-usr-id").value = u.id; 
+            document.getElementById("edit-usr-fullname").value = u.nombre_completo; 
+            document.getElementById("edit-usr-name").value = u.usuario; 
+            document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : ''; 
+            document.getElementById("edit-usr-rol").value = u.rol; 
+            
+            const esAdminNormal = sessionStorage.getItem("rolUsuario") === "admin"; 
+            document.getElementById("edit-usr-name").disabled = esAdminNormal; 
+            // MODIFICACIÓN CRUCIAL: El Admin de Tienda AHORA PUEDE modificar contraseñas
+            document.getElementById("edit-usr-pass").disabled = false; 
+            document.getElementById("edit-usr-rol").disabled = esAdminNormal; 
+            
+            if(esAdminNormal) { 
+                document.getElementById("edit-usr-pass").placeholder = "Escribe una nueva contraseña"; 
+                document.getElementById("edit-usr-name").title = "El login no es modificable"; 
+            } 
+            document.getElementById("edit-user-modal").classList.remove("hidden"); 
+        };
+        
+        document.getElementById("form-editar-usuario").addEventListener("submit", async (e) => { 
+            e.preventDefault(); const id = document.getElementById("edit-usr-id").value; 
+            const payload = { nombre_completo: document.getElementById("edit-usr-fullname").value.trim(), usuario: document.getElementById("edit-usr-name").value.trim(), password: document.getElementById("edit-usr-pass").value.trim(), rol: document.getElementById("edit-usr-rol").value }; 
+            if(sessionStorage.getItem("rolUsuario") === "admin") { 
+                delete payload.usuario; 
+                delete payload.rol; 
+                // AHORA MANDAMOS LA CONTRASEÑA EN EL PAYLOAD
+            } 
+            try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); } else { const data = await res.json(); Swal.fire('Error', data.detail, 'error'); } } catch (e) {} 
+        });
+
         window.verAuditoria = async function() { try { const res = await fetchConToken(`${API_URL}/auditoria`); const data = await res.json(); const list = document.getElementById("audit-list"); if (data.length === 0) list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay registros.</td></tr>`; else list.innerHTML = data.map(r => `<tr><td class="p-2 border-b whitespace-nowrap text-gray-500">${r.fecha}</td><td class="p-2 border-b font-mono">${r.usuario}</td><td class="p-2 border-b text-blue-800">${r.detalle}</td></tr>`).join(""); document.getElementById("audit-modal").classList.remove("hidden"); } catch (e) {} };
 
         function verificarSiExisteProducto(codigoNuevo, idInput) { const existe = allProducts.find(p => p.codigo === codigoNuevo); if (existe && currentEditCode !== codigoNuevo) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById(idInput).value = ""; } else { document.getElementById(idInput).value = codigoNuevo; } }
