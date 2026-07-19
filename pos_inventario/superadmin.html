@@ -80,7 +80,7 @@
                             </select>
                         </div>
                         <div class="flex-1 min-w-[200px]">
-                            <label class="block text-xs font-bold text-indigo-900 mb-1">Buscar por Nombre o Login</label>
+                            <label class="block text-xs font-bold text-indigo-900 mb-1">Buscar por Tienda, Nombre o Login</label>
                             <input type="text" id="filter-search" placeholder="Escribe aquí..." class="w-full p-2 rounded-lg border-2 border-indigo-200 outline-none focus:border-indigo-500" oninput="aplicarFiltrosUsuarios()">
                         </div>
                     </div>
@@ -189,13 +189,23 @@
         // CARGAR USUARIOS GLOBALES Y FILTRARLOS
         async function fetchSaaSUsuarios() { try { const res = await fetchConToken(`${API_URL}/saas/usuarios`); usuariosGlobales = await res.json(); aplicarFiltrosUsuarios(); } catch(e){} }
         
-        function aplicarFiltrosUsuarios() {
+       function aplicarFiltrosUsuarios() {
             const tiendaId = document.getElementById("filter-store").value;
             const search = document.getElementById("filter-search").value.toLowerCase();
             
             let filtrados = usuariosGlobales;
+            
+            // Filtro por menú desplegable
             if(tiendaId !== "todas") filtrados = filtrados.filter(u => u.tienda_id.toString() === tiendaId);
-            if(search) filtrados = filtrados.filter(u => u.nombre_completo.toLowerCase().includes(search) || u.usuario.toLowerCase().includes(search));
+            
+            // Filtro por texto (AQUÍ AGREGAMOS LA BÚSQUEDA POR TIENDA)
+            if(search) {
+                filtrados = filtrados.filter(u => 
+                    u.nombre_completo.toLowerCase().includes(search) || 
+                    u.usuario.toLowerCase().includes(search) || 
+                    u.tienda_nombre.toLowerCase().includes(search)
+                );
+            }
             
             renderSaaSUsuarios(filtrados);
         }
