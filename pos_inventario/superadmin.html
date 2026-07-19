@@ -63,7 +63,7 @@
                             <th class="p-4 w-16 text-center">ID</th>
                             <th class="p-4">Nombre de la Tienda</th>
                             <th class="p-4 text-center">Suscripción</th>
-                            <th class="p-4 text-center">Panel de Control Mestro</th>
+                            <th class="p-4 text-center">Panel de Control Maestro</th>
                         </tr>
                     </thead>
                     <tbody id="saas-list" class="divide-y divide-gray-200"></tbody>
@@ -77,7 +77,6 @@
 
         function cerrarSesion() { sessionStorage.clear(); window.location.href = "admin.html"; }
 
-        // PROTECCIÓN DE RUTA
         if(sessionStorage.getItem("rolUsuario") !== "superadmin") {
             Swal.fire({title: 'Acceso Restringido', text: 'Solo el Creador puede entrar aquí.', icon: 'error', showConfirmButton: false, timer: 2000})
             .then(() => { window.location.href = "admin.html"; });
@@ -156,15 +155,21 @@
             }); 
         }
 
+        // FUNCION MODIFICADA PARA NO DAR ERROR NUNCA, SIEMPRE MOSTRAR LA LLAVE
         async function crearBackdoor(id) { 
             try { 
                 const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}/backdoor`, { method: "POST" }); 
                 if(res.ok){ 
                     const data = await res.json(); 
-                    Swal.fire({title: 'Llave Maestra Creada', html: `Inicia sesión en el Admin normal con estas credenciales para entrar a su sistema:<br><br><b class="text-blue-600">Usuario:</b> <span class="font-mono bg-gray-100 p-1">${data.user}</span><br><b class="text-blue-600">Clave:</b> <span class="font-mono bg-gray-100 p-1">${data.pass}</span>`, icon: 'success'}); 
+                    const titulo = data.is_new ? 'Llave Maestra Creada' : 'Credenciales Maestras';
+                    Swal.fire({
+                        title: titulo, 
+                        html: `Inicia sesión en el Admin local con estas credenciales para entrar a su sistema y dar soporte:<br><br><b class="text-blue-600">Usuario:</b> <span class="font-mono bg-gray-100 p-1">${data.user}</span><br><b class="text-blue-600">Clave:</b> <span class="font-mono bg-gray-100 p-1">${data.pass}</span>`, 
+                        icon: 'info'
+                    }); 
                 } else { 
                     const err = await res.json(); 
-                    Swal.fire('Aviso', err.detail, 'info'); 
+                    Swal.fire('Aviso', err.detail, 'error'); 
                 } 
             } catch(e){} 
         }

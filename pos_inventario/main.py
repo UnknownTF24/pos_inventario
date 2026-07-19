@@ -41,7 +41,6 @@ def init_db():
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
     
-    # NUEVO: Límite de cambio de contraseña
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_cambiada BOOLEAN DEFAULT FALSE")
     
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
@@ -84,7 +83,7 @@ def login(req: LoginRequest):
         return {"token": token, "usuario": user[0], "rol": user[2], "nombre_completo": user[3], "tienda_id": user[4]}
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
-# ---- RUTAS SAAS (SOLO PARA TI, SÚPER ADMIN) ----
+# ---- RUTAS SAAS ----
 @app.get("/api/saas/tiendas")
 def listar_tiendas(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
@@ -111,17 +110,23 @@ def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(ve
     conn.commit(); conn.close()
     return {"status": "success"}
 
+# NUEVA LOGICA BACKDOOR: No da error, solo devuelve datos
 @app.post("/api/saas/tiendas/{id_tienda}/backdoor")
 def crear_backdoor(id_tienda: int, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     backdoor_user = f"soporte_isai_{id_tienda}"
+    backdoor_pass = "admin_isai_god"
+    
     cursor.execute("SELECT id FROM usuarios WHERE usuario = %s", (backdoor_user,))
-    if cursor.fetchone():
-        conn.close(); raise HTTPException(status_code=400, detail="La llave maestra ya existe para esta tienda.")
-    cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, 'admin_isai_god', 'superadmin', 'Soporte Isai', %s)", (backdoor_user, id_tienda))
-    conn.commit(); conn.close()
-    return {"status": "success", "user": backdoor_user, "pass": "admin_isai_god"}
+    existe = cursor.fetchone()
+    
+    if not existe:
+        cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, 'superadmin', 'Soporte Isai', %s)", (backdoor_user, backdoor_pass, id_tienda))
+        conn.commit()
+    
+    conn.close()
+    return {"status": "success", "user": backdoor_user, "pass": backdoor_pass, "is_new": not existe}
 
 # ---- RUTAS NORMALES ----
 @app.get("/api/ajustes")
@@ -174,7 +179,7 @@ def listar_usuarios(user_info: dict = Depends(verificar_token)):
 
 @app.post("/api/usuarios")
 def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos para crear cuentas.")
+    if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     if bool(re.search(r"\s", req.usuario)): raise HTTPException(status_code=400, detail="Sin espacios en el Login.")
     if user_info["rol"] == "admin" and req.rol != "cajero": raise HTTPException(status_code=403, detail="Solo el Súper Admin puede asignar nuevos Administradores.")
     conn = get_db_connection(); cursor = conn.cursor()
@@ -182,7 +187,6 @@ def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token
     except Exception: conn.rollback(); raise HTTPException(status_code=400, detail="Usuario en uso."); 
     finally: conn.close()
 
-# NUEVO: Lógica de Límite de Contraseña (1 oportunidad)
 @app.put("/api/usuarios/{id_usuario}")
 def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
@@ -209,7 +213,7 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
                     raise HTTPException(status_code=403, detail="La contraseña de esta cuenta ya fue cambiada 1 vez. Por seguridad, contacta a Soporte para reiniciarla.")
                 nuevo_cambiada = True
             elif user_info["rol"] == "superadmin":
-                nuevo_cambiada = False  # El Super Admin le resetea el límite al cambiarla
+                nuevo_cambiada = False
                 
             cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (old_usuario, f"Cambio de contraseña", user_info["tienda_id"]))
             
