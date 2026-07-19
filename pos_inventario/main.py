@@ -241,7 +241,13 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         
         if id_usuario == 1 and new_rol != "superadmin": new_rol = "superadmin"
         if user_info["rol"] == "admin" and (new_usuario != old_usuario or new_rol != old_rol): raise HTTPException(status_code=403, detail="Como Admin, solo puedes modificar Nombres y Contraseñas.")
-            
+        
+        # NUEVO SEGURO: Evitar que se quite el rol de admin si es el último
+        if old_rol == "admin" and new_rol != "admin":
+            cursor.execute("SELECT COUNT(*) FROM usuarios WHERE tienda_id = %s AND rol = 'admin'", (user_info["tienda_id"],))
+            if cursor.fetchone()[0] <= 1:
+                raise HTTPException(status_code=400, detail="Operación denegada. La tienda debe conservar al menos 1 Administrador.")
+
         nuevo_cambiada = old_cambiada
         if old_password != new_password:
             if user_info["rol"] == "admin":
@@ -266,6 +272,13 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
         if rol_target[0] == "superadmin":
             if rol_target[1] == 'admin': raise HTTPException(status_code=403, detail="El Creador principal no se puede borrar.")
             elif user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
+        
+        # NUEVO SEGURO: Evitar borrar al último Administrador
+        if rol_target[0] == "admin":
+            cursor.execute("SELECT COUNT(*) FROM usuarios WHERE tienda_id = %s AND rol = 'admin'", (user_info["tienda_id"],))
+            if cursor.fetchone()[0] <= 1:
+                raise HTTPException(status_code=400, detail="Operación denegada. No puedes eliminar al último Administrador de la tienda.")
+
         cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
