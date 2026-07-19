@@ -234,6 +234,7 @@
         };
 
         // --- 3. CAJA ---
+        // --- 3. LÓGICA DE CAJA (MODO INVITADO INCLUIDO) ---
         async function fetchEstadoCaja() { 
             try { 
                 const res = await fetchConToken(`${API_URL}/caja/estado`); 
@@ -246,12 +247,23 @@
                 if(!cajaAbierta) { 
                     if(btnAbrir) btnAbrir.classList.remove("hidden"); 
                     if(btnCerrar) btnCerrar.classList.add("hidden");
-                    Swal.fire({title: 'Modo Visualización', text: 'La caja está cerrada. Debes abrir turno para poder cobrar.', icon: 'info', toast: true, position: 'top-end', timer: 5000, showConfirmButton: false});
+                    
+                    // AQUÍ ESTÁ LA MAGIA: Agregamos showCloseButton: true
+                    Swal.fire({
+                        title: 'Modo Visualización', 
+                        text: 'La caja está cerrada. Debes abrir turno para poder cobrar.', 
+                        icon: 'info', 
+                        toast: true, 
+                        position: 'top-end', 
+                        timer: 5000, 
+                        showConfirmButton: false,
+                        showCloseButton: true // <-- Esto agrega la "X"
+                    });
                 } else {
                     if(btnAbrir) btnAbrir.classList.add("hidden"); 
                     if(btnCerrar) btnCerrar.classList.remove("hidden");
                 }
-                updateCartUI(); 
+                updateCartUI(); // Fuerza la actualización del carrito para bloquear el botón
             } catch(e) {} 
         }
         
