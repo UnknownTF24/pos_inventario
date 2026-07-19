@@ -92,13 +92,26 @@
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b">Fecha</th><th class="p-4 border-b">Hora</th><th class="p-4 border-b text-center">Cant.</th><th class="p-4 border-b min-w-[200px]">Producto</th><th class="p-4 border-b text-right">Precio U.</th><th class="p-4 border-b font-bold text-blue-600">Cajero</th><th class="p-4 border-b text-right">Total Venta</th></tr></thead><tbody id="ventas-list" class="divide-y divide-gray-100"></tbody><tfoot class="bg-blue-50 border-t-2 border-blue-200"><tr><td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado:</td><td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td></tr></tfoot></table></div></section>
         </div>
 
-        <!-- NUEVA PESTAÑA: CORTES Z (Cajas) -->
+        <!-- PESTAÑA: CORTES Z (Cajas) -->
         <div id="tab-cajas" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-md flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-800">Historial de Turnos (Cortes Z)</h2>
-                <button onclick="exportarCajasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center">
-                    📊 Exportar Turnos
-                </button>
+            
+            <!-- CONTROLES DE FILTRO IGUALES QUE EN VENTAS -->
+            <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end justify-between">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Período (Apertura):</label>
+                        <select id="filtro-fecha-cajas" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltrosCajas()">
+                            <option value="hoy">📅 Hoy</option><option value="semana">📅 Últimos 7 Días</option><option value="mes">📅 Este Mes</option><option value="todas" selected>📚 Todas</option><option value="manual">⚙️ Rango Manual...</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">Cajero:</label><select id="filtro-cajero-cajas" class="border-2 border-gray-300 rounded p-2 outline-none focus:border-blue-500" onchange="aplicarFiltrosCajas()"><option value="todos">Todos los cajeros</option></select></div>
+                    <div id="controles-manuales-cajas" class="hidden flex gap-2 items-end">
+                        <div><label class="block text-sm text-gray-500 mb-1">Desde</label><input type="date" id="fecha-inicio-cajas" class="border rounded p-2"></div>
+                        <div><label class="block text-sm text-gray-500 mb-1">Hasta</label><input type="date" id="fecha-fin-cajas" class="border rounded p-2"></div>
+                        <button onclick="aplicarFiltrosCajas()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Buscar</button>
+                    </div>
+                </div>
+                <button onclick="exportarCajasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Exportar Turnos Excel</button>
             </div>
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden">
@@ -141,7 +154,7 @@
         </div>
     </main>
 
-    <!-- MODAL EDITAR INVENTARIO -->
+    <!-- MODALES VARIOS -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -156,7 +169,6 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR USUARIO -->
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2>
@@ -171,7 +183,6 @@
         </div>
     </div>
 
-    <!-- MODAL AUDITORÍA -->
     <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2><button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button></div>
@@ -182,7 +193,9 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = [];
-        let arrayVentasFiltradasExport = []; let allCajas = [];
+        let arrayVentasFiltradasExport = []; 
+        let todasLasCajas = [];
+        let arrayCajasFiltradasExport = [];
 
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
@@ -199,12 +212,12 @@
         function exportarVentasExcel() {
             if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas.', 'info');
             const ws = XLSX.utils.json_to_sheet(arrayVentasFiltradasExport.map(v => ({"ID Venta": v.id, "Fecha y Hora": v.fecha, "Cajero": v.cajero, "Artículos": v.articulos.replace(/ \| /g, ", "), "Total (Q)": v.total})));
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas.xlsx");
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas_Filtrado.xlsx");
         }
         function exportarCajasExcel() {
-            if(allCajas.length === 0) return Swal.fire('Vacío', 'No hay turnos registrados.', 'info');
-            const ws = XLSX.utils.json_to_sheet(allCajas.map(c => ({"ID Turno": c.id, "Cajero": c.cajero, "Apertura": c.fecha_apertura, "Cierre": c.fecha_cierre, "Fondo Inicial (Q)": c.fondo_inicial, "Ventas (Q)": c.total_ventas, "Total Esperado (Q)": c.total_esperado, "Estado": c.estado})));
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cortes_Caja"); XLSX.writeFile(wb, "Reporte_Turnos_Cortes_Z.xlsx");
+            if(arrayCajasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay turnos registrados en este período.', 'info');
+            const ws = XLSX.utils.json_to_sheet(arrayCajasFiltradasExport.map(c => ({"ID Turno": c.id, "Cajero": c.cajero, "Apertura": c.fecha_apertura, "Cierre": c.fecha_cierre, "Fondo Inicial (Q)": c.fondo_inicial, "Ventas (Q)": c.total_ventas, "Total Esperado (Q)": c.total_esperado, "Estado": c.estado})));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cortes_Caja"); XLSX.writeFile(wb, "Reporte_Turnos_Filtrado.xlsx");
         }
 
         document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador del sistema.', 'warning'); this.value = "cajero"; } });
@@ -219,7 +232,7 @@
                 if (response.status === 403) { const errData = await response.json().catch(() => ({})); Swal.fire('Acceso Denegado', errData.detail || 'No tienes permisos.', 'error'); throw new Error("Permisos insuficientes"); }
                 return response;
             } catch (err) {
-                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); }
+                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet y vuelve a intentar. Tus datos están a salvo.', 'error'); }
                 throw err;
             }
         }
@@ -274,12 +287,48 @@
             if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
         }
 
+        function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
+
         // --- HISTORIAL DE CAJAS ---
-        async function fetchCajas() { try { const res = await fetchConToken(`${API_URL}/caja/historial`); allCajas = await res.json(); renderCajas(allCajas); } catch (e) {} }
+        async function fetchCajas() { 
+            try { 
+                const res = await fetchConToken(`${API_URL}/caja/historial`); 
+                todasLasCajas = await res.json(); 
+                const cajerosUnicos = [...new Set(todasLasCajas.map(c => c.cajero || "Desconocido"))]; 
+                document.getElementById("filtro-cajero-cajas").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join("");
+                aplicarFiltrosCajas();
+            } catch (e) {} 
+        }
+
+        function aplicarFiltrosCajas() {
+            const filtroF = document.getElementById("filtro-fecha-cajas").value; 
+            const filtroC = document.getElementById("filtro-cajero-cajas").value; 
+            document.getElementById("controles-manuales-cajas").classList.toggle("hidden", filtroF !== "manual");
+            
+            let filtradas = todasLasCajas; 
+            const ahora = new Date(); 
+            const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+            
+            if (filtroF === "hoy") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && new Date(parseFecha(c.fecha_apertura).getFullYear(), parseFecha(c.fecha_apertura).getMonth(), parseFecha(c.fecha_apertura).getDate()).getTime() === dHoy);
+            else if (filtroF === "semana") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= ahora.getTime() - (7 * 86400000));
+            else if (filtroF === "mes") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getMonth() === ahora.getMonth() && parseFecha(c.fecha_apertura).getFullYear() === ahora.getFullYear());
+            else if (filtroF === "manual") {
+                const fI = document.getElementById("fecha-inicio-cajas").value; const fF = document.getElementById("fecha-fin-cajas").value;
+                if (fI && fF) { 
+                    const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); 
+                    if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'El periodo máximo de búsqueda es de 6 meses.', 'warning'); return; }
+                    filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= tI && parseFecha(c.fecha_apertura).getTime() <= tF); 
+                }
+            }
+            
+            if (filtroC !== "todos") filtradas = filtradas.filter(c => (c.cajero || "Desconocido") === filtroC);
+            arrayCajasFiltradasExport = filtradas;
+            renderCajas(filtradas);
+        }
 
         function renderCajas(cajas) {
             const list = document.getElementById("cajas-list");
-            if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros de turnos.</td></tr>`;
+            if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros en este período.</td></tr>`;
             list.innerHTML = cajas.map(c => `
                 <tr class="hover:bg-gray-50 border-b">
                     <td class="p-4 font-mono text-gray-500">${c.id}</td>
@@ -358,7 +407,7 @@
         document.getElementById("edit-form").addEventListener("submit", async (e) => { e.preventDefault(); const nuevoCodigo = document.getElementById("edit-codigo").value.trim(); if(nuevoCodigo !== currentEditCode && allProducts.find(p => p.codigo === nuevoCodigo)) return Swal.fire('Error', 'El nuevo código ya está en uso.', 'error'); try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: nuevoCodigo, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) }) }); closeEditModal(); fetchInventory(); Swal.fire('Éxito', 'Actualizado', 'success'); } catch (e) {} });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
 
-        function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
+        // --- VENTAS ---
         function formatearFechaLocal(f) { const p = f.split(/[\s,/:]+/); if (p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } return f; }
 
         async function fetchVentas() { try { const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))]; document.getElementById("filtro-cajero").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join(""); aplicarFiltros(); } catch (e) {} }
@@ -385,7 +434,7 @@
         function actualizarVistaVentas(ventas) {
             const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer");
             const sum = ventas.reduce((acc, v) => acc + v.total, 0); gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`;
-            if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas.</td></tr>`; } 
+            if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas en este período.</td></tr>`; } 
             else { list.innerHTML = ventas.map(v => { let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1; items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } }); const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido"; return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`; }).join(""); }
             dibujarGrafica(ventas);
         }
