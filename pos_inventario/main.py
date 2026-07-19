@@ -40,9 +40,7 @@ def init_db():
     
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
-    
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_cambiada BOOLEAN DEFAULT FALSE")
-    
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
     
     for tabla in ["usuarios", "productos", "ventas", "auditoria_usuarios", "caja_sesiones"]:
@@ -78,16 +76,15 @@ def login(req: LoginRequest):
     cursor.execute("SELECT u.usuario, u.password, u.rol, u.nombre_completo, u.tienda_id, t.estado FROM usuarios u JOIN tiendas t ON u.tienda_id = t.id WHERE u.usuario = %s AND u.password = %s", (req.usuario, req.password))
     user = cursor.fetchone(); conn.close()
     if user:
-        if user[5] != 'activo': raise HTTPException(status_code=403, detail="🚨 Tu cuenta está suspendida por falta de pago. Por favor comunícate con Soporte Técnico al 4941-1913.")
+        if user[5] != 'activo' and user[2] != 'superadmin': raise HTTPException(status_code=403, detail="🚨 Tu cuenta está suspendida por falta de pago. Por favor comunícate con Soporte Técnico al 4941-1913.")
         token = jwt.encode({"sub": user[0], "rol": user[2], "nombre": user[3], "tienda_id": user[4], "exp": datetime.utcnow() + timedelta(hours=12)}, SECRET_KEY, algorithm=ALGORITHM)
         return {"token": token, "usuario": user[0], "rol": user[2], "nombre_completo": user[3], "tienda_id": user[4]}
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
-# ---- RUTAS SAAS ----
+# ---- NUEVAS RUTAS SAAS GLOBALES ----
 @app.get("/api/saas/tiendas")
 def listar_tiendas(user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: 
-    raise HTTPException(status_code=403, detail="Acceso denegado. Solo el Creador de la plataforma tiene este nivel de acceso.")
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("SELECT id, nombre, estado FROM tiendas ORDER BY id ASC")
     rows = cursor.fetchall(); conn.close()
@@ -95,8 +92,7 @@ def listar_tiendas(user_info: dict = Depends(verificar_token)):
 
 @app.post("/api/saas/tiendas")
 def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: 
-        raise HTTPException(status_code=403, detail="Acceso denegado. Solo el Creador de la plataforma tiene este nivel de acceso.")
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("INSERT INTO tiendas (nombre) VALUES (%s) RETURNING id", (req["nombre"],))
     tienda_id = cursor.fetchone()[0]
@@ -106,31 +102,38 @@ def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
 
 @app.put("/api/saas/tiendas/{id_tienda}/estado")
 def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: 
-        raise HTTPException(status_code=403, detail="Acceso denegado. Solo el Creador de la plataforma tiene este nivel de acceso.")
-
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("UPDATE tiendas SET estado = %s WHERE id = %s", (req["estado"], id_tienda))
     conn.commit(); conn.close()
     return {"status": "success"}
 
-# NUEVA LOGICA BACKDOOR: No da error, solo devuelve datos
-@app.post("/api/saas/tiendas/{id_tienda}/backdoor")
-def crear_backdoor(id_tienda: int, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+# DIRECTORIO GLOBAL DE USUARIOS (SaaS)
+@app.get("/api/saas/usuarios")
+def saas_listar_usuarios(user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
-    backdoor_user = f"soporte_isai_{id_tienda}"
-    backdoor_pass = "admin_isai_god"
-    
-    cursor.execute("SELECT id FROM usuarios WHERE usuario = %s", (backdoor_user,))
-    existe = cursor.fetchone()
-    
-    if not existe:
-        cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, 'superadmin', 'Soporte Isai', %s)", (backdoor_user, backdoor_pass, id_tienda))
-        conn.commit()
-    
-    conn.close()
-    return {"status": "success", "user": backdoor_user, "pass": backdoor_pass, "is_new": not existe}
+    cursor.execute("SELECT u.id, u.usuario, u.password, u.rol, u.nombre_completo, t.nombre, u.tienda_id FROM usuarios u JOIN tiendas t ON u.tienda_id = t.id ORDER BY t.id ASC, u.id ASC")
+    rows = cursor.fetchall(); conn.close()
+    return [{"id": r[0], "usuario": r[1], "password": r[2], "rol": r[3], "nombre_completo": r[4], "tienda_nombre": r[5], "tienda_id": r[6]} for r in rows]
+
+@app.put("/api/saas/usuarios/{id_usuario}")
+def saas_editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
+    if id_usuario == 1 and req.get("rol") != "superadmin": raise HTTPException(status_code=400, detail="No puedes quitarte tu propio rol.")
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s, password_cambiada=FALSE WHERE id=%s", (req["usuario"], req["password"], req["rol"], req["nombre_completo"], id_usuario))
+    conn.commit(); conn.close()
+    return {"status": "success"}
+
+@app.delete("/api/saas/usuarios/{id_usuario}")
+def saas_eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
+    if id_usuario == 1: raise HTTPException(status_code=400, detail="No puedes borrar a tu propio usuario maestro.")
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_usuario,))
+    conn.commit(); conn.close()
+    return {"status": "success"}
 
 # ---- RUTAS NORMALES ----
 @app.get("/api/ajustes")
@@ -200,12 +203,18 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         target = cursor.fetchone()
         if not target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
         old_usuario, old_password, old_rol, old_nombre, old_cambiada = target
-        if old_rol == "superadmin" and user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
+        
+        # Bloqueo: Un Admin no puede modificar a un Súper Admin
+        if old_rol == "superadmin" and user_info["rol"] != "superadmin": 
+            raise HTTPException(status_code=403, detail="No puedes modificar la cuenta del Creador.")
         
         new_usuario = req.get("usuario", old_usuario)
         new_password = req.get("password", old_password)
         new_rol = req.get("rol", old_rol)
         new_nombre = req.get("nombre_completo", old_nombre)
+        
+        # Seguridad: El ID 1 siempre debe ser superadmin
+        if id_usuario == 1 and new_rol != "superadmin": new_rol = "superadmin"
         
         if user_info["rol"] == "admin" and (new_usuario != old_usuario or new_rol != old_rol): 
             raise HTTPException(status_code=403, detail="Como Admin, solo puedes modificar Nombres y Contraseñas.")
@@ -219,14 +228,10 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
             elif user_info["rol"] == "superadmin":
                 nuevo_cambiada = False
                 
-            cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (old_usuario, f"Cambio de contraseña", user_info["tienda_id"]))
-            
-        if old_nombre != new_nombre: cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (old_usuario, f"Cambio de nombre: '{old_nombre}' a '{new_nombre}'", user_info["tienda_id"]))
-        
         cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s, password_cambiada=%s WHERE id=%s AND tienda_id=%s", (new_usuario, new_password, new_rol, new_nombre, nuevo_cambiada, id_usuario, user_info["tienda_id"]))
         conn.commit(); return {"status": "success"}
     except HTTPException: raise
-    except Exception: conn.rollback(); raise HTTPException(status_code=400, detail="Error al actualizar.")
+    except Exception as e: conn.rollback(); raise HTTPException(status_code=400, detail=str(e))
     finally: conn.close()
 
 @app.delete("/api/usuarios/{id_usuario}")
@@ -234,22 +239,18 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     conn = get_db_connection(); cursor = conn.cursor()
     try:
-        cursor.execute("SELECT rol, usuario FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
+        if id_usuario == 1: raise HTTPException(status_code=403, detail="El Creador principal no puede ser eliminado.")
+        cursor.execute("SELECT rol FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
         rol_target = cursor.fetchone()
         if not rol_target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+        if rol_target[0] == "superadmin" and user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="No puedes borrar a un Súper Administrador.")
         
-        # Bloquear borrado solo si es el Súper Admin Principal
-        if rol_target[0] == "superadmin":
-            if rol_target[1] == 'admin':
-                raise HTTPException(status_code=403, detail="El Creador principal no se puede borrar.")
-            elif user_info["rol"] != "superadmin":
-                raise HTTPException(status_code=403, detail="Intocable.")
-                
-        cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
+        cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
+        conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
     finally: conn.close()
-    
+
 @app.get("/api/auditoria")
 def obtener_auditoria(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")

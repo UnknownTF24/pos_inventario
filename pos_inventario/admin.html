@@ -216,14 +216,14 @@
         document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Denegado', 'Solo el creador puede asignar otro administrador.', 'warning'); this.value = "cajero"; } });
 
         async function fetchConToken(url, options = {}) {
-            const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
-            try {
-                const response = await fetch(url, options);
-                if (response.status === 401) { sessionStorage.clear(); document.getElementById("login-overlay").style.display = "flex"; Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning'); throw new Error("No autorizado"); }
-                if (response.status === 403) { const errData = await response.json().catch(() => ({})); Swal.fire('Acceso Denegado', errData.detail || 'No tienes permisos.', 'error'); throw new Error("Permisos insuficientes"); }
-                return response;
-            } catch (err) { if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); } throw err; }
-        }
+    const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
+    try {
+        const response = await fetch(url, options);
+        // AQUI ESTABA EL ERROR: Ya no expulsa al usuario si el servidor manda un 403.
+        if (response.status === 401) { sessionStorage.clear(); document.getElementById("login-overlay").style.display = "flex"; Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning'); throw new Error("No autorizado"); }
+        return response;
+    } catch (err) { if(err.message !== "No autorizado") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); } throw err; }
+}
 
         function aplicarPermisos() {
     const rol = sessionStorage.getItem("rolUsuario"); 

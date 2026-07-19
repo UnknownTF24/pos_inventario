@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SaaS Maestro - Control de Clientes</title>
+    <title>SaaS Maestro - Control Global</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -15,19 +15,19 @@
             <p class="text-xs text-indigo-300">Modo: Creador Maestro</p>
         </div>
         <div class="flex space-x-3">
-            <a href="https://wa.me/50249411913?text=Hola,%20necesito%20ayuda%20urgente%20con%20el%20servidor" target="_blank" class="text-indigo-300 hover:text-white text-sm font-bold flex items-center">💬 Mi WhatsApp</a>
-            <div class="w-px h-6 bg-indigo-700 mx-1"></div>
-            <a href="admin.html" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm font-bold shadow">Ir a Admin (Local)</a>
+            <a href="https://wa.me/50249411913?text=Hola,%20necesito%20ayuda%20urgente%20con%20el%20servidor" target="_blank" class="text-indigo-300 hover:text-white text-sm font-bold flex items-center hidden sm:flex">💬 Mi WhatsApp</a>
+            <div class="w-px h-6 bg-indigo-700 mx-1 hidden sm:block"></div>
+            <a href="admin.html" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm font-bold shadow">Volver al Admin</a>
             <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded text-sm font-bold shadow">Salir</button>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto p-4 mt-8 w-full space-y-8">
+    <main class="max-w-7xl mx-auto p-4 mt-4 w-full space-y-8">
         
         <!-- CARD: CREAR CLIENTE -->
         <section class="bg-white p-8 rounded-2xl shadow-xl border-t-8 border-indigo-600">
             <h2 class="text-2xl font-black text-gray-800 mb-2">🏢 Alta de Nuevo Cliente (Tienda)</h2>
-            <p class="text-sm text-gray-500 mb-6">Al crear una tienda aquí, se generará un entorno totalmente aislado en la base de datos.</p>
+            <p class="text-sm text-gray-500 mb-6">Genera un entorno completamente aislado para un nuevo negocio.</p>
             
             <form id="add-tienda-form" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end" onsubmit="crearTiendaSaaS(event)">
                 <div class="md:col-span-2">
@@ -43,135 +43,172 @@
                     <input type="text" id="saas-admin-pass" required class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-indigo-500 outline-none transition font-mono" placeholder="Ej. 12345">
                 </div>
                 <div class="md:col-span-4 flex justify-end mt-2">
-                    <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-lg hover:bg-indigo-700 shadow-lg transition transform hover:-translate-y-1">🚀 Generar Entorno</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-lg hover:bg-indigo-700 shadow-lg transition transform hover:-translate-y-1">🚀 Crear Entorno</button>
                 </div>
             </form>
         </section>
 
-        <!-- CARD: LISTA DE CLIENTES -->
-        <section class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div class="bg-gray-800 p-6 text-white flex justify-between items-center">
-                <div>
-                    <h2 class="font-black text-xl">Cartera de Clientes Activos</h2>
-                    <p class="text-sm text-gray-400">Control total de suscripciones y accesos maestros.</p>
-                </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- COLUMNA IZQUIERDA: LISTA DE TIENDAS -->
+            <div class="lg:col-span-1">
+                <section class="bg-white rounded-2xl shadow-xl overflow-hidden h-full">
+                    <div class="bg-gray-800 p-5 text-white">
+                        <h2 class="font-black text-lg">Cartera de Suscripciones</h2>
+                    </div>
+                    <div class="overflow-x-auto p-2">
+                        <table class="w-full text-left border-collapse">
+                            <tbody id="saas-list" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200">
-                        <tr>
-                            <th class="p-4 w-16 text-center">ID</th>
-                            <th class="p-4">Nombre de la Tienda</th>
-                            <th class="p-4 text-center">Suscripción</th>
-                            <th class="p-4 text-center">Panel de Control Maestro</th>
-                        </tr>
-                    </thead>
-                    <tbody id="saas-list" class="divide-y divide-gray-200"></tbody>
-                </table>
+
+            <!-- COLUMNA DERECHA: DIRECTORIO GLOBAL DE USUARIOS -->
+            <div class="lg:col-span-2">
+                <section class="bg-white rounded-2xl shadow-xl overflow-hidden h-full">
+                    <div class="bg-indigo-900 p-5 text-white flex justify-between items-center">
+                        <h2 class="font-black text-lg">🌎 Directorio Global de Personal</h2>
+                        <button onclick="fetchSaaSUsuarios()" class="bg-indigo-700 hover:bg-indigo-600 px-3 py-1 rounded text-sm font-bold shadow">↻ Refrescar</button>
+                    </div>
+                    <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead class="bg-indigo-50 text-indigo-900 sticky top-0 border-b-2 border-indigo-200">
+                                <tr>
+                                    <th class="p-3">Tienda</th>
+                                    <th class="p-3">Login</th>
+                                    <th class="p-3">Clave Actual</th>
+                                    <th class="p-3">Rol</th>
+                                    <th class="p-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saas-usuarios-list" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
-        </section>
+        </div>
     </main>
+
+    <!-- MODAL EDITAR USUARIO GLOBAL -->
+    <div id="saas-edit-user-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-xl font-black text-indigo-900 mb-4">Editar Empleado Global</h2>
+            <form id="saas-form-editar-usuario" class="space-y-4">
+                <input type="hidden" id="saas-edit-id">
+                <div><label class="block text-sm font-bold text-gray-700">Nombre en Pantalla</label><input type="text" id="saas-edit-fullname" required maxlength="50" class="w-full border-2 border-gray-200 rounded-lg p-2 outline-none focus:border-indigo-500"></div>
+                <div><label class="block text-sm font-bold text-gray-700">Usuario Login</label><input type="text" id="saas-edit-user" pattern="[^\s]+" required class="w-full border-2 border-gray-200 rounded-lg p-2 outline-none focus:border-indigo-500"></div>
+                <div><label class="block text-sm font-bold text-gray-700">Contraseña (Forzar Cambio)</label><input type="text" id="saas-edit-pass" required class="w-full border-2 border-gray-200 rounded-lg p-2 outline-none focus:border-indigo-500 font-mono"></div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700">Rol</label>
+                    <select id="saas-edit-rol" class="w-full border-2 border-gray-200 p-2 rounded-lg focus:border-indigo-500">
+                        <option value="cajero">🛒 Cajero</option>
+                        <option value="admin">🏢 Admin de Tienda</option>
+                        <option value="superadmin">👑 Súper Admin (Creador)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="document.getElementById('saas-edit-user-modal').classList.add('hidden')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-4 py-2 rounded-lg">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
+        let usuariosGlobales = [];
 
         function cerrarSesion() { sessionStorage.clear(); window.location.href = "admin.html"; }
 
-        if(sessionStorage.getItem("rolUsuario") !== "superadmin") {
-            Swal.fire({title: 'Acceso Restringido', text: 'Solo el Creador puede entrar aquí.', icon: 'error', showConfirmButton: false, timer: 2000})
+        if(sessionStorage.getItem("rolUsuario") !== "superadmin" || sessionStorage.getItem("tienda_id") != "1") {
+            Swal.fire({title: 'Acceso Restringido', text: 'Solo el Creador Maestro puede entrar aquí.', icon: 'error', showConfirmButton: false, timer: 2000})
             .then(() => { window.location.href = "admin.html"; });
         } else {
             fetchSaaS();
+            fetchSaaSUsuarios();
         }
 
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
             try {
                 const response = await fetch(url, options);
-                if (response.status === 401 || response.status === 403) { cerrarSesion(); throw new Error("No autorizado"); }
+                if (response.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
+                // La diferencia: Si es 403, solo devuelve el response para que Swal.fire lo lea, NO reinicia la sesión.
                 return response;
-            } catch (err) { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); throw err; }
+            } catch (err) { if(err.message !== "No autorizado") Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); throw err; }
         }
 
-        async function fetchSaaS() { 
-            try { 
-                const res = await fetchConToken(`${API_URL}/saas/tiendas`); 
-                const data = await res.json(); 
-                renderSaaS(data); 
-            } catch(e){} 
-        }
-
+        // CARGAR TIENDAS
+        async function fetchSaaS() { try { const res = await fetchConToken(`${API_URL}/saas/tiendas`); const data = await res.json(); renderSaaS(data); } catch(e){} }
         function renderSaaS(tiendas) {
-            const list = document.getElementById("saas-list"); 
-            if(tiendas.length === 0) return list.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-500 font-bold">No tienes clientes registrados aún.</td></tr>`;
-            
+            const list = document.getElementById("saas-list"); if(tiendas.length === 0) return list.innerHTML = `<tr><td class="p-8 text-center text-gray-500 font-bold">No hay clientes.</td></tr>`;
             list.innerHTML = tiendas.map(t => {
                 const isActive = t.estado === 'activo';
-                const estadoHtml = isActive 
-                    ? `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-xs border border-green-300">● ACTIVO</span>` 
-                    : `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold text-xs border border-red-300">● SUSPENDIDO</span>`;
-                
-                const toggleBtn = isActive 
-                    ? `<button onclick="toggleEstadoTienda(${t.id}, 'suspendido')" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg shadow-sm hover:bg-red-600 hover:text-white transition text-xs font-bold mr-2">🚫 Suspender Servicio</button>` 
-                    : `<button onclick="toggleEstadoTienda(${t.id}, 'activo')" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition text-xs font-bold mr-2">✅ Reactivar Servicio</button>`;
-                
-                return `
-                <tr class="hover:bg-indigo-50 transition">
-                    <td class="p-4 font-black text-gray-400 text-center text-lg">#${t.id}</td>
-                    <td class="p-4 font-bold text-gray-800 text-lg">${t.nombre}</td>
-                    <td class="p-4 text-center">${estadoHtml}</td>
-                    <td class="p-4 text-center">
-                        ${toggleBtn} 
-                        <button onclick="crearBackdoor(${t.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition text-xs font-bold">🗝️ Llave Maestra</button>
+                const estadoHtml = isActive ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold text-xs">ACTIVO</span>` : `<span class="bg-red-100 text-red-700 px-2 py-1 rounded font-bold text-xs">SUSPENDIDO</span>`;
+                const toggleBtn = isActive ? `<button onclick="toggleEstadoTienda(${t.id}, 'suspendido')" class="bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded hover:bg-red-600 hover:text-white transition text-xs font-bold w-full">🚫 Cortar Servicio</button>` : `<button onclick="toggleEstadoTienda(${t.id}, 'activo')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition text-xs font-bold w-full">✅ Reactivar</button>`;
+                return `<tr class="hover:bg-indigo-50 border-b transition">
+                    <td class="p-3">
+                        <div class="font-black text-gray-800 text-lg">${t.nombre} <span class="text-xs text-gray-400 font-normal">#${t.id}</span></div>
+                        <div class="mt-1 flex items-center justify-between gap-2">${estadoHtml} ${toggleBtn}</div>
                     </td>
                 </tr>`;
             }).join("");
         }
 
+        // CARGAR USUARIOS GLOBALES
+        async function fetchSaaSUsuarios() { try { const res = await fetchConToken(`${API_URL}/saas/usuarios`); usuariosGlobales = await res.json(); renderSaaSUsuarios(usuariosGlobales); } catch(e){} }
+        function renderSaaSUsuarios(usuarios) {
+            const list = document.getElementById("saas-usuarios-list"); if(usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-bold">No hay personal registrado.</td></tr>`;
+            list.innerHTML = usuarios.map(u => {
+                return `<tr class="hover:bg-indigo-50 border-b transition">
+                    <td class="p-3"><span class="font-bold text-gray-700">${u.tienda_nombre}</span> <span class="text-xs text-gray-400">#${u.tienda_id}</span></td>
+                    <td class="p-3 font-mono text-gray-800 font-bold">${u.usuario}</td>
+                    <td class="p-3 font-mono text-blue-600 bg-blue-50 px-2 rounded tracking-wider text-sm">${u.password}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <button onclick="abrirModalSaaSUser(${u.id})" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded shadow hover:bg-yellow-500 font-bold text-xs mr-1">✏️ Editar</button>
+                        <button onclick="eliminarSaaSUser(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600 font-bold text-xs">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join("");
+        }
+
+        // ACCIONES
         async function crearTiendaSaaS(e) {
-            e.preventDefault(); 
-            const nombre = document.getElementById("saas-nombre").value.trim();
-            const payload = { nombre: nombre, admin_user: document.getElementById("saas-admin-user").value.trim(), admin_pass: document.getElementById("saas-admin-pass").value.trim(), admin_nombre: "Dueño de " + nombre };
-            
-            try { 
-                const res = await fetchConToken(`${API_URL}/saas/tiendas`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) }); 
-                if(res.ok) { 
-                    document.getElementById("add-tienda-form").reset(); 
-                    fetchSaaS(); 
-                    Swal.fire('¡Tienda Creada!', 'El entorno ha sido generado. Ya puedes cobrar la mensualidad.', 'success'); 
-                } 
-            } catch(e){}
+            e.preventDefault(); const nombre = document.getElementById("saas-nombre").value.trim(); const payload = { nombre: nombre, admin_user: document.getElementById("saas-admin-user").value.trim(), admin_pass: document.getElementById("saas-admin-pass").value.trim(), admin_nombre: "Dueño de " + nombre };
+            try { const res = await fetchConToken(`${API_URL}/saas/tiendas`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) }); if(res.ok) { document.getElementById("add-tienda-form").reset(); fetchSaaS(); fetchSaaSUsuarios(); Swal.fire('¡Tienda Creada!', 'El entorno ha sido generado.', 'success'); } } catch(e){}
         }
 
         async function toggleEstadoTienda(id, estadoNuevo) { 
             Swal.fire({title: '¿Estás seguro?', text: `¿Pasar esta tienda a estado: ${estadoNuevo.toUpperCase()}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: estadoNuevo === 'activo' ? '#22c55e' : '#ef4444' }).then(async r => { 
-                if(r.isConfirmed) { 
-                    try { 
-                        await fetchConToken(`${API_URL}/saas/tiendas/${id}/estado`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify({estado: estadoNuevo}) }); 
-                        fetchSaaS(); 
-                        Swal.fire('Actualizado', `Servicio ${estadoNuevo}`, 'success'); 
-                    } catch(e){} 
-                } 
+                if(r.isConfirmed) { try { await fetchConToken(`${API_URL}/saas/tiendas/${id}/estado`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify({estado: estadoNuevo}) }); fetchSaaS(); Swal.fire('Actualizado', `Servicio ${estadoNuevo}`, 'success'); } catch(e){} } 
             }); 
         }
 
-        // FUNCION MODIFICADA PARA NO DAR ERROR NUNCA, SIEMPRE MOSTRAR LA LLAVE
-        async function crearBackdoor(id) { 
+        function abrirModalSaaSUser(id) {
+            const u = usuariosGlobales.find(x => x.id === id);
+            document.getElementById("saas-edit-id").value = u.id;
+            document.getElementById("saas-edit-fullname").value = u.nombre_completo;
+            document.getElementById("saas-edit-user").value = u.usuario;
+            document.getElementById("saas-edit-pass").value = u.password;
+            document.getElementById("saas-edit-rol").value = u.rol;
+            document.getElementById("saas-edit-user-modal").classList.remove("hidden");
+        }
+
+        document.getElementById("saas-form-editar-usuario").addEventListener("submit", async (e) => {
+            e.preventDefault(); const id = document.getElementById("saas-edit-id").value;
+            const payload = { nombre_completo: document.getElementById("saas-edit-fullname").value.trim(), usuario: document.getElementById("saas-edit-user").value.trim(), password: document.getElementById("saas-edit-pass").value.trim(), rol: document.getElementById("saas-edit-rol").value };
             try { 
-                const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}/backdoor`, { method: "POST" }); 
-                if(res.ok){ 
-                    const data = await res.json(); 
-                    const titulo = data.is_new ? 'Llave Maestra Creada' : 'Credenciales Maestras';
-                    Swal.fire({
-                        title: titulo, 
-                        html: `Inicia sesión en el Admin local con estas credenciales para entrar a su sistema y dar soporte:<br><br><b class="text-blue-600">Usuario:</b> <span class="font-mono bg-gray-100 p-1">${data.user}</span><br><b class="text-blue-600">Clave:</b> <span class="font-mono bg-gray-100 p-1">${data.pass}</span>`, 
-                        icon: 'info'
-                    }); 
-                } else { 
-                    const err = await res.json(); 
-                    Swal.fire('Aviso', err.detail, 'error'); 
-                } 
-            } catch(e){} 
+                const res = await fetchConToken(`${API_URL}/saas/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); 
+                if (res.ok) { document.getElementById("saas-edit-user-modal").classList.add("hidden"); fetchSaaSUsuarios(); Swal.fire('Guardado', 'Empleado actualizado con poder global.', 'success'); } 
+                else { const data = await res.json(); Swal.fire('Error', data.detail, 'error'); } 
+            } catch (e) {}
+        });
+
+        function eliminarSaaSUser(id) {
+            Swal.fire({title: '¡ADVERTENCIA DE CREADOR!', text: "Eliminarás a este usuario de su base de datos. Es irreversible.", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, aniquilar', confirmButtonColor: '#d33'}).then(async (r) => { 
+                if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/saas/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchSaaSUsuarios(); Swal.fire('Borrado', 'Usuario eliminado globalmente', 'success');} else { const err = await res.json(); Swal.fire('Aviso', err.detail, 'error'); } } catch(e){} } 
+            });
         }
     </script>
 </body>
