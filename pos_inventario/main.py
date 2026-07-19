@@ -35,7 +35,6 @@ def init_db():
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
     cursor.execute("""CREATE TABLE IF NOT EXISTS auditoria_usuarios (id SERIAL PRIMARY KEY, usuario_modificado TEXT NOT NULL, detalle TEXT NOT NULL, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
     
-    # NUEVA TABLA: Control de Caja
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS caja_sesiones (
             id SERIAL PRIMARY KEY,
@@ -119,8 +118,6 @@ def cerrar_caja(user_info: dict = Depends(verificar_token)):
         raise HTTPException(status_code=400, detail="No tienes un turno abierto para cerrar.")
     
     caja_id, fondo_inicial, fecha_apertura = row
-    
-    # Calcular las ventas hechas por este cajero desde que abrió la caja
     cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s", (user_info["nombre_completo"], fecha_apertura))
     total_ventas = cursor.fetchone()[0]
     
@@ -134,6 +131,29 @@ def cerrar_caja(user_info: dict = Depends(verificar_token)):
         "total_esperado": fondo_inicial + total_ventas,
         "fecha_apertura": fecha_apertura.strftime("%d/%m/%Y %H:%M")
     }
+
+# NUEVO: Ruta para que el Admin vea los Cortes Z
+@app.get("/api/caja/historial")
+def historial_cajas(user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            c.id, c.cajero, c.fondo_inicial, c.fecha_apertura, c.fecha_cierre, c.estado,
+            COALESCE((SELECT SUM(total) FROM ventas v WHERE v.cajero = c.cajero AND v.fecha >= c.fecha_apertura AND (c.fecha_cierre IS NULL OR v.fecha <= c.fecha_cierre)), 0) as total_ventas
+        FROM caja_sesiones c
+        ORDER BY c.fecha_apertura DESC LIMIT 100
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return [{
+        "id": r[0], "cajero": r[1], "fondo_inicial": r[2], 
+        "fecha_apertura": r[3].strftime("%d/%m/%Y %H:%M") if r[3] else "---", 
+        "fecha_cierre": r[4].strftime("%d/%m/%Y %H:%M") if r[4] else "Turno en curso...", 
+        "estado": r[5], "total_ventas": r[6], "total_esperado": r[2] + r[6]
+    } for r in rows]
+
 
 # ---- RUTAS DE USUARIOS ----
 @app.get("/api/usuarios")
@@ -239,7 +259,7 @@ def obtener_producto(codigo: str):
 def crear_producto(producto: Producto, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] == "cajero": raise HTTPException(status_code=403, detail="Los cajeros no pueden editar inventario.")
     if producto.precio < 0: raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
-    if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo (máx. 80 caracteres).")
+    if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo.")
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -255,7 +275,7 @@ def crear_producto(producto: Producto, user_info: dict = Depends(verificar_token
 def actualizar_producto(codigo: str, producto: Producto, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] == "cajero": raise HTTPException(status_code=403, detail="Los cajeros no pueden editar inventario.")
     if producto.precio < 0: raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
-    if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo (máx. 80 caracteres).")
+    if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo.")
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -264,7 +284,7 @@ def actualizar_producto(codigo: str, producto: Producto, user_info: dict = Depen
         return {"status": "success"}
     except Exception:
         conn.rollback()
-        raise HTTPException(status_code=500, detail="Error al actualizar. ¿El nuevo código ya existe?")
+        raise HTTPException(status_code=500, detail="Error al actualizar.")
     finally: conn.close()
 
 @app.delete("/api/productos/{codigo}")

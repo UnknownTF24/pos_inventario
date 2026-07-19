@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- LIBRERÍA PARA EXPORTAR A EXCEL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
@@ -37,6 +36,7 @@
         <div class="flex gap-2 flex-wrap items-center" id="nav-buttons">
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded transition">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded transition">📈 Ventas</button>
+            <button onclick="switchTab('cajas')" id="btn-caj" class="bg-gray-700 px-4 py-2 rounded transition">🗄️ Cortes Z</button>
             <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded transition hidden">👥 Usuarios</button>
             <div class="w-px h-8 bg-gray-600 mx-2"></div>
             <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
@@ -62,10 +62,7 @@
             
             <div class="flex gap-2 mb-4">
                 <input type="text" id="search-input" placeholder="🔍 Buscar producto..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:outline-none focus:border-blue-500">
-                <!-- BOTÓN EXCEL INVENTARIO -->
-                <button onclick="exportarInventarioExcel()" class="bg-green-600 text-white font-bold px-6 rounded-xl shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">
-                    📊 Exportar Excel
-                </button>
+                <button onclick="exportarInventarioExcel()" class="bg-green-600 text-white font-bold px-6 rounded-xl shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Exportar Excel</button>
             </div>
             
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[600px]"><thead class="bg-gray-50"><tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr></thead><tbody id="inventory-list" class="divide-y divide-gray-100"></tbody></table></div></section>
@@ -88,14 +85,41 @@
                         <button onclick="aplicarFiltros()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Buscar</button>
                     </div>
                 </div>
-                <!-- BOTÓN EXCEL VENTAS -->
-                <button onclick="exportarVentasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">
-                    📊 Descargar Reporte Excel
-                </button>
+                <button onclick="exportarVentasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Descargar Reporte Excel</button>
             </div>
             
             <div class="bg-white p-4 rounded-xl shadow-md"><div class="flex justify-between items-center mb-2"><h2 class="text-xl font-bold text-gray-800">Rendimiento</h2><h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3></div><div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div></div>
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b">Fecha</th><th class="p-4 border-b">Hora</th><th class="p-4 border-b text-center">Cant.</th><th class="p-4 border-b min-w-[200px]">Producto</th><th class="p-4 border-b text-right">Precio U.</th><th class="p-4 border-b font-bold text-blue-600">Cajero</th><th class="p-4 border-b text-right">Total Venta</th></tr></thead><tbody id="ventas-list" class="divide-y divide-gray-100"></tbody><tfoot class="bg-blue-50 border-t-2 border-blue-200"><tr><td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado:</td><td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td></tr></tfoot></table></div></section>
+        </div>
+
+        <!-- NUEVA PESTAÑA: CORTES Z (Cajas) -->
+        <div id="tab-cajas" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-md flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">Historial de Turnos (Cortes Z)</h2>
+                <button onclick="exportarCajasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center">
+                    📊 Exportar Turnos
+                </button>
+            </div>
+            
+            <section class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[900px]">
+                        <thead class="bg-gray-800 text-white">
+                            <tr>
+                                <th class="p-4 border-b">ID</th>
+                                <th class="p-4 border-b">Cajero (Nombre en Pantalla)</th>
+                                <th class="p-4 border-b">Apertura</th>
+                                <th class="p-4 border-b">Cierre</th>
+                                <th class="p-4 border-b text-right text-gray-300">Fondo Inicial</th>
+                                <th class="p-4 border-b text-right text-green-300">Ventas Turno</th>
+                                <th class="p-4 border-b text-right font-bold text-yellow-300">Efectivo en Gaveta</th>
+                                <th class="p-4 border-b text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cajas-list" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
         <!-- PESTAÑA: USUARIOS -->
@@ -158,7 +182,7 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = [];
-        let arrayVentasFiltradasExport = []; // Para poder exportar lo que vemos
+        let arrayVentasFiltradasExport = []; let allCajas = [];
 
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
@@ -166,34 +190,21 @@
             Swal.fire({ title: 'Soporte Técnico', html: '<p>Para recuperar o modificar contraseñas, por favor comunícate con el creador de la página.</p><br><p><b class="text-blue-600">WhatsApp / Teléfono:</b> 4941-1913<br><b class="text-blue-600">Correo:</b> isaijonatan4222@gmail.com</p>', icon: 'info', confirmButtonText: 'Entendido' });
         };
 
-        // --- FUNCIONES PARA EXPORTAR A EXCEL ---
+        // --- EXPORTAR EXCEL ---
         function exportarInventarioExcel() {
-            if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos para exportar.', 'info');
-            const dataFormateada = allProducts.map(p => ({
-                "Código de Barras": p.codigo,
-                "Nombre del Producto": p.nombre,
-                "Precio Venta (Q)": p.precio,
-                "Stock Disponible": p.stock
-            }));
-            const ws = XLSX.utils.json_to_sheet(dataFormateada);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Inventario");
-            XLSX.writeFile(wb, "Inventario_Tienda.xlsx");
+            if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos.', 'info');
+            const ws = XLSX.utils.json_to_sheet(allProducts.map(p => ({"Código de Barras": p.codigo, "Nombre del Producto": p.nombre, "Precio Venta (Q)": p.precio, "Stock Disponible": p.stock})));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Inventario"); XLSX.writeFile(wb, "Inventario_Tienda.xlsx");
         }
-
         function exportarVentasExcel() {
-            if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas en este período para exportar.', 'info');
-            const dataFormateada = arrayVentasFiltradasExport.map(v => ({
-                "ID Venta": v.id,
-                "Fecha y Hora": v.fecha,
-                "Cajero Responsable": v.cajero,
-                "Artículos Vendidos": v.articulos.replace(/ \| /g, ", "), // Limpiar formato para Excel
-                "Total Ingreso (Q)": v.total
-            }));
-            const ws = XLSX.utils.json_to_sheet(dataFormateada);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas");
-            XLSX.writeFile(wb, "Reporte_Ventas_Filtrado.xlsx");
+            if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas.', 'info');
+            const ws = XLSX.utils.json_to_sheet(arrayVentasFiltradasExport.map(v => ({"ID Venta": v.id, "Fecha y Hora": v.fecha, "Cajero": v.cajero, "Artículos": v.articulos.replace(/ \| /g, ", "), "Total (Q)": v.total})));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas.xlsx");
+        }
+        function exportarCajasExcel() {
+            if(allCajas.length === 0) return Swal.fire('Vacío', 'No hay turnos registrados.', 'info');
+            const ws = XLSX.utils.json_to_sheet(allCajas.map(c => ({"ID Turno": c.id, "Cajero": c.cajero, "Apertura": c.fecha_apertura, "Cierre": c.fecha_cierre, "Fondo Inicial (Q)": c.fondo_inicial, "Ventas (Q)": c.total_ventas, "Total Esperado (Q)": c.total_esperado, "Estado": c.estado})));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cortes_Caja"); XLSX.writeFile(wb, "Reporte_Turnos_Cortes_Z.xlsx");
         }
 
         document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador del sistema.', 'warning'); this.value = "cajero"; } });
@@ -208,7 +219,7 @@
                 if (response.status === 403) { const errData = await response.json().catch(() => ({})); Swal.fire('Acceso Denegado', errData.detail || 'No tienes permisos.', 'error'); throw new Error("Permisos insuficientes"); }
                 return response;
             } catch (err) {
-                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet y vuelve a intentar. Tus datos están a salvo.', 'error'); }
+                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); }
                 throw err;
             }
         }
@@ -231,7 +242,7 @@
 
         if(sessionStorage.getItem("adminToken")) { 
             document.getElementById("login-overlay").style.display = "none";
-            aplicarPermisos(); fetchInventory(); fetchVentas(); 
+            aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas();
             if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios();
         }
         
@@ -241,10 +252,10 @@
                 const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
                     const data = await res.json();
-                    if(data.rol === "cajero") { Swal.fire('Atención Cajero', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS), no aquí en Administración.', 'info'); return; }
+                    if(data.rol === "cajero") { Swal.fire('Atención Cajero', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS).', 'info'); return; }
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("login-overlay").style.display = "none";
-                    aplicarPermisos(); fetchInventory(); fetchVentas(); 
+                    aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas();
                     if(data.rol !== "cajero") fetchUsuarios();
                 } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
@@ -254,11 +265,36 @@
             document.getElementById('tab-inventario').classList.toggle('hidden', tab !== 'inventario');
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
             document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
+            document.getElementById('tab-cajas').classList.toggle('hidden', tab !== 'cajas');
+            
             document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            document.getElementById('btn-caj').className = tab === 'cajas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
+            
             if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
         }
 
+        // --- HISTORIAL DE CAJAS ---
+        async function fetchCajas() { try { const res = await fetchConToken(`${API_URL}/caja/historial`); allCajas = await res.json(); renderCajas(allCajas); } catch (e) {} }
+
+        function renderCajas(cajas) {
+            const list = document.getElementById("cajas-list");
+            if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros de turnos.</td></tr>`;
+            list.innerHTML = cajas.map(c => `
+                <tr class="hover:bg-gray-50 border-b">
+                    <td class="p-4 font-mono text-gray-500">${c.id}</td>
+                    <td class="p-4 font-bold text-gray-800">${c.cajero}</td>
+                    <td class="p-4">${c.fecha_apertura}</td>
+                    <td class="p-4 font-bold ${c.estado === 'abierta' ? 'text-green-500' : 'text-gray-600'}">${c.fecha_cierre}</td>
+                    <td class="p-4 text-right text-gray-500">Q${c.fondo_inicial.toFixed(2)}</td>
+                    <td class="p-4 text-right text-green-600">Q${c.total_ventas.toFixed(2)}</td>
+                    <td class="p-4 font-black text-blue-600 text-right text-lg">Q${c.total_esperado.toFixed(2)}</td>
+                    <td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${c.estado==='abierta'?'bg-green-100 text-green-700':'bg-gray-200 text-gray-600'}">${c.estado.toUpperCase()}</span></td>
+                </tr>
+            `).join("");
+        }
+
+        // --- GESTIÓN DE USUARIOS ---
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
 
         function renderUsuarios(usuarios) {
@@ -342,7 +378,7 @@
                 }
             }
             if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC);
-            arrayVentasFiltradasExport = filtradas; // Guardamos para exportar a Excel
+            arrayVentasFiltradasExport = filtradas; 
             actualizarVistaVentas(filtradas);
         }
 
