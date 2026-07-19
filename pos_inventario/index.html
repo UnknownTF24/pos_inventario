@@ -135,10 +135,9 @@
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
         
-        // VARIABLE GLOBAL NUEVA PARA EL MODO INVITADO
         let cajaAbierta = false; 
 
-        // --- 1. FUNCIONES VITALES DE SEGURIDAD Y CONEXIÓN ---
+        // --- 1. SEGURIDAD Y CONEXIÓN ---
         function cerrarSesion() { 
             sessionStorage.clear(); 
             window.location.reload(); 
@@ -158,7 +157,7 @@
             }
         }
 
-        // --- 2. INICIO DE SESIÓN, DISEÑO UNKNOWN Y AJUSTES ---
+        // --- 2. PORTAL UNKNOWN Y LOGIN ---
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
 
         function checkSession() {
@@ -171,12 +170,10 @@
         }
         checkSession();
 
-        // EFECTO VISUAL DEL LOGIN
         function seleccionarDestino(destino, btn) {
             document.getElementById("login-destino").value = destino;
             const btnPos = document.getElementById("btn-dest-pos");
             const btnAdmin = document.getElementById("btn-dest-admin");
-            
             btnPos.className = "flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
             btnAdmin.className = "flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
             btn.className = "flex-1 py-2 text-sm font-black bg-white shadow-sm rounded-lg text-indigo-700 transition transform scale-100";
@@ -195,7 +192,6 @@
                         return Swal.fire('Acceso Denegado', 'Los cajeros no tienen acceso al Panel Administrativo.', 'error');
                     }
                     
-                    // AQUÍ ESTABA EL BUG: Agregamos el guardado del tienda_id
                     sessionStorage.setItem("adminToken", data.token); 
                     sessionStorage.setItem("nombreUsuario", data.nombre_completo); 
                     sessionStorage.setItem("rolUsuario", data.rol);
@@ -209,8 +205,15 @@
                 } else { const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
+        
+        document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
+        
+        window.togglePassword = function(inputId) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
+        };
 
-        // --- 3. LÓGICA DE CAJA (MODO INVITADO INCLUIDO) ---
+        // --- 3. CAJA ---
         async function fetchEstadoCaja() { 
             try { 
                 const res = await fetchConToken(`${API_URL}/caja/estado`); 
@@ -228,7 +231,7 @@
                     if(btnAbrir) btnAbrir.classList.add("hidden"); 
                     if(btnCerrar) btnCerrar.classList.remove("hidden");
                 }
-                updateCartUI(); // Fuerza la actualización del carrito para bloquear el botón
+                updateCartUI(); 
             } catch(e) {} 
         }
         
@@ -240,7 +243,7 @@
                 if(res.ok) { 
                     document.getElementById("caja-overlay").classList.add("hidden"); 
                     Swal.fire({title: 'Turno Abierto', text: `Iniciaste con Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); 
-                    fetchEstadoCaja(); // Vuelve a verificar para activar el carrito
+                    fetchEstadoCaja(); 
                 } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } 
             } catch(e) {} 
         }
@@ -279,20 +282,19 @@
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        // --- 4. PRODUCTOS, CATÁLOGO Y VENTAS ---
+        // --- 4. PRODUCTOS, VENTAS E INVENTARIO ---
         async function fetchPosProducts() { try { const res = await fetchConToken(`${API_URL}/productos`); posProducts = await res.json(); posFuse = new Fuse(posProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); } catch (e) {} }
-        function openCatalog() { fetchPosProducts().then(() => { renderCatalog(posProducts); document.getElementById("catalog-modal").classList.remove("hidden"); setTimeout(() => document.getElementById("catalog-search").focus(), 100); }); }
-        function closeCatalog() { document.getElementById("catalog-modal").classList.add("hidden"); document.getElementById("catalog-search").value = ""; }
+        window.openCatalog = function() { fetchPosProducts().then(() => { renderCatalog(posProducts); document.getElementById("catalog-modal").classList.remove("hidden"); setTimeout(() => document.getElementById("catalog-search").focus(), 100); }); }
+        window.closeCatalog = function() { document.getElementById("catalog-modal").classList.add("hidden"); document.getElementById("catalog-search").value = ""; }
         function renderCatalog(products) { const list = document.getElementById("catalog-list"); if (products.length === 0) { list.innerHTML = `<p class="text-center text-gray-400 py-4 font-bold">Sin productos.</p>`; return; } list.innerHTML = products.map(p => `<div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg ${p.stock < 1 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-blue-50 active:bg-blue-100 cursor-pointer shadow-sm bg-white'} transition"><div><p class="font-bold text-gray-800 text-sm">${p.nombre}</p><p class="text-xs text-gray-500">Stock: <span class="font-bold ${p.stock <= 5 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></p></div><div class="font-black text-blue-600 text-lg">Q${p.precio.toFixed(2)}</div></div>`).join(""); }
         document.getElementById("catalog-search").addEventListener("input", (e) => { const term = e.target.value.trim(); renderCatalog(term ? posFuse.search(term).map(r => r.item) : posProducts); });
-        function addFromCatalog(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) { return Swal.fire('Agotado', 'No hay inventario.', 'warning'); } addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
+        window.addFromCatalog = function(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) { return Swal.fire('Agotado', 'No hay inventario.', 'warning'); } addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
 
         const manualInput = document.getElementById("manual-code"); const addManualBtn = document.getElementById("add-manual-btn"); const cartItemsContainer = document.getElementById("cart-items"); const cartTotalElement = document.getElementById("cart-total"); const checkoutBtn = document.getElementById("checkout-btn");
         async function fetchProduct(code) { try { const response = await fetchConToken(`${API_URL}/productos/${code}`); if (!response.ok) { Swal.fire('Oops...', "No encontrado", 'error'); manualInput.value = ""; return; } const product = await response.json(); addToCart(product); manualInput.value = ""; } catch (error) {} }
         
         function addToCart(product) { if (product.stock < 1) { return Swal.fire('Agotado', 'Sin stock.', 'warning'); } const existingItem = cart.find(item => item.codigo === product.codigo); if (existingItem) { if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } else { return Swal.fire('Límite', 'No hay más unidades.', 'warning'); } } else { cart.push({ ...product, cantidad: 1 }); } updateCartUI(); }
         
-        // BLOQUEO DINÁMICO DEL BOTÓN DE COBRAR SEGÚN EL ESTADO DE LA CAJA
         function updateCartUI() { 
             if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Carrito vacío</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } 
             
@@ -300,7 +302,6 @@
             const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); 
             cartTotalElement.innerText = `Q${total.toFixed(2)}`; 
             
-            // LA MAGIA: Si no hay caja abierta, bloquea el checkout
             if(!cajaAbierta) {
                 checkoutBtn.disabled = true;
                 checkoutBtn.innerText = "🔒 Abre la Caja para cobrar";
@@ -332,7 +333,7 @@
         // --- 5. CÁMARA Y ESCÁNER ---
         document.getElementById("native-cam-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto"); scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No legible.', 'error')).finally(() => scanner.clear()); });
         document.getElementById("start-btn").addEventListener("click", () => { document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden"); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { stopScanning(); fetchProduct(text); }).catch(e => { stopScanning(); Swal.fire('Error', 'Cámara no disponible', 'error'); }); });
-        function stopScanning() { if (html5QrcodeScanner) { try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
+        window.stopScanning = function() { if (html5QrcodeScanner) { try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
         document.getElementById("stop-btn").addEventListener("click", stopScanning); addManualBtn.addEventListener("click", () => { const c = manualInput.value.trim(); if (c) fetchProduct(c); }); manualInput.addEventListener("keypress", (e) => { if (e.key === "Enter") addManualBtn.click(); });
     </script>
 </body>
