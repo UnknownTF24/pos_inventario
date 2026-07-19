@@ -201,20 +201,30 @@
         }
 
         function renderSaaSUsuarios(usuarios) {
-            const list = document.getElementById("saas-usuarios-list"); if(usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-bold">No se encontraron resultados.</td></tr>`;
-            list.innerHTML = usuarios.map(u => {
-                return `<tr class="hover:bg-indigo-50 border-b transition">
-                    <td class="p-3"><div class="font-bold text-gray-700">${u.tienda_nombre}</div><div class="text-xs text-gray-400">ID #${u.tienda_id}</div></td>
-                    <td class="p-3"><div class="font-mono text-gray-800 font-bold">${u.usuario}</div><div class="text-xs text-gray-500">${u.nombre_completo}</div></td>
-                    <td class="p-3 font-mono text-blue-600 bg-blue-50 px-2 rounded tracking-wider text-sm">${u.password}</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
-                    <td class="p-3 text-center whitespace-nowrap">
-                        <button onclick="abrirModalSaaSUser(${u.id})" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded shadow hover:bg-yellow-500 font-bold text-xs mr-1">✏️</button>
-                        <button onclick="eliminarSaaSUser(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600 font-bold text-xs">🗑️</button>
-                    </td>
-                </tr>`;
-            }).join("");
+    const list = document.getElementById("saas-usuarios-list"); 
+    if(usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-bold">No se encontraron resultados.</td></tr>`;
+    
+    list.innerHTML = usuarios.map(u => {
+        let actionHtml = '';
+        
+        // CONSISTENCIA VISUAL: Si es el Creador Maestro (ID 1), ocultamos el basurero y ponemos el escudo
+        if (u.id === 1) {
+            actionHtml = `<button onclick="abrirModalSaaSUser(${u.id})" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded shadow hover:bg-yellow-500 font-bold text-xs mr-1">✏️ Editar</button><span title="El Creador principal no se puede borrar" class="text-gray-400 cursor-not-allowed ml-1 text-xs font-bold">🛡️ Intocable</span>`;
+        } else {
+            actionHtml = `<button onclick="abrirModalSaaSUser(${u.id})" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded shadow hover:bg-yellow-500 font-bold text-xs mr-1">✏️ Editar</button><button onclick="eliminarSaaSUser(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600 font-bold text-xs">🗑️</button>`;
         }
+
+        return `<tr class="hover:bg-indigo-50 border-b transition">
+            <td class="p-3"><div class="font-bold text-gray-700">${u.tienda_nombre}</div><div class="text-xs text-gray-400">ID #${u.tienda_id}</div></td>
+            <td class="p-3"><div class="font-mono text-gray-800 font-bold">${u.usuario}</div><div class="text-xs text-gray-500">${u.nombre_completo}</div></td>
+            <td class="p-3 font-mono text-blue-600 bg-blue-50 px-2 rounded tracking-wider text-sm">${u.password}</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
+            <td class="p-3 text-center whitespace-nowrap">
+                ${actionHtml}
+            </td>
+        </tr>`;
+    }).join("");
+}
 
         // ACCIONES PRINCIPALES
         async function crearTiendaSaaS(e) {
