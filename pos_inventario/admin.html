@@ -47,6 +47,7 @@
             <button onclick="switchTab('inventario')" id="btn-inv" class="bg-blue-600 px-4 py-2 rounded transition">📦 Inventario</button>
             <button onclick="switchTab('ventas')" id="btn-ven" class="bg-gray-700 px-4 py-2 rounded transition">📈 Ventas</button>
             <button onclick="switchTab('cajas')" id="btn-caj" class="bg-gray-700 px-4 py-2 rounded transition">🗄️ Cortes Z</button>
+            <button onclick="switchTab('ajustes')" id="btn-cfg" class="bg-gray-700 px-4 py-2 rounded transition">⚙️ Ajustes</button>
             <button onclick="switchTab('usuarios')" id="btn-usr" class="bg-gray-700 px-4 py-2 rounded transition hidden">👥 Usuarios</button>
             <div class="w-px h-8 bg-gray-600 mx-2"></div>
             <a href="index.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold shadow transition flex items-center gap-1">🛒 Ir al POS</a>
@@ -55,7 +56,6 @@
     </nav>
 
     <main class="max-w-7xl mx-auto p-4 mt-4 w-full">
-        <!-- PESTAÑA: INVENTARIO -->
         <div id="tab-inventario">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h2 class="text-lg font-bold mb-4">Registrar Nuevo Producto</h2>
@@ -69,16 +69,13 @@
                     <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Guardar Producto</button></div>
                 </form>
             </section>
-            
             <div class="flex gap-2 mb-4">
                 <input type="text" id="search-input" placeholder="🔍 Buscar producto..." class="w-full p-4 text-lg border-2 border-blue-200 rounded-xl focus:outline-none focus:border-blue-500">
                 <button onclick="exportarInventarioExcel()" class="bg-green-600 text-white font-bold px-6 rounded-xl shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Exportar Excel</button>
             </div>
-            
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[600px]"><thead class="bg-gray-50"><tr><th class="p-4 border-b">Código</th><th class="p-4 border-b">Nombre</th><th class="p-4 border-b">Precio</th><th class="p-4 border-b">Stock</th><th class="p-4 border-b text-center">Acción</th></tr></thead><tbody id="inventory-list" class="divide-y divide-gray-100"></tbody></table></div></section>
         </div>
 
-        <!-- PESTAÑA: VENTAS -->
         <div id="tab-ventas" class="hidden space-y-4">
             <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end justify-between">
                 <div class="flex flex-wrap gap-4 items-end">
@@ -97,15 +94,11 @@
                 </div>
                 <button onclick="exportarVentasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Descargar Reporte Excel</button>
             </div>
-            
             <div class="bg-white p-4 rounded-xl shadow-md"><div class="flex justify-between items-center mb-2"><h2 class="text-xl font-bold text-gray-800">Rendimiento</h2><h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3></div><div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div></div>
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b">Fecha</th><th class="p-4 border-b">Hora</th><th class="p-4 border-b text-center">Cant.</th><th class="p-4 border-b min-w-[200px]">Producto</th><th class="p-4 border-b text-right">Precio U.</th><th class="p-4 border-b font-bold text-blue-600">Cajero</th><th class="p-4 border-b text-right">Total Venta</th></tr></thead><tbody id="ventas-list" class="divide-y divide-gray-100"></tbody><tfoot class="bg-blue-50 border-t-2 border-blue-200"><tr><td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado:</td><td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td></tr></tfoot></table></div></section>
         </div>
 
-        <!-- PESTAÑA: CORTES Z (Cajas) -->
         <div id="tab-cajas" class="hidden space-y-4">
-            
-            <!-- CONTROLES DE FILTRO IGUALES QUE EN VENTAS -->
             <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end justify-between">
                 <div class="flex flex-wrap gap-4 items-end">
                     <div>
@@ -123,29 +116,28 @@
                 </div>
                 <button onclick="exportarCajasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Exportar Turnos Excel</button>
             </div>
-            
-            <section class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[900px]">
-                        <thead class="bg-gray-800 text-white">
-                            <tr>
-                                <th class="p-4 border-b">ID</th>
-                                <th class="p-4 border-b">Cajero (Nombre en Pantalla)</th>
-                                <th class="p-4 border-b">Apertura</th>
-                                <th class="p-4 border-b">Cierre</th>
-                                <th class="p-4 border-b text-right text-gray-300">Fondo Inicial</th>
-                                <th class="p-4 border-b text-right text-green-300">Ventas Turno</th>
-                                <th class="p-4 border-b text-right font-bold text-yellow-300">Efectivo en Gaveta</th>
-                                <th class="p-4 border-b text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cajas-list" class="divide-y divide-gray-200"></tbody>
-                    </table>
-                </div>
+            <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-800 text-white"><tr><th class="p-4 border-b">ID</th><th class="p-4 border-b">Cajero (Nombre en Pantalla)</th><th class="p-4 border-b">Apertura</th><th class="p-4 border-b">Cierre</th><th class="p-4 border-b text-right text-gray-300">Fondo Inicial</th><th class="p-4 border-b text-right text-green-300">Ventas Turno</th><th class="p-4 border-b text-right font-bold text-yellow-300">Efectivo en Gaveta</th><th class="p-4 border-b text-center">Estado</th></tr></thead><tbody id="cajas-list" class="divide-y divide-gray-200"></tbody></table></div></section>
+        </div>
+
+        <div id="tab-ajustes" class="hidden">
+            <section class="bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto border-t-4 border-blue-600">
+                <h2 class="text-xl font-bold mb-2 text-gray-800">⚙️ Configuración de Identidad y Recibos</h2>
+                <p class="text-gray-500 text-xs mb-6">Los datos ingresados aquí se guardarán localmente para personalizar la interfaz y el encabezado de las facturas/tickets de venta.</p>
+                
+                <form id="branding-form" class="space-y-4" onsubmit="guardarBranding(event)">
+                    <div><label class="block text-sm font-bold text-gray-700">Nombre Comercial del Negocio</label><input type="text" id="cfg-nombre" required class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none" placeholder="Ej. Tienda El Shaddai"></div>
+                    <div><label class="block text-sm font-bold text-gray-700">Dirección Física de la Tienda</label><input type="text" id="cfg-direccion" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none" placeholder="Ej. 3ra Calle 4-12 Zona 1, Guatemala"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-bold text-gray-700">NIT / Registro Legal</label><input type="text" id="cfg-nit" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none" placeholder="Ej. 4512984-5"></div>
+                        <div><label class="block text-sm font-bold text-gray-700">Teléfono Comercial</label><input type="text" id="cfg-telefono" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none" placeholder="Ej. 2200-1122"></div>
+                    </div>
+                    <div><label class="block text-sm font-bold text-gray-700">Mensaje al pie del ticket</label><input type="text" id="cfg-footer" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none" placeholder="Ej. ¡Gracias por su preferencia, vuelva pronto!"></div>
+                    
+                    <div class="flex justify-end pt-2"><button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow">Guardar Identidad</button></div>
+                </form>
             </section>
         </div>
 
-        <!-- PESTAÑA: USUARIOS -->
         <div id="tab-usuarios" class="hidden space-y-4">
             <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
@@ -157,14 +149,10 @@
                     <div><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
                 </form>
             </section>
-            <section class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="bg-gray-800 p-4 text-white flex justify-between items-center"><h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2><button onclick="verAuditoria()" class="bg-gray-600 hover:bg-gray-500 text-sm px-3 py-1 rounded shadow">📜 Ver Historial de Cambios</button></div>
-                <div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[800px]"><thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200"><tr><th class="p-4 w-16">No.</th><th class="p-4">Usuario (Login)</th><th class="p-4 text-blue-600 font-bold">Nombre en Pantalla</th><th class="p-4">Rol</th><th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th><th class="p-4 text-center">Acción</th></tr></thead><tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody></table></div>
-            </section>
+            <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[800px]"><thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200"><tr><th class="p-4 w-16">No.</th><th class="p-4">Usuario (Login)</th><th class="p-4 text-blue-600 font-bold">Nombre en Pantalla</th><th class="p-4">Rol</th><th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th><th class="p-4 text-center">Acción</th></tr></thead><tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody></table></div></section>
         </div>
     </main>
 
-    <!-- MODALES VARIOS -->
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2>
@@ -203,9 +191,7 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = [];
-        let arrayVentasFiltradasExport = []; 
-        let todasLasCajas = [];
-        let arrayCajasFiltradasExport = [];
+        let arrayVentasFiltradasExport = []; let todasLasCajas = []; let arrayCajasFiltradasExport = [];
 
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
@@ -213,73 +199,60 @@
             Swal.fire({ title: 'Soporte Técnico', html: '<p>Para recuperar o modificar contraseñas, por favor comunícate con el creador de la página.</p><br><p><b class="text-blue-600">WhatsApp / Teléfono:</b> 4941-1913<br><b class="text-blue-600">Correo:</b> isaijonatan4222@gmail.com</p>', icon: 'info', confirmButtonText: 'Entendido' });
         };
 
-        // --- EXPORTAR EXCEL ---
-        function exportarInventarioExcel() {
-            if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos.', 'info');
-            const ws = XLSX.utils.json_to_sheet(allProducts.map(p => ({"Código de Barras": p.codigo, "Nombre del Producto": p.nombre, "Precio Venta (Q)": p.precio, "Stock Disponible": p.stock})));
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Inventario"); XLSX.writeFile(wb, "Inventario_Tienda.xlsx");
-        }
-        function exportarVentasExcel() {
-            if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas.', 'info');
-            const ws = XLSX.utils.json_to_sheet(arrayVentasFiltradasExport.map(v => ({"ID Venta": v.id, "Fecha y Hora": v.fecha, "Cajero": v.cajero, "Artículos": v.articulos.replace(/ \| /g, ", "), "Total (Q)": v.total})));
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas_Filtrado.xlsx");
-        }
-        function exportarCajasExcel() {
-            if(arrayCajasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay turnos registrados en este período.', 'info');
-            const ws = XLSX.utils.json_to_sheet(arrayCajasFiltradasExport.map(c => ({"ID Turno": c.id, "Cajero": c.cajero, "Apertura": c.fecha_apertura, "Cierre": c.fecha_cierre, "Fondo Inicial (Q)": c.fondo_inicial, "Ventas (Q)": c.total_ventas, "Total Esperado (Q)": c.total_esperado, "Estado": c.estado})));
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cortes_Caja"); XLSX.writeFile(wb, "Reporte_Turnos_Filtrado.xlsx");
+        // --- MANEJO DE BRANDING DE AJUSTES ---
+        function cargarAjustesBrandingForm() {
+            document.getElementById("cfg-nombre").value = localStorage.getItem("cfg_nombre") || "";
+            document.getElementById("cfg-direccion").value = localStorage.getItem("cfg_direccion") || "";
+            document.getElementById("cfg-nit").value = localStorage.getItem("cfg_nit") || "";
+            document.getElementById("cfg-telefono").value = localStorage.getItem("cfg_telefono") || "";
+            document.getElementById("cfg-footer").value = localStorage.getItem("cfg_footer") || "";
         }
 
-        document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador del sistema.', 'warning'); this.value = "cajero"; } });
+        function guardarBranding(e) {
+            e.preventDefault();
+            localStorage.setItem("cfg_nombre", document.getElementById("cfg-nombre").value.trim());
+            localStorage.setItem("cfg_direccion", document.getElementById("cfg-direccion").value.trim());
+            localStorage.setItem("cfg_nit", document.getElementById("cfg-nit").value.trim());
+            localStorage.setItem("cfg_telefono", document.getElementById("cfg-telefono").value.trim());
+            localStorage.setItem("cfg_footer", document.getElementById("cfg-footer").value.trim());
+            Swal.fire('¡Guardado!', 'La identidad de la tienda e impresión de recibos se actualizó correctamente.', 'success');
+        }
+
+        // --- EXPORTAR EXCEL ---
+        function exportarInventarioExcel() { if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos.', 'info'); const ws = XLSX.utils.json_to_sheet(allProducts.map(p => ({"Código de Barras": p.codigo, "Nombre del Producto": p.nombre, "Precio Venta (Q)": p.precio, "Stock Disponible": p.stock}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Inventario"); XLSX.writeFile(wb, "Inventario_Tienda.xlsx"); }
+        function exportarVentasExcel() { if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas.', 'info'); const ws = XLSX.utils.json_to_sheet(arrayVentasFiltradasExport.map(v => ({"ID Venta": v.id, "Fecha y Hora": v.fecha, "Cajero": v.cajero, "Artículos": v.articulos.replace(/ \| /g, ", "), "Total (Q)": v.total}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas.xlsx"); }
+        function exportarCajasExcel() { if(arrayCajasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay turnos registrados.', 'info'); const ws = XLSX.utils.json_to_sheet(arrayCajasFiltradasExport.map(c => ({"ID Turno": c.id, "Cajero": c.cajero, "Apertura": c.fecha_apertura, "Cierre": c.fecha_cierre, "Fondo Inicial (Q)": c.fondo_inicial, "Ventas (Q)": c.total_ventas, "Total Esperado (Q)": c.total_esperado, "Estado": c.estado}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Cortes_Caja"); XLSX.writeFile(wb, "Reporte_Turnos_Filtrado.xlsx"); }
+
+        document.getElementById("new-user-rol").addEventListener("change", function(e) { if(sessionStorage.getItem("rolUsuario") === "admin" && this.value === "admin") { Swal.fire('Permiso Denegado', 'Para crear otro Admin de Tienda, por favor contacta al Creador.', 'warning'); this.value = "cajero"; } });
 
         async function fetchConToken(url, options = {}) {
-            const token = sessionStorage.getItem("adminToken");
-            if (!options.headers) options.headers = {};
-            if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
             try {
                 const response = await fetch(url, options);
                 if (response.status === 401) { sessionStorage.clear(); document.getElementById("login-overlay").style.display = "flex"; Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning'); throw new Error("No autorizado"); }
                 if (response.status === 403) { const errData = await response.json().catch(() => ({})); Swal.fire('Acceso Denegado', errData.detail || 'No tienes permisos.', 'error'); throw new Error("Permisos insuficientes"); }
                 return response;
-            } catch (err) {
-                if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet y vuelve a intentar. Tus datos están a salvo.', 'error'); }
-                throw err;
-            }
+            } catch (err) { if(err.message !== "No autorizado" && err.message !== "Permisos insuficientes") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); } throw err; }
         }
 
         function aplicarPermisos() {
-            const rol = sessionStorage.getItem("rolUsuario");
-            document.getElementById("rol-display").innerText = "Rol: " + (rol === "superadmin" ? "👑 Súper Admin (Creador)" : "🏢 Admin de Tienda");
+            const rol = sessionStorage.getItem("rolUsuario"); document.getElementById("rol-display").innerText = "Rol: " + (rol === "superadmin" ? "👑 Súper Admin (Creador)" : "🏢 Admin de Tienda");
             const btnUsr = document.getElementById("btn-usr");
             if (rol === "cajero") { window.location.href = "index.html"; } 
-            else if (rol === "admin") {
-                btnUsr.classList.remove("hidden"); btnUsr.innerText = "👥 Mi Personal";
-                document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo";
-                document.getElementById("header-clave").innerText = "Contraseña"; document.getElementById("header-clave").className = "p-4 text-gray-700";
-            } else if (rol === "superadmin") {
-                btnUsr.classList.remove("hidden"); btnUsr.innerText = "👥 Usuarios (Global)";
-                document.getElementById("titulo-tabla-usuarios").innerText = "Administración Global de Usuarios";
-                document.getElementById("header-clave").innerText = "Bóveda: Clave Secreta"; document.getElementById("header-clave").className = "p-4 text-yellow-600 font-bold";
-            }
+            else if (rol === "admin") { btnUsr.classList.remove("hidden"); btnUsr.innerText = "👥 Mi Personal"; document.getElementById("seccion-crear-usuario").style.display = "block"; document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo"; document.getElementById("header-clave").innerText = "Contraseña"; document.getElementById("header-clave").className = "p-4 text-gray-700"; } 
+            else if (rol === "superadmin") { btnUsr.classList.remove("hidden"); btnUsr.innerText = "👥 Usuarios (Global)"; document.getElementById("seccion-crear-usuario").style.display = "block"; document.getElementById("titulo-tabla-usuarios").innerText = "Administración Global de Usuarios"; document.getElementById("header-clave").innerText = "Bóveda: Clave Secreta"; document.getElementById("header-clave").className = "p-4 text-yellow-600 font-bold"; }
         }
 
-        if(sessionStorage.getItem("adminToken")) { 
-            document.getElementById("login-overlay").style.display = "none";
-            aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas();
-            if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios();
-        }
+        if(sessionStorage.getItem("adminToken")) { document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas(); cargarAjustesBrandingForm(); if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios(); }
         
         async function verificarLogin() {
             const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
             try {
                 const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
-                    const data = await res.json();
-                    if(data.rol === "cajero") { Swal.fire('Atención Cajero', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS).', 'info'); return; }
+                    const data = await res.json(); if(data.rol === "cajero") { Swal.fire('Atención', 'Tú debes iniciar sesión en la pantalla del Punto de Venta (POS).', 'info'); return; }
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
-                    document.getElementById("login-overlay").style.display = "none";
-                    aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas();
-                    if(data.rol !== "cajero") fetchUsuarios();
+                    document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas(); cargarAjustesBrandingForm(); if(data.rol !== "cajero") fetchUsuarios();
                 } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
@@ -289,166 +262,48 @@
             document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
             document.getElementById('tab-usuarios').classList.toggle('hidden', tab !== 'usuarios');
             document.getElementById('tab-cajas').classList.toggle('hidden', tab !== 'cajas');
+            document.getElementById('tab-ajustes').classList.toggle('hidden', tab !== 'ajustes');
             
             document.getElementById('btn-inv').className = tab === 'inventario' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-ven').className = tab === 'ventas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             document.getElementById('btn-caj').className = tab === 'cajas' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
-            
+            document.getElementById('btn-cfg').className = tab === 'ajustes' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded";
             if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById('btn-usr').className = tab === 'usuarios' ? "bg-blue-600 px-4 py-2 rounded" : "bg-gray-700 px-4 py-2 rounded"; }
         }
 
-        function parseFecha(f) { const p = f.split(/[\s,/:]+/); if(p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); if (!isNaN(d.getTime())) return d; } return new Date(f); }
-
-        // --- HISTORIAL DE CAJAS ---
-        async function fetchCajas() { 
-            try { 
-                const res = await fetchConToken(`${API_URL}/caja/historial`); 
-                todasLasCajas = await res.json(); 
-                const cajerosUnicos = [...new Set(todasLasCajas.map(c => c.cajero || "Desconocido"))]; 
-                document.getElementById("filtro-cajero-cajas").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join("");
-                aplicarFiltrosCajas();
-            } catch (e) {} 
-        }
-
+        // --- CORTES DE CAJA ---
+        async function fetchCajas() { try { const res = await fetchConToken(`${API_URL}/caja/historial`); todasLasCajas = await res.json(); const cajerosUnicos = [...new Set(todasLasCajas.map(c => c.cajero || "Desconocido"))]; document.getElementById("filtro-cajero-cajas").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join(""); aplicarFiltrosCajas(); } catch (e) {} }
         function aplicarFiltrosCajas() {
-            const filtroF = document.getElementById("filtro-fecha-cajas").value; 
-            const filtroC = document.getElementById("filtro-cajero-cajas").value; 
-            document.getElementById("controles-manuales-cajas").classList.toggle("hidden", filtroF !== "manual");
-            
-            let filtradas = todasLasCajas; 
-            const ahora = new Date(); 
-            const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
-            
+            const filtroF = document.getElementById("filtro-fecha-cajas").value; const filtroC = document.getElementById("filtro-cajero-cajas").value; document.getElementById("controles-manuales-cajas").classList.toggle("hidden", filtroF !== "manual");
+            let filtradas = todasLasCajas; const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
             if (filtroF === "hoy") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && new Date(parseFecha(c.fecha_apertura).getFullYear(), parseFecha(c.fecha_apertura).getMonth(), parseFecha(c.fecha_apertura).getDate()).getTime() === dHoy);
             else if (filtroF === "semana") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= ahora.getTime() - (7 * 86400000));
             else if (filtroF === "mes") filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getMonth() === ahora.getMonth() && parseFecha(c.fecha_apertura).getFullYear() === ahora.getFullYear());
-            else if (filtroF === "manual") {
-                const fI = document.getElementById("fecha-inicio-cajas").value; const fF = document.getElementById("fecha-fin-cajas").value;
-                if (fI && fF) { 
-                    const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); 
-                    if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'El periodo máximo de búsqueda es de 6 meses.', 'warning'); return; }
-                    filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= tI && parseFecha(c.fecha_apertura).getTime() <= tF); 
-                }
-            }
-            
+            else if (filtroF === "manual") { const fI = document.getElementById("fecha-inicio-cajas").value; const fF = document.getElementById("fecha-fin-cajas").value; if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'Máximo 6 meses.', 'warning'); return; } filtradas = filtradas.filter(c => c.fecha_apertura !== "---" && parseFecha(c.fecha_apertura).getTime() >= tI && parseFecha(c.fecha_apertura).getTime() <= tF); } }
             if (filtroC !== "todos") filtradas = filtradas.filter(c => (c.cajero || "Desconocido") === filtroC);
-            arrayCajasFiltradasExport = filtradas;
-            renderCajas(filtradas);
+            arrayCajasFiltradasExport = filtradas; renderCajas(filtradas);
         }
+        function renderCajas(cajas) { const list = document.getElementById("cajas-list"); if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros en este período.</td></tr>`; list.innerHTML = cajas.map(c => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-mono text-gray-500">${c.id}</td><td class="p-4 font-bold text-gray-800">${c.cajero}</td><td class="p-4">${c.fecha_apertura}</td><td class="p-4 font-bold ${c.estado === 'abierta' ? 'text-green-500' : 'text-gray-600'}">${c.fecha_cierre}</td><td class="p-4 text-right text-gray-500">Q${c.fondo_inicial.toFixed(2)}</td><td class="p-4 text-right text-green-600">Q${c.total_ventas.toFixed(2)}</td><td class="p-4 font-black text-blue-600 text-right text-lg">Q${c.total_esperado.toFixed(2)}</td><td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${c.estado==='abierta'?'bg-green-100 text-green-700':'bg-gray-200 text-gray-600'}">${c.estado.toUpperCase()}</span></td></tr>`).join(""); }
 
-        function renderCajas(cajas) {
-            const list = document.getElementById("cajas-list");
-            if (cajas.length === 0) return list.innerHTML = `<tr><td colspan="8" class="p-4 text-center">No hay registros en este período.</td></tr>`;
-            list.innerHTML = cajas.map(c => `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4 font-mono text-gray-500">${c.id}</td>
-                    <td class="p-4 font-bold text-gray-800">${c.cajero}</td>
-                    <td class="p-4">${c.fecha_apertura}</td>
-                    <td class="p-4 font-bold ${c.estado === 'abierta' ? 'text-green-500' : 'text-gray-600'}">${c.fecha_cierre}</td>
-                    <td class="p-4 text-right text-gray-500">Q${c.fondo_inicial.toFixed(2)}</td>
-                    <td class="p-4 text-right text-green-600">Q${c.total_ventas.toFixed(2)}</td>
-                    <td class="p-4 font-black text-blue-600 text-right text-lg">Q${c.total_esperado.toFixed(2)}</td>
-                    <td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${c.estado==='abierta'?'bg-green-100 text-green-700':'bg-gray-200 text-gray-600'}">${c.estado.toUpperCase()}</span></td>
-                </tr>
-            `).join("");
-        }
-
-        // --- GESTIÓN DE USUARIOS ---
+        // --- RESTO DE FUNCIONES (Usuarios/Inventario/Ventas) ---
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
-
-        function renderUsuarios(usuarios) {
-            const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario");
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`;
-            list.innerHTML = usuarios.map((u, index) => {
-                let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b";
-                if (u.rol === 'superadmin') {
-                    if (rolActual === "superadmin") { trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`; } else { return ""; } 
-                } else {
-                    if (rolActual === "superadmin") { passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } else { passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1" title="Editar Nombre">✏️ Nombre</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; }
-                }
-                return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>`
-            }).join("");
-        }
-
+        function renderUsuarios(usuarios) { const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario"); if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; list.innerHTML = usuarios.map((u, index) => { let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; if (u.rol === 'superadmin') { if (rolActual === "superadmin") { trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`; } else { return ""; } } else { if (rolActual === "superadmin") { passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️</button><button onclick="eliminarUsuario(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } else { passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Nombre</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } } return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` }).join(""); }
         document.getElementById("add-user-form").addEventListener("submit", async (e) => { e.preventDefault(); const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value; try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {} });
         window.eliminarUsuario = function(id) { Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } }); };
-        window.eliminarUsuarioConfirmado = function(id) { Swal.fire({title: '¡ADVERTENCIA!', text: "Estás a punto de borrar definitivamente este usuario y no se podrá recuperar. ¿Seguro?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success');} } catch(e){} } }); };
-
-        window.openEditUser = function(id) {
-            const u = allUsers.find(x => x.id === id);
-            document.getElementById("edit-usr-id").value = u.id; document.getElementById("edit-usr-fullname").value = u.nombre_completo; document.getElementById("edit-usr-name").value = u.usuario; document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : ''; document.getElementById("edit-usr-rol").value = u.rol;
-            const esAdminNormal = sessionStorage.getItem("rolUsuario") === "admin";
-            document.getElementById("edit-usr-name").disabled = esAdminNormal; document.getElementById("edit-usr-pass").disabled = esAdminNormal; document.getElementById("edit-usr-rol").disabled = esAdminNormal;
-            if(esAdminNormal) { document.getElementById("edit-usr-pass").placeholder = "Comunícate con Soporte para cambiar"; document.getElementById("edit-usr-name").title = "No modificable"; }
-            document.getElementById("edit-user-modal").classList.remove("hidden");
-        };
-
-        document.getElementById("form-editar-usuario").addEventListener("submit", async (e) => {
-            e.preventDefault(); const id = document.getElementById("edit-usr-id").value;
-            const payload = { nombre_completo: document.getElementById("edit-usr-fullname").value.trim(), usuario: document.getElementById("edit-usr-name").value.trim(), password: document.getElementById("edit-usr-pass").value.trim(), rol: document.getElementById("edit-usr-rol").value };
-            if(sessionStorage.getItem("rolUsuario") === "admin") { delete payload.usuario; delete payload.password; delete payload.rol; }
-            try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); } } catch (e) {}
-        });
-
-        window.verAuditoria = async function() { try { const res = await fetchConToken(`${API_URL}/auditoria`); const data = await res.json(); const list = document.getElementById("audit-list"); if (data.length === 0) list.innerHTML = `<tr><td colspan="3" class="p-4 text-center">No hay registros.</td></tr>`; else list.innerHTML = data.map(r => `<tr><td class="p-2 border-b whitespace-nowrap text-gray-500">${r.fecha}</td><td class="p-2 border-b font-mono">${r.usuario}</td><td class="p-2 border-b text-blue-800">${r.detalle}</td></tr>`).join(""); document.getElementById("audit-modal").classList.remove("hidden"); } catch (e) {} };
-
-        // --- INVENTARIO ---
-        function verificarSiExisteProducto(codigoNuevo, idInput) { const existe = allProducts.find(p => p.codigo === codigoNuevo); if (existe && currentEditCode !== codigoNuevo) { Swal.fire('¡Código Existente!', `Pertenece a: "${existe.nombre}"`, 'warning'); document.getElementById(idInput).value = ""; } else { document.getElementById(idInput).value = codigoNuevo; } }
-        document.getElementById("native-admin-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto-admin"); scanner.scanFile(e.target.files[0], true).then(t => verificarSiExisteProducto(t, "add-codigo")).catch(err => Swal.fire('Error', 'No se detectó un código legible.', 'error')).finally(() => scanner.clear()); });
-        document.getElementById("start-admin-btn").addEventListener("click", () => { document.getElementById("admin-scanner-container").classList.remove("hidden"); adminScanner = new Html5Qrcode("admin-reader"); adminScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopAdminScanning(); verificarSiExisteProducto(t, "add-codigo"); }).catch(e => { document.getElementById("admin-scanner-container").classList.add("hidden"); Swal.fire('Error', 'Cámara no disponible.', 'error'); }); });
-        function stopAdminScanning() { if(adminScanner){ try { adminScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("admin-scanner-container").classList.add("hidden"); } }
-        document.getElementById("stop-admin-btn").addEventListener("click", stopAdminScanning);
-
-        let editScanner = null;
-        document.getElementById("native-edit-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto-edit"); scanner.scanFile(e.target.files[0], true).then(t => verificarSiExisteProducto(t, "edit-codigo")).catch(err => Swal.fire('Error', 'No se detectó un código legible.', 'error')).finally(() => scanner.clear()); });
-        document.getElementById("start-edit-scan-btn").addEventListener("click", () => { document.getElementById("edit-scanner-container").classList.remove("hidden"); editScanner = new Html5Qrcode("edit-reader"); editScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (t) => { stopEditScanning(); verificarSiExisteProducto(t, "edit-codigo"); }).catch(e => { document.getElementById("edit-scanner-container").classList.add("hidden"); Swal.fire('Error', 'Cámara no disponible.', 'error'); }); });
-        function stopEditScanning() { if(editScanner) { try { editScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("edit-scanner-container").classList.add("hidden"); } }
-        document.getElementById("stop-edit-scan-btn").addEventListener("click", stopEditScanning);
-
+        window.eliminarUsuarioConfirmado = function(id) { Swal.fire({title: '¡ADVERTENCIA!', text: "¿Estás absolutamente seguro de eliminar esta cuenta?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success');} } catch(e){} } }); };
+        window.openEditUser = function(id) { const u = allUsers.find(x => x.id === id); document.getElementById("edit-usr-id").value = u.id; document.getElementById("edit-usr-fullname").value = u.nombre_completo; document.getElementById("edit-usr-name").value = u.usuario; document.getElementById("edit-usr-pass").value = u.password !== '********' ? u.password : ''; document.getElementById("edit-usr-rol").value = u.rol; const esAdminNormal = sessionStorage.getItem("rolUsuario") === "admin"; document.getElementById("edit-usr-name").disabled = esAdminNormal; document.getElementById("edit-usr-pass").disabled = esAdminNormal; document.getElementById("edit-usr-rol").disabled = esAdminNormal; if(esAdminNormal) { document.getElementById("edit-usr-pass").placeholder = "Comunícate con Soporte"; } document.getElementById("edit-user-modal").classList.remove("hidden"); };
+        document.getElementById("form-editar-usuario").addEventListener("submit", async (e) => { e.preventDefault(); const id = document.getElementById("edit-usr-id").value; const payload = { nombre_completo: document.getElementById("edit-usr-fullname").value.trim(), usuario: document.getElementById("edit-usr-name").value.trim(), password: document.getElementById("edit-usr-pass").value.trim(), rol: document.getElementById("edit-usr-rol").value }; if(sessionStorage.getItem("rolUsuario") === "admin") { delete payload.usuario; delete payload.password; delete payload.rol; } try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("edit-user-modal").classList.add("hidden"); fetchUsuarios(); Swal.fire('Guardado', 'Modificaciones guardadas', 'success'); } } catch (e) {} });
         async function fetchInventory() { try { const res = await fetchConToken(`${API_URL}/productos`); allProducts = await res.json(); fuse = new Fuse(allProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); renderTable(allProducts); } catch (e) {} }
         function renderTable(products) { const list = document.getElementById("inventory-list"); if (products.length === 0) return list.innerHTML = `<tr><td colspan="5" class="text-center p-4">Vacío</td></tr>`; list.innerHTML = products.map(p => `<tr class="border-b"><td class="p-4 font-mono">${p.codigo}</td><td class="p-4">${p.nombre}</td><td class="p-4">Q${p.precio.toFixed(2)}</td><td class="p-4 font-bold ${p.stock<=5?'text-red-600':''}">${p.stock}</td><td class="p-4 text-center"><button onclick="openEditModal('${p.codigo}')" class="bg-yellow-400 px-2 py-1 rounded">✎</button> <button onclick="deleteProduct('${p.codigo}')" class="bg-red-500 text-white px-2 py-1 rounded">✕</button></td></tr>`).join(""); }
         document.getElementById("search-input").addEventListener("input", (e) => { const term = e.target.value.trim(); renderTable(term ? fuse.search(term).map(r => r.item) : allProducts); });
-        
         document.getElementById("add-form").addEventListener("submit", async (e) => { e.preventDefault(); const codVal = document.getElementById("add-codigo").value.trim(); const nomVal = document.getElementById("add-nombre").value.trim(); if (allProducts.find(p => p.codigo === codVal)) return Swal.fire('Error', 'Código en uso', 'error'); try { const res = await fetchConToken(`${API_URL}/productos`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: codVal, nombre: nomVal, precio: parseFloat(document.getElementById("add-precio").value), stock: parseInt(document.getElementById("add-stock").value) }) }); if (res.ok) { document.getElementById("add-form").reset(); fetchInventory(); Swal.fire('Éxito', 'Guardado', 'success'); } } catch (e) {} });
-        
         function openEditModal(c) { const p = allProducts.find(x => x.codigo === c); currentEditCode = c; document.getElementById("edit-original-code").value = p.codigo; document.getElementById("edit-codigo").value = p.codigo; document.getElementById("edit-nombre").value = p.nombre; document.getElementById("edit-precio").value = p.precio; document.getElementById("edit-stock").value = p.stock; document.getElementById("edit-modal").classList.remove("hidden"); }
         function closeEditModal() { stopEditScanning(); document.getElementById("edit-modal").classList.add("hidden"); }
-        
-        document.getElementById("edit-form").addEventListener("submit", async (e) => { e.preventDefault(); const nuevoCodigo = document.getElementById("edit-codigo").value.trim(); if(nuevoCodigo !== currentEditCode && allProducts.find(p => p.codigo === nuevoCodigo)) return Swal.fire('Error', 'El nuevo código ya está en uso.', 'error'); try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: nuevoCodigo, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) }) }); closeEditModal(); fetchInventory(); Swal.fire('Éxito', 'Actualizado', 'success'); } catch (e) {} });
+        document.getElementById("edit-form").addEventListener("submit", async (e) => { e.preventDefault(); const nuevoCodigo = document.getElementById("edit-codigo").value.trim(); if(nuevoCodigo !== currentEditCode && allProducts.find(p => p.codigo === nuevoCodigo)) return Swal.fire('Error', 'Código en uso.', 'error'); try { await fetchConToken(`${API_URL}/productos/${currentEditCode}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ codigo: nuevoCodigo, nombre: document.getElementById("edit-nombre").value, precio: parseFloat(document.getElementById("edit-precio").value), stock: parseInt(document.getElementById("edit-stock").value) }) }); closeEditModal(); fetchInventory(); Swal.fire('Éxito', 'Actualizado', 'success'); } catch (e) {} });
         window.deleteProduct = function(c) { Swal.fire({title: '¿Eliminar?', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { await fetchConToken(`${API_URL}/productos/${c}`, { method: "DELETE" }); fetchInventory(); } }); };
-
-        // --- VENTAS ---
-        function formatearFechaLocal(f) { const p = f.split(/[\s,/:]+/); if (p.length >= 5) { const d = new Date(`${p[2]}-${p[1]}-${p[0]}T${p[3]}:${p[4]}:00Z`); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } return f; }
-
         async function fetchVentas() { try { const res = await fetchConToken(`${API_URL}/ventas/historial`); todasLasVentas = await res.json(); const cajerosUnicos = [...new Set(todasLasVentas.map(v => v.cajero || "Desconocido"))]; document.getElementById("filtro-cajero").innerHTML = `<option value="todos">Todos los cajeros</option>` + cajerosUnicos.map(c => `<option value="${c}">${c}</option>`).join(""); aplicarFiltros(); } catch (e) {} }
-
-        function aplicarFiltros() {
-            const filtroF = document.getElementById("filtro-fecha").value; const filtroC = document.getElementById("filtro-cajero").value; document.getElementById("controles-manuales").classList.toggle("hidden", filtroF !== "manual");
-            let filtradas = todasLasVentas; const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
-            if (filtroF === "hoy") filtradas = filtradas.filter(v => new Date(parseFecha(v.fecha).getFullYear(), parseFecha(v.fecha).getMonth(), parseFecha(v.fecha).getDate()).getTime() === dHoy);
-            else if (filtroF === "semana") filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= ahora.getTime() - (7 * 86400000));
-            else if (filtroF === "mes") filtradas = filtradas.filter(v => parseFecha(v.fecha).getMonth() === ahora.getMonth() && parseFecha(v.fecha).getFullYear() === ahora.getFullYear());
-            else if (filtroF === "manual") {
-                const fI = document.getElementById("fecha-inicio").value; const fF = document.getElementById("fecha-fin").value;
-                if (fI && fF) { 
-                    const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); 
-                    if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'El periodo máximo de búsqueda es de 6 meses.', 'warning'); return; }
-                    filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); 
-                }
-            }
-            if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC);
-            arrayVentasFiltradasExport = filtradas; 
-            actualizarVistaVentas(filtradas);
-        }
-
-        function actualizarVistaVentas(ventas) {
-            const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer");
-            const sum = ventas.reduce((acc, v) => acc + v.total, 0); gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`;
-            if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas en este período.</td></tr>`; } 
-            else { list.innerHTML = ventas.map(v => { let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1; items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } }); const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido"; return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`; }).join(""); }
-            dibujarGrafica(ventas);
-        }
-
+        function aplicarFiltros() { const filtroF = document.getElementById("filtro-fecha").value; const filtroC = document.getElementById("filtro-cajero").value; document.getElementById("controles-manuales").classList.toggle("hidden", filtroF !== "manual"); let filtradas = todasLasVentas; const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime(); if (filtroF === "hoy") filtradas = filtradas.filter(v => new Date(parseFecha(v.fecha).getFullYear(), parseFecha(v.fecha).getMonth(), parseFecha(v.fecha).getDate()).getTime() === dHoy); else if (filtroF === "semana") filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= ahora.getTime() - (7 * 86400000)); else if (filtroF === "mes") filtradas = filtradas.filter(v => parseFecha(v.fecha).getMonth() === ahora.getMonth() && parseFecha(v.fecha).getFullYear() === ahora.getFullYear()); else if (filtroF === "manual") { const fI = document.getElementById("fecha-inicio").value; const fF = document.getElementById("fecha-fin").value; if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'Máximo 6 meses.', 'warning'); return; } filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); } } if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC); arrayVentasFiltradasExport = filtradas; actualizarVistaVentas(filtradas); }
+        function actualizarVistaVentas(ventas) { const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer"); const sum = ventas.reduce((acc, v) => acc + v.total, 0); gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`; if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas.</td></tr>`; } else { list.innerHTML = ventas.map(v => { let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1; items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } }); const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido"; return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`; }).join(""); } dibujarGrafica(ventas); }
         function dibujarGrafica(ventas) { const ctx = document.getElementById('ventasChart').getContext('2d'); const ag = {}; ventas.forEach(v => { const fc = parseFecha(v.fecha).toLocaleDateString(); ag[fc] = (ag[fc] || 0) + v.total; }); if(miGrafico) miGrafico.destroy(); miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(ag).reverse(), datasets: [{ label: 'Ingresos (Q)', data: Object.values(ag).reverse(), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); }
     </script>
 </body>
