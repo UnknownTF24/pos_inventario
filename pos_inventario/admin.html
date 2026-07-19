@@ -226,21 +226,23 @@
         }
 
         function aplicarPermisos() {
-            const rol = sessionStorage.getItem("rolUsuario"); 
-            document.getElementById("rol-display").innerText = "Modo: " + (rol === "superadmin" ? "Soporte Maestro" : "Administrador");
-            const btnUsr = document.getElementById("btn-usr");
-            const btnUsrM = document.getElementById("btn-usr-m");
-            
-            if (rol === "cajero") { window.location.href = "index.html"; } 
-            else if (rol === "admin" || rol === "superadmin") { 
-                btnUsr.classList.remove("hidden"); btnUsrM.classList.remove("hidden");
-                document.getElementById("seccion-crear-usuario").style.display = "block"; 
-                document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo"; 
-                
-                // Mostrar botón de ir al panel maestro SOLO al Superadmin
-                if(rol === "superadmin") { document.getElementById("btn-maestro").classList.remove("hidden"); }
-            }
+    const rol = sessionStorage.getItem("rolUsuario"); 
+    document.getElementById("rol-display").innerText = "Modo: " + (rol === "superadmin" ? "Soporte Maestro" : "Administrador");
+    const btnUsr = document.getElementById("btn-usr");
+    const btnUsrM = document.getElementById("btn-usr-m");
+    
+    if (rol === "cajero") { window.location.href = "index.html"; } 
+    else if (rol === "admin" || rol === "superadmin") { 
+        btnUsr.classList.remove("hidden"); btnUsrM.classList.remove("hidden");
+        document.getElementById("seccion-crear-usuario").style.display = "block"; 
+        document.getElementById("titulo-tabla-usuarios").innerText = "Mi Equipo de Trabajo"; 
+        
+        // MOSTRAR BOTON MAESTRO SOLO AL CREADOR (TIENDA 1)
+        if(rol === "superadmin" && sessionStorage.getItem("tienda_id") == "1") { 
+            document.getElementById("btn-maestro").classList.remove("hidden"); 
         }
+    }
+}
 
         if(sessionStorage.getItem("adminToken")) { 
             document.getElementById("login-overlay").style.display = "none"; 
@@ -252,24 +254,33 @@
         }
         
         async function verificarLogin() {
-            const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
-            try {
-                const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
-                if (res.ok) {
-                    const data = await res.json(); if(data.rol === "cajero") { Swal.fire('Atención', 'Inicia sesión en el Punto de Venta (POS).', 'info'); return; }
-                    sessionStorage.setItem("tienda_id", data.tienda_id);
-                    document.getElementById("login-overlay").style.display = "none"; 
-                    aplicarPermisos(); 
-                    switchTab('inventario');
-                    fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
-                    if(rol === "superadmin" && sessionStorage.getItem("tienda_id") == "1") { 
-    document.getElementById("btn-maestro").classList.remove("hidden"); 
-}
-                    if(data.rol !== "cajero") fetchUsuarios(); 
-                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("rolUsuario", data.rol);
-                } else { Swal.fire('Error', 'Usuario o contraseña incorrectos.', 'error'); }
-            } catch (e) { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); }
+    const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
+    try {
+        const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
+        if (res.ok) {
+            const data = await res.json(); 
+            if(data.rol === "cajero") { Swal.fire('Atención', 'Inicia sesión en el Punto de Venta (POS).', 'info'); return; }
+            
+            // 1. PRIMERO: Guardar TODOS los datos y tokens vitales
+            sessionStorage.setItem("adminToken", data.token); 
+            sessionStorage.setItem("nombreUsuario", data.nombre_completo); 
+            sessionStorage.setItem("rolUsuario", data.rol);
+            sessionStorage.setItem("tienda_id", data.tienda_id);
+
+            // 2. SEGUNDO: Ocultar login y cargar la interfaz
+            document.getElementById("login-overlay").style.display = "none"; 
+            aplicarPermisos(); 
+            switchTab('inventario');
+            
+            // 3. TERCERO: Ya con el token guardado, pedimos los datos al servidor
+            fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
+            if(data.rol !== "cajero") fetchUsuarios();
+            
+        } else { 
+            const errData = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', errData.detail || 'Credenciales incorrectas', 'error'); 
         }
+    } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
+}
 
         function switchTab(tab) { 
             ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => { 
