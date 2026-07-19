@@ -108,6 +108,38 @@ def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(ve
     conn.commit(); conn.close()
     return {"status": "success"}
 
+# NUEVO: Ruta para borrar cliente por completo
+@app.delete("/api/saas/tiendas/{id_tienda}")
+def eliminar_tienda_saas(id_tienda: int, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
+    if id_tienda == 1: raise HTTPException(status_code=400, detail="No puedes borrar tu propia tienda maestra.")
+    conn = get_db_connection(); cursor = conn.cursor()
+    try:
+        # Borrar en cascada manual
+        cursor.execute("DELETE FROM ventas WHERE tienda_id = %s", (id_tienda,))
+        cursor.execute("DELETE FROM caja_sesiones WHERE tienda_id = %s", (id_tienda,))
+        cursor.execute("DELETE FROM auditoria_usuarios WHERE tienda_id = %s", (id_tienda,))
+        cursor.execute("DELETE FROM productos WHERE tienda_id = %s", (id_tienda,))
+        cursor.execute("DELETE FROM usuarios WHERE tienda_id = %s", (id_tienda,))
+        cursor.execute("DELETE FROM tiendas WHERE id = %s", (id_tienda,))
+        conn.commit(); return {"status": "success"}
+    except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
+    finally: conn.close()
+
+# NUEVO: Generador de token de Visita (Impersonation)
+@app.post("/api/saas/impersonate/{id_tienda}")
+def visitar_tienda(id_tienda: int, user_info: dict = Depends(verificar_token)):
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
+    conn = get_db_connection(); cursor = conn.cursor()
+    cursor.execute("SELECT nombre FROM tiendas WHERE id = %s", (id_tienda,))
+    tienda = cursor.fetchone()
+    conn.close()
+    if not tienda: raise HTTPException(status_code=404, detail="La tienda no existe.")
+    
+    # Creamos un Token falso pero válido a tu nombre para esa tienda
+    token = jwt.encode({"sub": "dios_creador", "rol": "superadmin", "nombre": "Soporte Central", "tienda_id": id_tienda, "exp": datetime.utcnow() + timedelta(hours=4)}, SECRET_KEY, algorithm=ALGORITHM)
+    return {"token": token, "tienda_id": id_tienda}
+
 # DIRECTORIO GLOBAL DE USUARIOS (SaaS)
 @app.get("/api/saas/usuarios")
 def saas_listar_usuarios(user_info: dict = Depends(verificar_token)):
@@ -204,29 +236,18 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         if not target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
         old_usuario, old_password, old_rol, old_nombre, old_cambiada = target
         
-        # Bloqueo: Un Admin no puede modificar a un Súper Admin
-        if old_rol == "superadmin" and user_info["rol"] != "superadmin": 
-            raise HTTPException(status_code=403, detail="No puedes modificar la cuenta del Creador.")
+        if old_rol == "superadmin" and user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="No puedes modificar la cuenta del Creador.")
+        new_usuario = req.get("usuario", old_usuario); new_password = req.get("password", old_password); new_rol = req.get("rol", old_rol); new_nombre = req.get("nombre_completo", old_nombre)
         
-        new_usuario = req.get("usuario", old_usuario)
-        new_password = req.get("password", old_password)
-        new_rol = req.get("rol", old_rol)
-        new_nombre = req.get("nombre_completo", old_nombre)
-        
-        # Seguridad: El ID 1 siempre debe ser superadmin
         if id_usuario == 1 and new_rol != "superadmin": new_rol = "superadmin"
-        
-        if user_info["rol"] == "admin" and (new_usuario != old_usuario or new_rol != old_rol): 
-            raise HTTPException(status_code=403, detail="Como Admin, solo puedes modificar Nombres y Contraseñas.")
+        if user_info["rol"] == "admin" and (new_usuario != old_usuario or new_rol != old_rol): raise HTTPException(status_code=403, detail="Como Admin, solo puedes modificar Nombres y Contraseñas.")
             
         nuevo_cambiada = old_cambiada
         if old_password != new_password:
             if user_info["rol"] == "admin":
-                if old_cambiada:
-                    raise HTTPException(status_code=403, detail="La contraseña de esta cuenta ya fue cambiada 1 vez. Por seguridad, contacta a Soporte para reiniciarla.")
+                if old_cambiada: raise HTTPException(status_code=403, detail="La contraseña ya fue cambiada 1 vez. Contacta a Soporte para reiniciarla.")
                 nuevo_cambiada = True
-            elif user_info["rol"] == "superadmin":
-                nuevo_cambiada = False
+            elif user_info["rol"] == "superadmin": nuevo_cambiada = False
                 
         cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s, password_cambiada=%s WHERE id=%s AND tienda_id=%s", (new_usuario, new_password, new_rol, new_nombre, nuevo_cambiada, id_usuario, user_info["tienda_id"]))
         conn.commit(); return {"status": "success"}
@@ -239,14 +260,13 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     conn = get_db_connection(); cursor = conn.cursor()
     try:
-        if id_usuario == 1: raise HTTPException(status_code=403, detail="El Creador principal no puede ser eliminado.")
-        cursor.execute("SELECT rol FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
+        cursor.execute("SELECT rol, usuario FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
         rol_target = cursor.fetchone()
         if not rol_target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-        if rol_target[0] == "superadmin" and user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="No puedes borrar a un Súper Administrador.")
-        
-        cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
-        conn.commit(); return {"status": "success"}
+        if rol_target[0] == "superadmin":
+            if rol_target[1] == 'admin': raise HTTPException(status_code=403, detail="El Creador principal no se puede borrar.")
+            elif user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
+        cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
     finally: conn.close()
