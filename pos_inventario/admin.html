@@ -20,11 +20,20 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Panel Administrativo 🔒</h2>
             <div class="space-y-4 text-left mt-4">
                 <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. admin"></div>
-                <div><label class="block text-sm font-bold">Contraseña</label><input type="password" id="pass-input" class="w-full border p-3 rounded" placeholder="••••••••"></div>
+                
+                <!-- CAMPO CONTRASEÑA CON BOTÓN DE VER -->
+                <div>
+                    <label class="block text-sm font-bold">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="pass-input" class="w-full border p-3 rounded outline-none focus:border-blue-500" placeholder="••••••••">
+                        <button type="button" onclick="togglePassword('pass-input')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-blue-600 transition text-lg">👁️</button>
+                    </div>
+                </div>
+                
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Iniciar Sesión</button>
             </div>
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
-                <a href="https://wa.me/50249411913?text=Hola,%20necesito%20soporte%20con%20el%20sistema%20POS" target="_blank" class="text-sm text-green-600 font-bold hover:underline">💬 Contactar a Soporte Técnico</a>
+                <a href="https://wa.me/50249411913?text=Hola,%20necesito%20soporte%20con%20el%20Panel%20Administrativo" target="_blank" class="text-sm text-green-600 font-bold hover:underline">💬 Contactar a Soporte Técnico</a>
                 <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">🛒 Volver a la Caja (POS)</a>
             </div>
         </div>
