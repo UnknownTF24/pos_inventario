@@ -1,11 +1,17 @@
 {
   "name": "POS Mi Tienda",
   "short_name": "POS Cajas",
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1011/1011812.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "https://cdn-icons-png.flaticon.com/512/1011/1011812.png",
       "sizes": "512x512",
