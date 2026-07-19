@@ -103,6 +103,27 @@
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
 
+        // --- 1. FUNCIONES VITALES DE SEGURIDAD Y CONEXIÓN ---
+        function cerrarSesion() { 
+            sessionStorage.clear(); 
+            window.location.reload(); 
+        }
+
+        async function fetchConToken(url, options = {}) {
+            const token = sessionStorage.getItem("adminToken"); 
+            if (!options.headers) options.headers = {}; 
+            if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            try {
+                const res = await fetch(url, options);
+                if (res.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
+                return res;
+            } catch (err) { 
+                if(err.message !== "No autorizado") { console.error("Error de red interceptado."); } 
+                throw err; 
+            }
+        }
+
+        // --- 2. INICIO DE SESIÓN Y AJUSTES ---
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
 
         function checkSession() {
@@ -127,42 +148,37 @@
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
+        
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
-            if (input.type === "password") {
-                input.type = "text";
-            } else {
-                input.type = "password";
-            }
+            if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
         }
 
+        // --- 3. LÓGICA DE CAJA (BLINDADA CONTRA ERRORES) ---
         async function fetchEstadoCaja() { try { const res = await fetchConToken(`${API_URL}/caja/estado`); const data = await res.json(); if(!data.abierta) { document.getElementById("caja-overlay").classList.remove("hidden"); setTimeout(()=> document.getElementById("fondo-caja-input").focus(), 100); } } catch(e) {} }
+        
         async function abrirCaja() { const fondo = parseFloat(document.getElementById("fondo-caja-input").value); if(isNaN(fondo) || fondo < 0) return Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning'); try { const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) }); if(res.ok) { document.getElementById("caja-overlay").classList.add("hidden"); Swal.fire({title: 'Turno Abierto', text: `Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } } catch(e) {} }
+        
         async function cerrarCajaTurno() { 
             Swal.fire({ title: '¿Cerrar Turno?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, imprimir Corte Z', confirmButtonColor: '#d33' }).then(async (result) => { 
                 if(result.isConfirmed) { 
                     try { 
                         const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); 
-                        
-                        // Si el servidor responde bien (200 OK)
                         if(res.ok) { 
                             try {
                                 const data = await res.json(); 
                                 try { imprimirTicketCorte(data); } catch(err) { console.error("Error al imprimir:", err); }
                                 Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); 
                             } catch (parseError) {
-                                // Si el servidor dice "OK" pero manda basura en vez de datos
                                 Swal.fire('Error de Datos', 'El servidor respondió, pero los datos están corruptos. Intenta de nuevo.', 'error');
                             }
                         } else { 
-                            // Si el servidor responde con un error controlado (ej. 400 o 500)
                             const errorText = await res.text();
                             let detail = "Error desconocido del servidor.";
                             try { detail = JSON.parse(errorText).detail || errorText; } catch(e) { detail = errorText; }
                             Swal.fire('Denegado por el Servidor', detail, 'error'); 
                         } 
                     } catch(e) { 
-                        // AQUÍ ESTÁ LA MAGIA: Ahora te mostrará el error técnico real del navegador
                         Swal.fire('Fallo Crítico de Red', `Motivo técnico: ${e.message || String(e)}`, 'error'); 
                     } 
                 } 
@@ -171,15 +187,13 @@
 
         function imprimirTicketCorte(data) {
             let tNombre = cfgTienda.nombre || "MI TIENDA"; let tDireccion = cfgTienda.direccion || ""; let tNit = cfgTienda.nit || ""; let tTel = cfgTienda.telefono || "";
-            
-            // PRIORIDAD: Usa el nombre del cajero que viene de la base de datos
             let cajero = data.cajero || sessionStorage.getItem("nombreUsuario"); 
-            
             let ventana = window.open('', 'PRINT', 'height=600,width=400'); let fechaCierre = new Date().toLocaleString();
             let html = `<html><head><style>body { font-family: monospace; font-size: 14px; width: 300px; padding: 10px; margin: 0;} h2, p { text-align: center; margin: 2px 0; } h2 { font-size: 16px; font-weight: bold; } .dashed { border-bottom: 1px dashed #000; margin: 8px 0; } table { width: 100%; border-collapse: collapse; margin-top: 10px; } td { padding: 4px 0; } .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; }</style></head><body><h2>${tNombre.toUpperCase()}</h2><p>${tDireccion}</p><p>NIT: ${tNit}</p><p>TEL: ${tTel}</p><div class="dashed"></div><p>*** CORTE DE CAJA Z ***</p><p>Cierre: ${fechaCierre}</p><p>Cajero: ${cajero}</p><table><tr><td>Fondo Inicial:</td><td style="text-align:right">Q${data.fondo_inicial.toFixed(2)}</td></tr><tr><td>Ventas del Turno:</td><td style="text-align:right">Q${data.total_ventas.toFixed(2)}</td></tr></table><div class="dashed"></div><div class="total">TOTAL ESPERADO: Q${data.total_esperado.toFixed(2)}</div></body></html>`;
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
+        // --- 4. PRODUCTOS, CATÁLOGO Y VENTAS ---
         async function fetchPosProducts() { try { const res = await fetchConToken(`${API_URL}/productos`); posProducts = await res.json(); posFuse = new Fuse(posProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); } catch (e) {} }
         function openCatalog() { fetchPosProducts().then(() => { renderCatalog(posProducts); document.getElementById("catalog-modal").classList.remove("hidden"); setTimeout(() => document.getElementById("catalog-search").focus(), 100); }); }
         function closeCatalog() { document.getElementById("catalog-modal").classList.add("hidden"); document.getElementById("catalog-search").value = ""; }
@@ -209,6 +223,7 @@
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
+        // --- 5. CÁMARA Y ESCÁNER ---
         document.getElementById("native-cam-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto"); scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No legible.', 'error')).finally(() => scanner.clear()); });
         document.getElementById("start-btn").addEventListener("click", () => { document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden"); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { stopScanning(); fetchProduct(text); }).catch(e => { stopScanning(); Swal.fire('Error', 'Cámara no disponible', 'error'); }); });
         function stopScanning() { if (html5QrcodeScanner) { try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
