@@ -93,11 +93,7 @@
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
 
-        async function fetchAjustesCloud() {
-            try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); 
-            document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre;
-            } catch(e) {}
-        }
+        async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
 
         function checkSession() {
             if(sessionStorage.getItem("adminToken")) {
@@ -117,7 +113,10 @@
                     const data = await res.json();
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession();
-                } else { Swal.fire('Error', 'Credenciales incorrectas', 'error'); }
+                } else { 
+                    const data = await res.json().catch(()=>({})); 
+                    Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); 
+                }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });

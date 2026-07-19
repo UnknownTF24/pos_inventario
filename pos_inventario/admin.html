@@ -218,7 +218,10 @@
                     const data = await res.json(); if(data.rol === "cajero") { Swal.fire('Atención', 'Inicia sesión en el Punto de Venta (POS).', 'info'); return; }
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
                     document.getElementById("login-overlay").style.display = "none"; aplicarPermisos(); fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); if(data.rol !== "cajero") fetchUsuarios();
-                } else { Swal.fire('Acceso Denegado', 'Credenciales incorrectas', 'error'); }
+                } else { 
+                    const data = await res.json().catch(()=>({})); 
+                    Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); 
+                }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
 
