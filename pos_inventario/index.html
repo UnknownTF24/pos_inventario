@@ -7,12 +7,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Agregamos Fuse.js para la búsqueda inteligente en el POS -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
     <style>
+        /* CSS actualizado según las sugerencias de compatibilidad de VSC */
         input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            appearance: none; /* Regla estándar */
+            margin: 0; 
+        }
+        input[type=number] { 
+            -moz-appearance: textfield; 
+            appearance: textfield; /* Regla estándar */
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
@@ -65,7 +72,6 @@
                 <input id="manual-code" type="text" placeholder="Cód. de barras / Lector Físico" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
             </div>
-            <!-- NUEVO BOTÓN: Catálogo -->
             <button onclick="openCatalog()" class="bg-gray-800 text-white py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition flex items-center justify-center gap-2">
                 🔍 Buscar en Catálogo (Manual)
             </button>
@@ -100,18 +106,13 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null;
-        
-        // Variables para el catálogo
-        let posProducts = []; 
-        let posFuse = null;
+        let posProducts = []; let posFuse = null;
 
         function checkSession() {
             if(sessionStorage.getItem("adminToken")) {
                 document.getElementById("login-overlay").style.display = "none";
                 document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
                 if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById("btn-admin-link").classList.remove("hidden"); }
-                
-                // Cargamos los productos para el catálogo al iniciar sesión
                 fetchPosProducts();
             } else { document.getElementById("login-overlay").style.display = "flex"; }
         }
@@ -146,7 +147,6 @@
             }
         }
 
-        // --- LÓGICA DEL CATÁLOGO INTELIGENTE ---
         async function fetchPosProducts() {
             try {
                 const res = await fetchConToken(`${API_URL}/productos`);
@@ -156,7 +156,6 @@
         }
 
         function openCatalog() {
-            // Recargamos por si alguien en administración modificó stock o nombres recientemente
             fetchPosProducts().then(() => {
                 renderCatalog(posProducts);
                 document.getElementById("catalog-modal").classList.remove("hidden");
@@ -174,7 +173,7 @@
             if (products.length === 0) { list.innerHTML = `<p class="text-center text-gray-400 py-4 font-bold">No se encontraron productos.</p>`; return; }
             
             list.innerHTML = products.map(p => `
-                <div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg hover:bg-blue-50 active:bg-blue-100 cursor-pointer transition shadow-sm bg-white">
+                <div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg ${p.stock < 1 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-blue-50 active:bg-blue-100 cursor-pointer shadow-sm bg-white'} transition">
                     <div>
                         <p class="font-bold text-gray-800 text-sm">${p.nombre}</p>
                         <p class="text-xs text-gray-500">Stock: <span class="font-bold ${p.stock <= 5 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></p>
@@ -192,23 +191,23 @@
         function addFromCatalog(code) {
             const prod = posProducts.find(p => p.codigo === code);
             if(prod) {
-                // Truco para reutilizar la función de carrito
+                // Validación para que no agregue desde el catálogo si hay 0 stock
+                if (prod.stock < 1) {
+                    Swal.fire('Agotado', `No hay inventario de ${prod.nombre}.`, 'warning');
+                    return;
+                }
                 addToCart(prod);
-                // Cerramos el catálogo para agilizar
                 closeCatalog();
-                // Mostramos un mensajito rápido
                 Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200});
             }
         }
 
-        // Autofocus Lector Físico
         document.body.addEventListener("click", (e) => {
             if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && document.getElementById("login-overlay").style.display === "none" && document.getElementById("catalog-modal").classList.contains("hidden")) {
                 document.getElementById("manual-code").focus();
             }
         });
 
-        // --- LÓGICA DEL CARRITO ---
         const manualInput = document.getElementById("manual-code");
         const addManualBtn = document.getElementById("add-manual-btn");
         const cartItemsContainer = document.getElementById("cart-items");
@@ -220,14 +219,19 @@
                 const response = await fetchConToken(`${API_URL}/productos/${code}`);
                 if (!response.ok) { Swal.fire('Oops...', "Producto no encontrado", 'error'); manualInput.value = ""; return; }
                 const product = await response.json(); addToCart(product); manualInput.value = "";
-            } catch (error) {} // Error handled in fetchConToken
+            } catch (error) {} 
         }
 
         function addToCart(product) {
+            // CORRECCIÓN: Revisar si el producto inicial tiene stock antes de meterlo al carrito como nuevo
+            if (product.stock < 1) {
+                return Swal.fire('Agotado', `El producto "${product.nombre}" no tiene stock disponible.`, 'warning');
+            }
+
             const existingItem = cart.find(item => item.codigo === product.codigo);
             if (existingItem) {
                 if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } 
-                else { return Swal.fire('Límite', `Solo hay ${product.stock} unidades.`, 'warning'); }
+                else { return Swal.fire('Límite', `Solo hay ${product.stock} unidades en inventario.`, 'warning'); }
             } else { cart.push({ ...product, cantidad: 1 }); }
             updateCartUI();
         }
@@ -242,7 +246,7 @@
                 return `
                 <div class="flex flex-col py-3 border-b border-gray-100 last:border-0">
                     <div class="flex justify-between items-start mb-2">
-                        <div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock: ${stockRestante}</p></div>
+                        <div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div>
                         <button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button>
                     </div>
                     <div class="flex justify-between items-center mt-1">
@@ -280,7 +284,7 @@
             try {
                 const response = await fetchConToken(`${API_URL}/ventas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 if (response.ok) {
-                    cart = []; updateCartUI(); fetchPosProducts(); // Refrescar inventario en segundo plano
+                    cart = []; updateCartUI(); fetchPosProducts(); // Refrescar inventario
                     Swal.fire({
                         title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success',
                         showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar'
@@ -298,11 +302,10 @@
             setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        // CÁMARAS BLINDADAS 
         document.getElementById("native-cam-input").addEventListener("change", e => {
             if (e.target.files.length == 0) return;
             const scanner = new Html5Qrcode("lector-oculto");
-            scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No se detectó un código legible.', 'error')).finally(() => scanner.clear());
+            scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No se detectó un código legible en la foto.', 'error')).finally(() => scanner.clear());
         });
 
         document.getElementById("start-btn").addEventListener("click", () => {
