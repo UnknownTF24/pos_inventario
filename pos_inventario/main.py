@@ -198,36 +198,60 @@ def estado_caja(user_info: dict = Depends(verificar_token)):
 @app.post("/api/caja/abrir")
 def abrir_caja(req: CajaAbrir, user_info: dict = Depends(verificar_token)):
     conn = get_db_connection(); cursor = conn.cursor()
-    cursor.execute("SELECT id FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
-    if cursor.fetchone(): conn.close(); raise HTTPException(status_code=400, detail="Ya tienes un turno abierto.")
-    cursor.execute("INSERT INTO caja_sesiones (cajero, fondo_inicial, tienda_id) VALUES (%s, %s, %s)", (user_info["nombre_completo"], req.fondo_inicial, user_info["tienda_id"])); conn.commit(); conn.close()
-    return {"status": "success"}
+    try:
+        cursor.execute("SELECT id FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
+        if cursor.fetchone(): raise HTTPException(status_code=400, detail="Ya tienes un turno abierto.")
+        cursor.execute("INSERT INTO caja_sesiones (cajero, fondo_inicial, tienda_id) VALUES (%s, %s, %s)", (user_info["nombre_completo"], req.fondo_inicial, user_info["tienda_id"]))
+        conn.commit()
+        return {"status": "success"}
+    except HTTPException: raise
+    except Exception as e:
+        conn.rollback() # Revierte si la base de datos falla
+        raise HTTPException(status_code=500, detail=f"Error interno al abrir: {str(e)}")
+    finally:
+        conn.close()
 
 @app.post("/api/caja/cerrar")
 def cerrar_caja(user_info: dict = Depends(verificar_token)):
     conn = get_db_connection(); cursor = conn.cursor()
-    
-    cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
-    row = cursor.fetchone()
-    
-    # Permiso Maestro: Forzar cierre de caja ajena si eres Admin/Superadmin
-    if not row and user_info["rol"] in ["superadmin", "admin"]:
-        cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE estado = 'abierta' AND tienda_id = %s LIMIT 1", (user_info["tienda_id"],))
+    try:
+        cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
         row = cursor.fetchone()
         
-    if not row: conn.close(); raise HTTPException(status_code=400, detail="No tienes un turno abierto para cerrar.")
-    
-    caja_id, fondo_inicial, fecha_apertura, cajero_turno = row
-    
-    # Calcula las ventas sumando los datos del cajero original, NO del admin que fuerza el cierre
-    cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s AND tienda_id = %s", (cajero_turno, fecha_apertura, user_info["tienda_id"]))
-    total_ventas = cursor.fetchone()[0]
-    
-    cursor.execute("UPDATE caja_sesiones SET estado = 'cerrada', fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s", (caja_id,))
-    conn.commit(); conn.close()
-    
-    # Devolvemos el nombre del cajero_turno para la factura
-    return {"fondo_inicial": fondo_inicial, "total_ventas": total_ventas, "total_esperado": fondo_inicial + total_ventas, "fecha_apertura": fecha_apertura.strftime("%d/%m/%Y %H:%M"), "cajero": cajero_turno}
+        # Permiso Maestro: Forzar cierre si el cajero original no está
+        if not row and user_info["rol"] in ["superadmin", "admin"]:
+            cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE estado = 'abierta' AND tienda_id = %s LIMIT 1", (user_info["tienda_id"],))
+            row = cursor.fetchone()
+            
+        if not row: 
+            raise HTTPException(status_code=400, detail="No se encontró un turno abierto para cerrar en esta tienda.")
+        
+        caja_id, fondo_inicial, fecha_apertura, cajero_turno = row
+        
+        # Calcular ventas (garantizando formato)
+        cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s AND tienda_id = %s", (cajero_turno, fecha_apertura, user_info["tienda_id"]))
+        total_ventas = cursor.fetchone()[0]
+        
+        # Cerrar en base de datos
+        cursor.execute("UPDATE caja_sesiones SET estado = 'cerrada', fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s", (caja_id,))
+        conn.commit()
+        
+        # Formateo ultra seguro para evitar choques en el frontend
+        fecha_str = fecha_apertura.strftime("%d/%m/%Y %H:%M") if hasattr(fecha_apertura, 'strftime') else str(fecha_apertura)
+        
+        return {
+            "fondo_inicial": float(fondo_inicial), 
+            "total_ventas": float(total_ventas), 
+            "total_esperado": float(fondo_inicial) + float(total_ventas), 
+            "fecha_apertura": fecha_str, 
+            "cajero": str(cajero_turno)
+        }
+    except HTTPException: raise
+    except Exception as e:
+        conn.rollback() # Revierte cualquier daño en la tabla
+        raise HTTPException(status_code=500, detail=f"Error Crítico BD: {str(e)}")
+    finally:
+        conn.close()
     
 @app.get("/api/caja/historial")
 def historial_cajas(user_info: dict = Depends(verificar_token)):

@@ -145,14 +145,15 @@
                         const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); 
                         if(res.ok) { 
                             const data = await res.json(); 
-                            // Evitar fallos silenciosos al abrir la ventana de impresión
                             try { imprimirTicketCorte(data); } catch(err) { console.error(err); }
                             Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); 
                         } else { 
-                            const error = await res.json(); Swal.fire('Error', error.detail, 'error'); 
+                            // Ahora captura correctamente los errores que mandamos en el "detail"
+                            const error = await res.json().catch(() => ({detail: "Error de formato devuelto por el servidor."})); 
+                            Swal.fire('Error al Cerrar', error.detail, 'error'); 
                         } 
                     } catch(e) { 
-                        Swal.fire('Error', 'Fallo de conexión al intentar cerrar la caja.', 'error'); 
+                        Swal.fire('Interrupción de Red', 'Se cortó la conexión al procesar la caja. Intenta de nuevo.', 'error'); 
                     } 
                 } 
             }); 
