@@ -30,47 +30,29 @@ def init_db():
     cursor.execute("""CREATE TABLE IF NOT EXISTS productos (codigo TEXT PRIMARY KEY, nombre TEXT NOT NULL, precio REAL NOT NULL, stock INTEGER NOT NULL)""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS ventas (id SERIAL PRIMARY KEY, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, total REAL NOT NULL, articulos TEXT NOT NULL)""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, usuario TEXT UNIQUE NOT NULL, password TEXT NOT NULL)""")
-    
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'cajero'")
     cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nombre_completo TEXT")
     cursor.execute("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS cajero TEXT DEFAULT 'Desconocido'")
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS auditoria_usuarios (
-            id SERIAL PRIMARY KEY,
-            usuario_modificado TEXT NOT NULL,
-            detalle TEXT NOT NULL,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
+    cursor.execute("""CREATE TABLE IF NOT EXISTS auditoria_usuarios (id SERIAL PRIMARY KEY, usuario_modificado TEXT NOT NULL, detalle TEXT NOT NULL, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
     cursor.execute("UPDATE usuarios SET nombre_completo = usuario WHERE nombre_completo IS NULL")
     
     cursor.execute("SELECT COUNT(*) FROM usuarios WHERE usuario = 'admin'")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo) VALUES ('admin', '1234', 'superadmin', 'Creador del Sistema')")
-    else:
-        cursor.execute("UPDATE usuarios SET rol = 'superadmin' WHERE usuario = 'admin'")
-        
+    if cursor.fetchone()[0] == 0: cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo) VALUES ('admin', '1234', 'superadmin', 'Creador del Sistema')")
+    else: cursor.execute("UPDATE usuarios SET rol = 'superadmin' WHERE usuario = 'admin'")
     conn.commit()
     conn.close()
 
 @app.on_event("startup")
-def startup_event():
-    init_db()
+def startup_event(): init_db()
 
 class Producto(BaseModel):
     codigo: str; nombre: str; precio: float; stock: int
-
 class ItemVenta(BaseModel):
     codigo: str; cantidad: int
-
 class VentaRequest(BaseModel):
     items: List[ItemVenta]
-
 class LoginRequest(BaseModel):
     usuario: str; password: str
-
 class UsuarioRequest(BaseModel):
     usuario: str; password: str; rol: str; nombre_completo: str
 
@@ -80,8 +62,7 @@ def verificar_token(authorization: str = Header(None)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return {"usuario": payload["sub"], "rol": payload.get("rol", "cajero"), "nombre_completo": payload.get("nombre", payload["sub"])}
-    except jwt.ExpiredSignatureError: raise HTTPException(status_code=401, detail="Tu sesión ha expirado.")
-    except jwt.InvalidTokenError: raise HTTPException(status_code=401, detail="Token inválido.")
+    except Exception: raise HTTPException(status_code=401, detail="Tu sesión ha expirado.")
 
 @app.post("/api/login")
 def login(req: LoginRequest):
@@ -90,14 +71,11 @@ def login(req: LoginRequest):
     cursor.execute("SELECT usuario, password, rol, nombre_completo FROM usuarios WHERE usuario = %s AND password = %s", (req.usuario, req.password))
     user = cursor.fetchone()
     conn.close()
-
     if user:
-        expiracion = datetime.utcnow() + timedelta(hours=12)
-        token = jwt.encode({"sub": user[0], "rol": user[2], "nombre": user[3], "exp": expiracion}, SECRET_KEY, algorithm=ALGORITHM)
+        token = jwt.encode({"sub": user[0], "rol": user[2], "nombre": user[3], "exp": datetime.utcnow() + timedelta(hours=12)}, SECRET_KEY, algorithm=ALGORITHM)
         return {"token": token, "usuario": user[0], "rol": user[2], "nombre_completo": user[3]}
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
-# ---- RUTAS DE USUARIOS Y AUDITORÍA ----
 @app.get("/api/usuarios")
 def listar_usuarios(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Acceso denegado.")
@@ -106,70 +84,55 @@ def listar_usuarios(user_info: dict = Depends(verificar_token)):
     cursor.execute("SELECT id, usuario, password, rol, nombre_completo FROM usuarios ORDER BY id ASC")
     rows = cursor.fetchall()
     conn.close()
-    
-    result = []
-    for row in rows:
-        pwd = row[2] if user_info["rol"] == "superadmin" else "********"
-        result.append({"id": row[0], "usuario": row[1], "password": pwd, "rol": row[3], "nombre_completo": row[4]})
-    return result
+    return [{"id": r[0], "usuario": r[1], "password": (r[2] if user_info["rol"] == "superadmin" else "********"), "rol": r[3], "nombre_completo": r[4]} for r in rows]
 
 @app.post("/api/usuarios")
 def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos para crear cuentas.")
     if bool(re.search(r"\s", req.usuario)): raise HTTPException(status_code=400, detail="El nombre de 'Usuario' para iniciar sesión no puede tener espacios.")
     if user_info["rol"] == "admin" and req.rol != "cajero": raise HTTPException(status_code=403, detail="Para crear un Administrador, contacta al Creador del sistema.")
-        
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo) VALUES (%s, %s, %s, %s)", (req.usuario, req.password, req.rol, req.nombre_completo))
         conn.commit()
         return {"status": "success"}
-    except Exception as e:
+    except Exception:
         conn.rollback()
         raise HTTPException(status_code=400, detail="Ese Usuario (para iniciar sesión) ya está en uso.")
-    finally:
-        conn.close()
+    finally: conn.close()
 
 @app.put("/api/usuarios/{id_usuario}")
 def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
-    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT usuario, password, rol, nombre_completo FROM usuarios WHERE id = %s", (id_usuario,))
         target = cursor.fetchone()
         if not target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-            
         old_usuario, old_password, old_rol, old_nombre = target
+        if old_rol == "superadmin": raise HTTPException(status_code=403, detail="El Súper Administrador no puede ser modificado desde la interfaz, solo a nivel código.")
         
-        # BLOQUEO ABSOLUTO: Nadie, ni siquiera el super admin, puede modificar al super admin desde la web.
-        if old_rol == "superadmin":
-            raise HTTPException(status_code=403, detail="El Súper Administrador no puede ser modificado desde la interfaz, solo a nivel código.")
-
         new_usuario = req.get("usuario", old_usuario)
         new_password = req.get("password", old_password)
         new_rol = req.get("rol", old_rol)
         new_nombre = req.get("nombre_completo", old_nombre)
 
         if user_info["rol"] == "admin":
-            if new_usuario != old_usuario or new_password != old_password or new_rol != old_rol:
-                raise HTTPException(status_code=403, detail="Como Admin de Tienda, solo puedes modificar el Nombre en Pantalla.")
+            if new_usuario != old_usuario or new_password != old_password or new_rol != old_rol: raise HTTPException(status_code=403, detail="Solo puedes modificar el Nombre en Pantalla.")
 
         if old_nombre != new_nombre:
-            detalle = f"Cambio de nombre en pantalla: '{old_nombre}' a '{new_nombre}' (Modificado por {user_info['nombre_completo']})"
-            cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle) VALUES (%s, %s)", (old_usuario, detalle))
+            cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle) VALUES (%s, %s)", (old_usuario, f"Cambio de nombre en pantalla: '{old_nombre}' a '{new_nombre}' (Por {user_info['nombre_completo']})"))
         
         cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s WHERE id=%s", (new_usuario, new_password, new_rol, new_nombre, id_usuario))
         conn.commit()
         return {"status": "success"}
     except HTTPException: raise
-    except Exception as e:
+    except Exception:
         conn.rollback()
         raise HTTPException(status_code=400, detail="Error al actualizar. ¿Usuario duplicado?")
-    finally:
-        conn.close()
+    finally: conn.close()
 
 @app.delete("/api/usuarios/{id_usuario}")
 def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)):
@@ -180,7 +143,6 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
         cursor.execute("SELECT rol FROM usuarios WHERE id = %s", (id_usuario,))
         rol_target = cursor.fetchone()
         if rol_target and rol_target[0] == "superadmin": raise HTTPException(status_code=403, detail="Protección: No puedes eliminar al Súper Administrador.")
-
         cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_usuario,))
         conn.commit()
         return {"status": "success"}
@@ -188,8 +150,7 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        conn.close()
+    finally: conn.close()
 
 @app.get("/api/auditoria")
 def obtener_auditoria(user_info: dict = Depends(verificar_token)):
@@ -201,7 +162,6 @@ def obtener_auditoria(user_info: dict = Depends(verificar_token)):
     conn.close()
     return [{"fecha": row[0].strftime("%d/%m/%Y %H:%M"), "usuario": row[1], "detalle": row[2]} for row in rows]
 
-# ---- RESTO (PRODUCTOS/VENTAS) ----
 @app.get("/api/productos")
 def listar_productos():
     conn = get_db_connection()
@@ -224,6 +184,9 @@ def obtener_producto(codigo: str):
 @app.post("/api/productos")
 def crear_producto(producto: Producto, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] == "cajero": raise HTTPException(status_code=403, detail="Los cajeros no pueden editar inventario.")
+    if producto.precio < 0: raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
+    if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo (máx. 80 caracteres).")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -238,15 +201,16 @@ def crear_producto(producto: Producto, user_info: dict = Depends(verificar_token
 @app.put("/api/productos/{codigo}")
 def actualizar_producto(codigo: str, producto: Producto, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] == "cajero": raise HTTPException(status_code=403, detail="Los cajeros no pueden editar inventario.")
+    if producto.precio < 0: raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
+    if len(producto.nombre) > 80: raise HTTPException(status_code=400, detail="El nombre del producto es demasiado largo (máx. 80 caracteres).")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # AHORA PERMITE ACTUALIZAR EL CODIGO DE BARRAS
-        cursor.execute("UPDATE productos SET codigo = %s, nombre = %s, precio = %s, stock = %s WHERE codigo = %s", 
-                       (producto.codigo, producto.nombre, producto.precio, producto.stock, codigo))
+        cursor.execute("UPDATE productos SET codigo = %s, nombre = %s, precio = %s, stock = %s WHERE codigo = %s", (producto.codigo, producto.nombre, producto.precio, producto.stock, codigo))
         conn.commit()
         return {"status": "success"}
-    except Exception as e:
+    except Exception:
         conn.rollback()
         raise HTTPException(status_code=500, detail="Error al actualizar. ¿El nuevo código ya existe?")
     finally: conn.close()
@@ -270,8 +234,7 @@ def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_toke
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        total_venta = 0
-        detalles_lista = []
+        total_venta = 0; detalles_lista = []
         for item in venta.items:
             cursor.execute("SELECT stock, nombre, precio FROM productos WHERE codigo = %s", (item.codigo,))
             row = cursor.fetchone()
@@ -279,10 +242,8 @@ def procesar_venta(venta: VentaRequest, user_info: dict = Depends(verificar_toke
             if row[0] < item.cantidad: raise HTTPException(status_code=400, detail=f"Stock insuficiente para {row[1]}.")
             total_venta += row[2] * item.cantidad
             detalles_lista.append(f"{item.cantidad}x {row[1]}")
-        
         for item in venta.items:
             cursor.execute("UPDATE productos SET stock = stock - %s WHERE codigo = %s", (item.cantidad, item.codigo))
-        
         detalles_str = " | ".join(detalles_lista)
         cursor.execute("INSERT INTO ventas (total, articulos, cajero) VALUES (%s, %s, %s)", (total_venta, detalles_str, user_info["nombre_completo"]))
         conn.commit()

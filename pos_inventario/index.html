@@ -7,10 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Ocultar las flechitas feas del input de número para que se vea limpio */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
-    <!-- LOGIN OBLIGATORIO PARA CAJEROS -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">POS Cajas 🛒</h2>
@@ -21,7 +26,6 @@
                 <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Abrir Caja</button>
             </div>
             
-            <!-- ENLACES DE SOPORTE Y REDIRECCIÓN -->
             <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
                 <a href="#" onclick="Swal.fire({title: 'Soporte Técnico', html: '<p>Para recuperar o modificar contraseñas, por favor comunícate con el creador de la página.</p><br><p><b class=\'text-blue-600\'>WhatsApp / Teléfono:</b> 4941-1913<br><b class=\'text-blue-600\'>Correo:</b> isaijonatan4222@gmail.com</p>', icon: 'info', confirmButtonText: 'Entendido'})" class="text-sm text-blue-500 hover:underline">¿Olvidaste tu contraseña?</a>
                 <a href="admin.html" class="text-sm text-gray-600 hover:text-gray-900 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">⚙️ Ir al Panel Administrativo</a>
@@ -35,7 +39,6 @@
             <p class="text-xs text-blue-200" id="cajero-name-display">Cajero: ---</p>
         </div>
         <div class="flex gap-2">
-            <!-- Este botón solo aparece si el que se loguea es admin o superadmin -->
             <a href="admin.html" id="btn-admin-link" class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-medium transition shadow hidden">Admin ⚙️</a>
             <button onclick="cerrarSesion()" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded text-sm font-medium transition shadow">Salir</button>
         </div>
@@ -76,59 +79,51 @@
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null;
 
-        // --- SISTEMA DE LOGIN PARA EL POS ---
         function checkSession() {
             if(sessionStorage.getItem("adminToken")) {
                 document.getElementById("login-overlay").style.display = "none";
                 document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
-                
-                if (sessionStorage.getItem("rolUsuario") !== "cajero") {
-                    document.getElementById("btn-admin-link").classList.remove("hidden");
-                }
+                if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById("btn-admin-link").classList.remove("hidden"); }
             } else { document.getElementById("login-overlay").style.display = "flex"; }
         }
         checkSession();
 
         async function verificarLogin() {
-            const user = document.getElementById("user-input").value.trim();
-            const pass = document.getElementById("pass-input").value;
+            const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
             try {
                 const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
                     const data = await res.json();
-                    sessionStorage.setItem("adminToken", data.token); 
-                    sessionStorage.setItem("nombreUsuario", data.nombre_completo);
-                    sessionStorage.setItem("rolUsuario", data.rol);
-                    document.getElementById("user-input").value = "";
-                    document.getElementById("pass-input").value = "";
-                    checkSession();
+                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
+                    document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession();
                 } else { Swal.fire('Error', 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
 
-        function cerrarSesion() {
-            sessionStorage.clear();
-            window.location.reload();
-        }
+        function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken");
             if (!options.headers) options.headers = {};
             if (token) options.headers["Authorization"] = `Bearer ${token}`;
-            const res = await fetch(url, options);
-            if (res.status === 401) cerrarSesion();
-            return res;
+            
+            try {
+                const res = await fetch(url, options);
+                if (res.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
+                return res;
+            } catch (err) {
+                if(err.message !== "No autorizado") { Swal.fire('Fallo de Red', 'Verifica tu conexión a internet. Tu carrito está a salvo.', 'error'); }
+                throw err;
+            }
         }
 
-        // Autofocus Lector Físico
         document.body.addEventListener("click", (e) => {
             if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && document.getElementById("login-overlay").style.display === "none") {
                 document.getElementById("manual-code").focus();
             }
         });
 
-        // --- LÓGICA DEL CARRITO ---
         const manualInput = document.getElementById("manual-code");
         const addManualBtn = document.getElementById("add-manual-btn");
         const cartItemsContainer = document.getElementById("cart-items");
@@ -137,10 +132,10 @@
 
         async function fetchProduct(code) {
             try {
-                const response = await fetch(`${API_URL}/productos/${code}`);
+                const response = await fetchConToken(`${API_URL}/productos/${code}`);
                 if (!response.ok) { Swal.fire('Oops...', "Producto no encontrado", 'error'); manualInput.value = ""; return; }
                 const product = await response.json(); addToCart(product); manualInput.value = "";
-            } catch (error) { Swal.fire('Error', 'No se pudo conectar', 'error'); }
+            } catch (error) {} // Error handled in fetchConToken
         }
 
         function addToCart(product) {
@@ -166,10 +161,13 @@
                         <button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button>
                     </div>
                     <div class="flex justify-between items-center mt-1">
-                        <div class="flex items-center border border-gray-300 rounded-lg bg-white">
-                            <button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button>
-                            <span class="px-4 py-1 font-bold text-gray-800 w-12 text-center">${item.cantidad}</span>
-                            <button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button>
+                        <div class="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-sm">
+                            <button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold hover:bg-gray-200 transition">-</button>
+                            
+                            <!-- CAMBIO: Ahora es un input donde el usuario puede teclear -->
+                            <input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold text-gray-800 border-none outline-none focus:ring-2 focus:ring-blue-500 py-1 bg-white">
+                            
+                            <button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold hover:bg-gray-200 transition" ${stockRestante === 0 ? 'disabled' : ''}>+</button>
                         </div>
                         <div class="text-right">
                             <span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span>
@@ -185,8 +183,19 @@
         window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } };
         window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } };
         window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); };
+        
+        // NUEVO: Función para escribir la cantidad manualmente
+        window.setQuantity = function(index, value) {
+            let val = parseInt(value);
+            if (isNaN(val) || val < 1) { val = 1; }
+            if (val > cart[index].stock) {
+                Swal.fire('Límite', `Solo hay ${cart[index].stock} unidades disponibles en inventario.`, 'warning');
+                val = cart[index].stock;
+            }
+            cart[index].cantidad = val;
+            updateCartUI();
+        };
 
-        // CHECKOUT SEGURO
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return;
             const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) };
@@ -202,7 +211,7 @@
                         showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar'
                     }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); });
                 } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
-            } catch (error) { }
+            } catch (error) {} // Error handled in fetchConToken
         });
 
         function imprimirTicket(items, total) {
@@ -214,7 +223,7 @@
             setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        // --- CÁMARAS BLINDADAS (SOLUCIÓN DE BUG DE CONGELAMIENTO) ---
+        // CÁMARAS BLINDADAS 
         document.getElementById("native-cam-input").addEventListener("change", e => {
             if (e.target.files.length == 0) return;
             const scanner = new Html5Qrcode("lector-oculto");
