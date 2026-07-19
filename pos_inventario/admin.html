@@ -257,17 +257,14 @@
                 const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
                     const data = await res.json(); if(data.rol === "cajero") { Swal.fire('Atención', 'Inicia sesión en el Punto de Venta (POS).', 'info'); return; }
-                    sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
+                    sessionStorage.setItem("tienda_id", data.tienda_id);
                     document.getElementById("login-overlay").style.display = "none"; 
                     aplicarPermisos(); 
                     switchTab('inventario');
                     fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
-                    if(data.rol !== "cajero") fetchUsuarios();
-                } else { 
-                    const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); 
-                }
-            } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
-        }
+                    if(rol === "superadmin" && sessionStorage.getItem("tienda_id") == "1") { 
+    document.getElementById("btn-maestro").classList.remove("hidden"); 
+}
 
         function switchTab(tab) { 
             ['inventario', 'ventas', 'usuarios', 'cajas', 'ajustes'].forEach(t => { 
@@ -288,20 +285,34 @@
 
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
         function renderUsuarios(usuarios) { 
-            const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario"); 
-            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; 
-            list.innerHTML = usuarios.map((u, index) => { 
-                let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; 
-                if (u.rol === 'superadmin') { 
-                    if (rolActual === "superadmin") { trClass = "bg-gray-50 border-b"; passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><span title="El Creador no se puede modificar" class="text-gray-400 cursor-not-allowed">🛡️ Intocable</span></td>`; } 
-                    else { return ""; } 
-                } else { 
-                    if (rolActual === "superadmin") { passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } 
-                    else { passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; } 
-                } 
-                return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` 
-            }).join(""); 
-        }
+    const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario"); 
+    if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; 
+    list.innerHTML = usuarios.map((u, index) => { 
+        let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; 
+        if (u.rol === 'superadmin') { 
+            if (rolActual === "superadmin") { 
+                trClass = "bg-gray-50 border-b"; 
+                passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
+                // NUEVO: Si eres tu mismo (admin), te deja editar. Si es una llave de soporte, te deja editarla y borrarla.
+                if (u.usuario === 'admin') {
+                    actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><span title="El Creador principal no se puede borrar" class="text-gray-400 cursor-not-allowed ml-1">🛡️ Intocable</span></td>`;
+                } else {
+                    actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
+                }
+            } 
+            else { return ""; } 
+        } else { 
+            if (rolActual === "superadmin") { 
+                passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
+                actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; 
+            } else { 
+                passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; 
+                actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; 
+            } 
+        } 
+        return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` 
+    }).join(""); 
+}
         
         document.getElementById("add-user-form").addEventListener("submit", async (e) => { e.preventDefault(); const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value; try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {} });
         window.eliminarUsuario = function(id) { Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } }); };

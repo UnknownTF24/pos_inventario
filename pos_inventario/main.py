@@ -86,7 +86,8 @@ def login(req: LoginRequest):
 # ---- RUTAS SAAS ----
 @app.get("/api/saas/tiendas")
 def listar_tiendas(user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: 
+    raise HTTPException(status_code=403, detail="Acceso denegado. Solo el Creador de la plataforma tiene este nivel de acceso.")
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("SELECT id, nombre, estado FROM tiendas ORDER BY id ASC")
     rows = cursor.fetchall(); conn.close()
@@ -94,7 +95,8 @@ def listar_tiendas(user_info: dict = Depends(verificar_token)):
 
 @app.post("/api/saas/tiendas")
 def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: 
+        raise HTTPException(status_code=403, detail="Acceso denegado. Solo el Creador de la plataforma tiene este nivel de acceso.")
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("INSERT INTO tiendas (nombre) VALUES (%s) RETURNING id", (req["nombre"],))
     tienda_id = cursor.fetchone()[0]
@@ -104,7 +106,9 @@ def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
 
 @app.put("/api/saas/tiendas/{id_tienda}/estado")
 def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Denegado")
+    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: 
+        raise HTTPException(status_code=403, detail="Acceso denegado. Solo el Creador de la plataforma tiene este nivel de acceso.")
+
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("UPDATE tiendas SET estado = %s WHERE id = %s", (req["estado"], id_tienda))
     conn.commit(); conn.close()
@@ -230,13 +234,22 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     conn = get_db_connection(); cursor = conn.cursor()
     try:
-        cursor.execute("SELECT rol FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
+        cursor.execute("SELECT rol, usuario FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
         rol_target = cursor.fetchone()
-        if rol_target and rol_target[0] == "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
+        if not rol_target: raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+        
+        # Bloquear borrado solo si es el Súper Admin Principal
+        if rol_target[0] == "superadmin":
+            if rol_target[1] == 'admin':
+                raise HTTPException(status_code=403, detail="El Creador principal no se puede borrar.")
+            elif user_info["rol"] != "superadmin":
+                raise HTTPException(status_code=403, detail="Intocable.")
+                
         cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
+    except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
     finally: conn.close()
-
+    
 @app.get("/api/auditoria")
 def obtener_auditoria(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
