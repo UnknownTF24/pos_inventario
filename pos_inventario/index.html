@@ -14,50 +14,82 @@
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
-    <div id="login-overlay" class="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center overflow-y-auto">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2" id="login-title-display">POS Cajas 🛒</h2>
-            <div class="space-y-4 text-left mt-4">
-                <div><label class="block text-sm font-bold">Usuario</label><input type="text" id="user-input" class="w-full border p-3 rounded" placeholder="Ej. juan_cajero"></div>
-                
-                <!-- CAMPO CONTRASEÑA CON BOTÓN DE VER -->
-                <div>
-                    <label class="block text-sm font-bold">Contraseña</label>
-                    <div class="relative">
-                        <input type="password" id="pass-input" class="w-full border p-3 rounded outline-none focus:border-blue-500" placeholder="••••••••">
-                        <button type="button" onclick="togglePassword('pass-input')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-blue-600 transition text-lg">👁️</button>
-                    </div>
+    <!-- PORTAL DE INICIO UNKNOWN -->
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex justify-center items-center overflow-y-auto backdrop-blur-sm transition-all duration-500">
+        <div class="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row w-[90%] max-w-4xl overflow-hidden m-4 transform transition-all">
+            
+            <!-- Mitad Izquierda: Branding de Creador -->
+            <div class="bg-gradient-to-br from-indigo-900 via-gray-900 to-black text-white p-10 md:w-1/2 flex flex-col justify-between relative overflow-hidden">
+                <div class="relative z-10">
+                    <span class="bg-indigo-600/30 text-indigo-300 text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest border border-indigo-500/50">🚀 Sistema en Fase Beta</span>
+                    <h2 class="text-4xl font-black mt-6 leading-tight tracking-tighter">Tu Negocio.<br><span class="text-indigo-400">Sin Límites.</span></h2>
+                    <p class="mt-4 text-gray-300 text-sm leading-relaxed">El Punto de Venta en la nube más rápido e intuitivo. Toma el control absoluto de tu inventario y tus ventas desde cualquier lugar.</p>
                 </div>
                 
-                <button onclick="verificarLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Ingresar</button>
+                <div class="relative z-10 mt-12 pt-6 border-t border-gray-700/50">
+                    <p class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Desarrollado Exclusivamente Por</p>
+                    <p class="text-xl font-black tracking-widest text-white flex items-center gap-2">
+                        UNKNOWN <span class="text-indigo-500 text-sm font-medium tracking-normal">Tech Solutions</span>
+                    </p>
+                    <a href="https://wa.me/50249411913?text=Hola%20Unknown,%20necesito%20asistencia%20con%20el%20sistema" target="_blank" class="mt-4 inline-flex items-center gap-2 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition shadow-lg border border-white/5 backdrop-blur-md">
+                        💬 Contactar al Creador
+                    </a>
+                </div>
+                <!-- Decoración de fondo -->
+                <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
             </div>
-            <div class="mt-5 border-t border-gray-200 pt-4 flex flex-col gap-3">
-                <a href="https://wa.me/50249411913?text=Hola,%20necesito%20soporte%20con%20el%20sistema%20POS" target="_blank" class="text-sm text-green-600 font-bold hover:underline">💬 Escribir a Soporte Técnico</a>
-                <a href="admin.html" class="text-sm text-gray-600 font-bold hover:underline bg-gray-50 py-2 rounded border border-gray-200">⚙️ Panel Administrativo</a>
+            
+            <!-- Mitad Derecha: Login Interactivo -->
+            <div class="p-10 md:w-1/2 flex flex-col justify-center bg-gray-50">
+                <h3 class="text-2xl font-black text-gray-800 mb-2" id="login-title-display">Bienvenido 🛒</h3>
+                <p class="text-sm text-gray-500 mb-6 font-medium">Ingresa tus credenciales para continuar.</p>
+                
+                <!-- Selector de Destino -->
+                <div class="flex p-1 bg-gray-200 rounded-xl mb-6 shadow-inner">
+                    <button type="button" onclick="seleccionarDestino('pos', this)" id="btn-dest-pos" class="flex-1 py-2 text-sm font-black bg-white shadow-sm rounded-lg text-indigo-700 transition transform scale-100">🛒 Ir a Caja</button>
+                    <button type="button" onclick="seleccionarDestino('admin', this)" id="btn-dest-admin" class="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95">⚙️ Ir a Panel</button>
+                </div>
+                <input type="hidden" id="login-destino" value="pos">
+
+                <div class="space-y-4 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Usuario</label>
+                        <input type="text" id="user-input" class="w-full bg-white border-2 border-gray-200 p-3 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition font-medium" placeholder="Ej. juan_cajero">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Contraseña</label>
+                        <div class="relative">
+                            <input type="password" id="pass-input" class="w-full bg-white border-2 border-gray-200 p-3 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition font-medium" placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('pass-input')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-indigo-600 transition text-lg">👁️</button>
+                        </div>
+                    </div>
+                    <button onclick="verificarLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-lg py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition transform mt-2">Ingresar Al Sistema ➔</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="caja-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-40 hidden flex justify-center items-center overflow-y-auto">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center m-auto border-t-4 border-green-500">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Apertura de Caja 💵</h2>
-            <p class="text-gray-500 text-sm mb-6">Declara el efectivo base de tu caja.</p>
-            <div class="space-y-4 text-left">
-                <input type="number" step="0.01" min="0" id="fondo-caja-input" class="w-full border-2 border-green-300 focus:border-green-600 outline-none p-3 rounded font-bold text-xl text-center" placeholder="Ej. 100.00">
-                <button onclick="abrirCaja()" class="w-full bg-green-600 hover:bg-green-700 transition text-white font-bold py-3 rounded shadow-lg">Comenzar a Vender</button>
-            </div>
+    <!-- MODAL DE APERTURA DE CAJA (Ahora se puede cerrar) -->
+    <div id="caja-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex justify-center items-center hidden backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 text-center relative">
+            <button onclick="document.getElementById('caja-overlay').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
+            <h2 class="text-2xl font-black text-gray-800 mb-2">Apertura de Caja 💰</h2>
+            <p class="text-sm text-gray-500 mb-6">Ingresa el efectivo inicial (sencillo) con el que empiezas el turno.</p>
+            <input type="number" id="fondo-caja-input" class="w-full border-2 border-gray-200 text-center text-3xl font-black p-4 rounded-xl text-blue-600 mb-4 focus:border-blue-500 outline-none" placeholder="Q0.00">
+            <button onclick="abrirCaja()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-lg shadow-lg">Iniciar Turno</button>
         </div>
     </div>
 
     <header class="bg-blue-700 text-white p-3 shadow-md flex justify-between items-center">
-        <div>
-            <h1 class="text-lg font-bold" id="header-brand-title">Punto de Venta</h1>
-            <p class="text-xs text-blue-200" id="cajero-name-display">Cajero: ---</p>
-        </div>
-        <div class="flex gap-2 items-center flex-wrap justify-end">
-            <a href="https://wa.me/50249411913?text=Hola,%20necesito%20soporte%20con%20el%20sistema%20POS" target="_blank" class="bg-green-500 hover:bg-green-600 px-3 py-2 rounded text-xs font-bold transition shadow hidden sm:block">💬 Soporte</a>
-            <a href="admin.html" id="btn-admin-link" class="bg-blue-900 hover:bg-gray-800 px-3 py-2 rounded text-xs font-bold transition shadow hidden">⚙️ Admin</a>
-            <button onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-xs font-bold transition shadow border border-red-500">Cerrar Turno</button>
+        <div class="flex items-center gap-2 md:gap-4">
+            <span id="cajero-name-display" class="text-sm font-medium hidden md:inline"></span>
+            <a href="https://wa.me/50249411913" target="_blank" class="bg-green-500 hover:bg-green-400 px-3 py-2 rounded text-sm font-bold shadow-sm transition hidden md:block">💬 Soporte</a>
+            <a href="admin.html" id="btn-admin-link" class="bg-gray-800 hover:bg-gray-900 px-3 py-2 rounded text-sm font-bold shadow-sm hidden transition">⚙️ Panel</a>
+            
+            <!-- BOTONES DINÁMICOS DE CAJA -->
+            <button id="btn-abrir-caja" onclick="document.getElementById('caja-overlay').classList.remove('hidden')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-4 py-2 rounded text-sm font-black shadow-md hidden transition animate-pulse">🔓 Abrir Caja</button>
+            <button id="btn-cerrar-caja" onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-500 px-3 py-2 rounded text-sm font-bold shadow-sm hidden transition">🔒 Cerrar Turno</button>
         </div>
     </header>
 
@@ -102,6 +134,9 @@
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
+        
+        // VARIABLE GLOBAL NUEVA PARA EL MODO INVITADO
+        let cajaAbierta = false; 
 
         // --- 1. FUNCIONES VITALES DE SEGURIDAD Y CONEXIÓN ---
         function cerrarSesion() { 
@@ -123,7 +158,7 @@
             }
         }
 
-        // --- 2. INICIO DE SESIÓN Y AJUSTES ---
+        // --- 2. INICIO DE SESIÓN, DISEÑO UNKNOWN Y AJUSTES ---
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
 
         function checkSession() {
@@ -136,14 +171,38 @@
         }
         checkSession();
 
+        // EFECTO VISUAL DEL LOGIN
+        function seleccionarDestino(destino, btn) {
+            document.getElementById("login-destino").value = destino;
+            const btnPos = document.getElementById("btn-dest-pos");
+            const btnAdmin = document.getElementById("btn-dest-admin");
+            
+            btnPos.className = "flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
+            btnAdmin.className = "flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
+            btn.className = "flex-1 py-2 text-sm font-black bg-white shadow-sm rounded-lg text-indigo-700 transition transform scale-100";
+        }
+
         async function verificarLogin() {
             const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
+            const destino = document.getElementById("login-destino") ? document.getElementById("login-destino").value : 'pos';
+            
             try {
                 const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
                     const data = await res.json();
+                    
+                    // SEGURIDAD: Bloquear a cajeros si intentan ir al panel
+                    if (destino === 'admin' && data.rol === 'cajero') {
+                        return Swal.fire('Acceso Denegado', 'Los cajeros no tienen acceso al Panel Administrativo.', 'error');
+                    }
+                    
                     sessionStorage.setItem("adminToken", data.token); sessionStorage.setItem("nombreUsuario", data.nombre_completo); sessionStorage.setItem("rolUsuario", data.rol);
-                    document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession();
+                    
+                    if(destino === 'admin') {
+                        window.location.href = "admin.html"; // Redirigir al admin
+                    } else {
+                        document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession(); // Entrar al POS
+                    }
                 } else { const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
@@ -154,10 +213,40 @@
             if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
         }
 
-        // --- 3. LÓGICA DE CAJA (BLINDADA CONTRA ERRORES) ---
-        async function fetchEstadoCaja() { try { const res = await fetchConToken(`${API_URL}/caja/estado`); const data = await res.json(); if(!data.abierta) { document.getElementById("caja-overlay").classList.remove("hidden"); setTimeout(()=> document.getElementById("fondo-caja-input").focus(), 100); } } catch(e) {} }
+        // --- 3. LÓGICA DE CAJA (MODO INVITADO INCLUIDO) ---
+        async function fetchEstadoCaja() { 
+            try { 
+                const res = await fetchConToken(`${API_URL}/caja/estado`); 
+                const data = await res.json(); 
+                cajaAbierta = data.abierta;
+                
+                const btnAbrir = document.getElementById("btn-abrir-caja");
+                const btnCerrar = document.getElementById("btn-cerrar-caja");
+
+                if(!cajaAbierta) { 
+                    if(btnAbrir) btnAbrir.classList.remove("hidden"); 
+                    if(btnCerrar) btnCerrar.classList.add("hidden");
+                    Swal.fire({title: 'Modo Visualización', text: 'La caja está cerrada. Debes abrir turno para poder cobrar.', icon: 'info', toast: true, position: 'top-end', timer: 5000, showConfirmButton: false});
+                } else {
+                    if(btnAbrir) btnAbrir.classList.add("hidden"); 
+                    if(btnCerrar) btnCerrar.classList.remove("hidden");
+                }
+                updateCartUI(); // Fuerza la actualización del carrito para bloquear el botón
+            } catch(e) {} 
+        }
         
-        async function abrirCaja() { const fondo = parseFloat(document.getElementById("fondo-caja-input").value); if(isNaN(fondo) || fondo < 0) return Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning'); try { const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) }); if(res.ok) { document.getElementById("caja-overlay").classList.add("hidden"); Swal.fire({title: 'Turno Abierto', text: `Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } } catch(e) {} }
+        async function abrirCaja() { 
+            const fondo = parseFloat(document.getElementById("fondo-caja-input").value); 
+            if(isNaN(fondo) || fondo < 0) return Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning'); 
+            try { 
+                const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) }); 
+                if(res.ok) { 
+                    document.getElementById("caja-overlay").classList.add("hidden"); 
+                    Swal.fire({title: 'Turno Abierto', text: `Iniciaste con Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); 
+                    fetchEstadoCaja(); // Vuelve a verificar para activar el carrito
+                } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } 
+            } catch(e) {} 
+        }
         
         async function cerrarCajaTurno() { 
             Swal.fire({ title: '¿Cerrar Turno?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, imprimir Corte Z', confirmButtonColor: '#d33' }).then(async (result) => { 
@@ -205,7 +294,27 @@
         async function fetchProduct(code) { try { const response = await fetchConToken(`${API_URL}/productos/${code}`); if (!response.ok) { Swal.fire('Oops...', "No encontrado", 'error'); manualInput.value = ""; return; } const product = await response.json(); addToCart(product); manualInput.value = ""; } catch (error) {} }
         
         function addToCart(product) { if (product.stock < 1) { return Swal.fire('Agotado', 'Sin stock.', 'warning'); } const existingItem = cart.find(item => item.codigo === product.codigo); if (existingItem) { if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } else { return Swal.fire('Límite', 'No hay más unidades.', 'warning'); } } else { cart.push({ ...product, cantidad: 1 }); } updateCartUI(); }
-        function updateCartUI() { if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Carrito vacío</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } cartItemsContainer.innerHTML = cart.map((item, index) => { const stockRestante = item.stock - item.cantidad; return `<div class="flex flex-col py-3 border-b border-gray-100 last:border-0"><div class="flex justify-between items-start mb-2"><div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button></div><div class="flex justify-between items-center mt-1"><div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm"><button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button><input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold border-none py-1"><button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button></div><div class="text-right"><span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span><span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span></div></div></div>` }).join(""); const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); cartTotalElement.innerText = `Q${total.toFixed(2)}`; checkoutBtn.disabled = false; }
+        
+        // BLOQUEO DINÁMICO DEL BOTÓN DE COBRAR SEGÚN EL ESTADO DE LA CAJA
+        function updateCartUI() { 
+            if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Carrito vacío</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } 
+            
+            cartItemsContainer.innerHTML = cart.map((item, index) => { const stockRestante = item.stock - item.cantidad; return `<div class="flex flex-col py-3 border-b border-gray-100 last:border-0"><div class="flex justify-between items-start mb-2"><div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button></div><div class="flex justify-between items-center mt-1"><div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm"><button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button><input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold border-none py-1"><button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button></div><div class="text-right"><span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span><span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span></div></div></div>` }).join(""); 
+            const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); 
+            cartTotalElement.innerText = `Q${total.toFixed(2)}`; 
+            
+            // LA MAGIA: Si no hay caja abierta, bloquea el checkout
+            if(!cajaAbierta) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.innerText = "🔒 Abre la Caja para cobrar";
+                checkoutBtn.className = "w-full bg-gray-400 text-white font-bold py-3 rounded-lg mt-4 cursor-not-allowed transition";
+            } else {
+                checkoutBtn.disabled = false;
+                checkoutBtn.innerText = "Confirmar y Cobrar";
+                checkoutBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-lg shadow-lg mt-4 transition transform hover:-translate-y-1";
+            }
+        }
+        
         window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } }; window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } }; window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); }; window.setQuantity = function(index, value) { let val = parseInt(value); if (isNaN(val) || val < 1) { val = 1; } if (val > cart[index].stock) { Swal.fire('Límite', 'Stock superado.', 'warning'); val = cart[index].stock; } cart[index].cantidad = val; updateCartUI(); };
 
         checkoutBtn.addEventListener("click", async () => {
