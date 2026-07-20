@@ -299,11 +299,26 @@
             }
         }
 
-        if(sessionStorage.getItem("adminToken")) { 
+        async function inicializarPanel() {
             aplicarPermisos(); 
             switchTab('inventario');
-            fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
-            if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios(); 
+            
+            try {
+                // MAGIA: Peticiones en fila (await) para no asfixiar la RAM de Render
+                await fetchAjustesCloud();
+                await fetchInventory();
+                await fetchVentas();
+                await fetchCajas();
+                if(sessionStorage.getItem("rolUsuario") !== "cajero") {
+                    await fetchUsuarios();
+                }
+            } catch (error) {
+                console.error("Fallo al cargar datos:", error);
+            }
+        }
+
+        if(sessionStorage.getItem("adminToken")) { 
+            inicializarPanel();
         } else {
             window.location.href = "index.html";
         }
