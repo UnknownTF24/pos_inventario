@@ -170,15 +170,31 @@ def saas_eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_t
 # ---- RUTAS NORMALES ----
 @app.get("/api/ajustes")
 def obtener_ajustes(user_info: dict = Depends(verificar_token)):
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT nombre, direccion, nit, telefono, mensaje_ticket FROM tiendas WHERE id = %s", (user_info["tienda_id"],)); row = cursor.fetchone(); conn.close()
-    if not row: return {"nombre": "Mi Tienda", "direccion": "", "nit": "", "telefono": "", "footer": "¡Gracias por su compra!"}
-    return {"nombre": row[0], "direccion": row[1], "nit": row[2], "telefono": row[3], "footer": row[4]}
+    conn = get_db_connection(); cursor = conn.cursor()
+    # Ahora traemos también el estado 'configurada'
+    cursor.execute("SELECT nombre, direccion, nit, telefono, footer, configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
+    row = cursor.fetchone(); conn.close()
+    if row: return {"nombre": row[0], "direccion": row[1], "nit": row[2], "telefono": row[3], "footer": row[4], "configurada": row[5]}
+    return {}
 
 @app.put("/api/ajustes")
-def guardar_ajustes(req: dict, user_info: dict = Depends(verificar_token)):
+def actualizar_ajustes(req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("UPDATE tiendas SET nombre=%s, direccion=%s, nit=%s, telefono=%s, mensaje_ticket=%s WHERE id=%s", (req.get("nombre"), req.get("direccion"), req.get("nit"), req.get("telefono"), req.get("footer"), user_info["tienda_id"])); conn.commit(); conn.close()
-    return {"status": "success"}
+    conn = get_db_connection(); cursor = conn.cursor()
+    try:
+        # SEGURO: Verificamos si la tienda ya fue configurada
+        cursor.execute("SELECT configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
+        tienda = cursor.fetchone()
+        
+        # Si ya está configurada y el usuario NO es el Súper Admin, lo bloqueamos.
+        if tienda and tienda[0] and user_info["rol"] == "admin":
+            raise HTTPException(status_code=403, detail="Tu tienda ya fue personalizada. Para cambiar la identidad nuevamente, contacta a Soporte Técnico.")
+            
+        cursor.execute("UPDATE tiendas SET nombre=%s, direccion=%s, nit=%s, telefono=%s, footer=%s, configurada=TRUE WHERE id=%s", (req.get("nombre"), req.get("direccion"), req.get("nit"), req.get("telefono"), req.get("footer"), user_info["tienda_id"]))
+        conn.commit(); return {"status": "success"}
+    except HTTPException: raise
+    except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
+    finally: conn.close()
 
 @app.get("/api/caja/estado")
 def estado_caja(user_info: dict = Depends(verificar_token)):
