@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS Móvil & Inventario</title>
-    <link rel="manifest" href="manifest.json">
-    <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').catch(err => console.log(err)); }); }</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
-    <style>input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; } input[type=number] { -moz-appearance: textfield; appearance: textfield; }</style>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
+    <style>
+        /* MAGIA DEL MODO OSCURO */
+        html.dark-mode { filter: invert(1) hue-rotate(180deg); background-color: #111; min-height: 100vh; }
+        html.dark-mode img, html.dark-mode canvas, html.dark-mode video, html.dark-mode .no-invert { filter: invert(1) hue-rotate(180deg); }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     
-   <!-- PORTAL DE INICIO UNKNOWN (OPTIMIZADO PARA MÓVIL) -->
+    <!-- PORTAL DE INICIO UNKNOWN (OPTIMIZADO PARA MÓVIL) -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex justify-center items-center backdrop-blur-sm transition-all duration-500 p-4">
         <div class="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row w-full max-w-4xl max-h-[95vh] overflow-y-auto md:overflow-hidden transform transition-all">
             
@@ -23,20 +25,18 @@
                 <div class="relative z-10">
                     <span class="bg-indigo-600/30 text-indigo-300 text-[10px] md:text-xs font-black px-2 md:px-3 py-1 rounded-full uppercase tracking-widest border border-indigo-500/50">🚀 Sistema en Fase Beta</span>
                     <h2 class="text-2xl md:text-4xl font-black mt-3 md:mt-6 leading-tight tracking-tighter">Tu Negocio.<br><span class="text-indigo-400">Sin Límites.</span></h2>
-                    <!-- Ocultamos el texto largo en celular para ahorrar espacio -->
                     <p class="mt-4 text-gray-300 text-sm leading-relaxed hidden sm:block">El Punto de Venta en la nube más rápido e intuitivo. Toma el control absoluto de tu inventario y tus ventas desde cualquier lugar.</p>
                 </div>
                 
                 <div class="relative z-10 mt-6 md:mt-12 pt-4 md:pt-6 border-t border-gray-700/50">
                     <p class="text-[10px] md:text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Desarrollado Por</p>
                     <p class="text-lg md:text-xl font-black tracking-widest text-white flex items-center gap-2">
-                        UnknownTF24 <span class="text-indigo-500 text-xs md:text-sm font-medium tracking-normal hidden sm:inline">Tech Solutions</span>
+                        UNKNOWN <span class="text-indigo-500 text-xs md:text-sm font-medium tracking-normal hidden sm:inline">Tech Solutions</span>
                     </p>
                     <a href="https://wa.me/50249411913?text=Hola%20Unknown,%20necesito%20asistencia%20con%20el%20sistema" target="_blank" class="mt-3 md:mt-4 inline-flex items-center gap-2 text-[10px] md:text-xs font-bold bg-white/10 hover:bg-white/20 px-3 md:px-4 py-2 rounded-lg transition shadow-lg border border-white/5 backdrop-blur-md">
                         💬 Contactar al Creador
                     </a>
                 </div>
-                <!-- Decoración de fondo -->
                 <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
                 <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
             </div>
@@ -65,18 +65,18 @@
                             <button type="button" onclick="togglePassword('pass-input')" class="absolute inset-y-0 right-0 pr-3 md:pr-4 flex items-center text-gray-400 hover:text-indigo-600 transition text-base md:text-lg">👁️</button>
                         </div>
                     </div>
-                    <button onclick="verificarLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-sm md:text-lg py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition transform mt-2">Ingresar Al Sistema ➔</button>
+                    <button id="btn-login-main" onclick="verificarLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-sm md:text-lg py-3 rounded-xl shadow-lg transition transform mt-2">Ingresar a Caja 🛒 ➔</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE APERTURA DE CAJA (Ahora se puede cerrar) -->
+    <!-- MODAL DE APERTURA DE CAJA -->
     <div id="caja-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex justify-center items-center hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 text-center relative">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 text-center relative no-invert">
             <button onclick="document.getElementById('caja-overlay').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
             <h2 class="text-2xl font-black text-gray-800 mb-2">Apertura de Caja 💰</h2>
-            <p class="text-sm text-gray-500 mb-6">Ingresa el efectivo inicial (sencillo) con el que empiezas el turno.</p>
+            <p class="text-sm text-gray-500 mb-6">Ingresa el efectivo inicial con el que empiezas el turno.</p>
             <input type="number" id="fondo-caja-input" class="w-full border-2 border-gray-200 text-center text-3xl font-black p-4 rounded-xl text-blue-600 mb-4 focus:border-blue-500 outline-none" placeholder="Q0.00">
             <button onclick="abrirCaja()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-lg shadow-lg">Iniciar Turno</button>
         </div>
@@ -84,27 +84,21 @@
 
     <!-- BARRA SUPERIOR POS RESPONSIVE -->
     <header class="bg-blue-700 text-white shadow-md">
-        <!-- Fila Principal: Título y Botones Base -->
         <div class="p-3 flex justify-between items-center max-w-7xl mx-auto w-full">
             <div class="flex flex-col">
                 <h1 class="text-xl md:text-2xl font-black tracking-tight" id="header-brand-title">Punto de Venta</h1>
-                <!-- Nombre del cajero visible siempre -->
                 <span id="cajero-name-display" class="text-xs text-blue-200 font-bold truncate max-w-[150px] md:max-w-xs"></span>
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Botón Panel (Solo visible si es Admin) -->
                 <a href="admin.html" id="btn-admin-link" class="bg-gray-800 hover:bg-gray-900 px-3 py-2 rounded text-xs md:text-sm font-bold shadow-sm hidden transition flex items-center gap-1">⚙️ <span class="hidden sm:inline">Panel</span></a>
-                
-                <!-- Botones de Caja (Abrir/Cerrar) -->
                 <button id="btn-abrir-caja" onclick="document.getElementById('caja-overlay').classList.remove('hidden')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-black shadow-md hidden transition animate-pulse flex items-center gap-1">🔓 <span class="hidden sm:inline">Abrir Caja</span></button>
                 <button id="btn-cerrar-caja" onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-500 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-bold shadow-sm hidden transition flex items-center gap-1">🔒 <span class="hidden sm:inline">Cerrar Turno</span></button>
 
-                <!-- Menú de Opciones (Salir / Soporte) -->
+                <!-- Menú de Opciones -->
                 <div class="relative group ml-1">
                     <button class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-bold transition">⋮</button>
-                    <!-- Menú Desplegable -->
-                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-xl overflow-hidden hidden group-hover:block z-50 border border-gray-100">
+                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-xl overflow-hidden hidden group-hover:block z-50 border border-gray-100 no-invert">
                         <a href="https://wa.me/50249411913?text=Hola,%20necesito%20ayuda%20con%20la%20caja%20POS" target="_blank" class="block px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 font-bold border-b border-gray-100 transition">💬 Soporte Técnico</a>
                         <button onclick="cerrarSesion()" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-bold transition">🚪 Cerrar Sesión</button>
                     </div>
@@ -115,7 +109,7 @@
 
     <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
         <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
-            <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50"></div>
+            <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50 no-invert"></div>
             <div id="lector-oculto" style="display: none;"></div>
             <div class="grid grid-cols-2 gap-2">
                 <button id="start-btn" class="bg-green-500 text-white py-2 rounded-lg font-medium shadow">📷 Cámara Vivo</button>
@@ -144,24 +138,29 @@
     </main>
 
     <div id="catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
-        <div class="bg-white p-4 rounded-xl shadow-lg w-full max-w-md flex flex-col h-[80vh]">
+        <div class="bg-white p-4 rounded-xl shadow-lg w-full max-w-md flex flex-col h-[80vh] no-invert">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Catálogo</h2><button onclick="closeCatalog()" class="text-red-500 font-bold text-xl">✕</button></div>
             <input type="text" id="catalog-search" placeholder="Escribe el nombre del producto..." class="w-full p-3 border-2 border-blue-200 rounded-xl mb-4 focus:outline-none focus:border-blue-500 text-lg">
             <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="catalog-list"></div>
         </div>
     </div>
 
+    <!-- Botón flotante Modo Oscuro -->
+    <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-2xl z-[100] hover:scale-110 transition border border-gray-600 no-invert">🌓</button>
+
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api"; 
         let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
-        
         let cajaAbierta = false; 
 
-        // --- 1. SEGURIDAD Y CONEXIÓN ---
-        function cerrarSesion() { 
-            sessionStorage.clear(); 
-            window.location.reload(); 
+        // MODO OSCURO
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark-mode'));
         }
+        if(localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark-mode');
+
+        function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken"); 
@@ -171,20 +170,16 @@
                 const res = await fetch(url, options);
                 if (res.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
                 return res;
-            } catch (err) { 
-                if(err.message !== "No autorizado") { console.error("Error de red interceptado."); } 
-                throw err; 
-            }
+            } catch (err) { if(err.message !== "No autorizado") console.error("Error de red"); throw err; }
         }
 
-        // --- 2. PORTAL UNKNOWN Y LOGIN ---
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
 
         function checkSession() {
             if(sessionStorage.getItem("adminToken")) {
                 document.getElementById("login-overlay").style.display = "none";
                 document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
-                if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById("btn-admin-link").classList.remove("hidden"); }
+                if (sessionStorage.getItem("rolUsuario") !== "cajero") document.getElementById("btn-admin-link").classList.remove("hidden");
                 fetchAjustesCloud(); fetchEstadoCaja(); fetchPosProducts();
             } else { document.getElementById("login-overlay").style.display = "flex"; }
         }
@@ -194,47 +189,47 @@
             document.getElementById("login-destino").value = destino;
             const btnPos = document.getElementById("btn-dest-pos");
             const btnAdmin = document.getElementById("btn-dest-admin");
-            btnPos.className = "flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
-            btnAdmin.className = "flex-1 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
-            btn.className = "flex-1 py-2 text-sm font-black bg-white shadow-sm rounded-lg text-indigo-700 transition transform scale-100";
+            const mainBtn = document.getElementById("btn-login-main");
+            const titleDisplay = document.getElementById("login-title-display");
+            
+            btnPos.className = "flex-1 py-2 text-xs md:text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
+            btnAdmin.className = "flex-1 py-2 text-xs md:text-sm font-bold text-gray-500 hover:text-gray-700 transition transform scale-95";
+            btn.className = "flex-1 py-2 text-xs md:text-sm font-black bg-white shadow-sm rounded-lg text-indigo-700 transition transform scale-100";
+
+            if(destino === 'pos') {
+                mainBtn.className = "w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-sm md:text-lg py-3 rounded-xl shadow-lg transition transform mt-2";
+                mainBtn.innerText = "Ingresar a Caja 🛒 ➔";
+                if(cfgTienda.nombre) titleDisplay.innerText = cfgTienda.nombre + " 🛒"; else titleDisplay.innerText = "Bienvenido 🛒";
+            } else {
+                mainBtn.className = "w-full bg-gray-900 hover:bg-black active:scale-95 text-white font-black text-sm md:text-lg py-3 rounded-xl shadow-lg transition transform mt-2";
+                mainBtn.innerText = "Ingresar al Panel ⚙️ ➔";
+                titleDisplay.innerText = "Acceso Administrativo ⚙️";
+            }
         }
 
         async function verificarLogin() {
             const user = document.getElementById("user-input").value.trim(); const pass = document.getElementById("pass-input").value;
             const destino = document.getElementById("login-destino") ? document.getElementById("login-destino").value : 'pos';
-            
             try {
                 const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario: user, password: pass }) });
                 if (res.ok) {
                     const data = await res.json();
-                    
-                    if (destino === 'admin' && data.rol === 'cajero') {
-                        return Swal.fire('Acceso Denegado', 'Los cajeros no tienen acceso al Panel Administrativo.', 'error');
-                    }
+                    if (destino === 'admin' && data.rol === 'cajero') return Swal.fire('Acceso Denegado', 'Los cajeros no tienen acceso al Panel Administrativo.', 'error');
                     
                     sessionStorage.setItem("adminToken", data.token); 
                     sessionStorage.setItem("nombreUsuario", data.nombre_completo); 
                     sessionStorage.setItem("rolUsuario", data.rol);
                     sessionStorage.setItem("tienda_id", data.tienda_id); 
                     
-                    if(destino === 'admin') {
-                        window.location.href = "admin.html";
-                    } else {
-                        document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession(); 
-                    }
+                    if(destino === 'admin') window.location.href = "admin.html";
+                    else { document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession(); }
                 } else { const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); }
             } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
         }
         
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
-        
-        window.togglePassword = function(inputId) {
-            const input = document.getElementById(inputId);
-            if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
-        };
+        window.togglePassword = function(inputId) { const input = document.getElementById(inputId); if (input.type === "password") { input.type = "text"; } else { input.type = "password"; } };
 
-        // --- 3. CAJA ---
-        // --- 3. LÓGICA DE CAJA (MODO INVITADO INCLUIDO) ---
         async function fetchEstadoCaja() { 
             try { 
                 const res = await fetchConToken(`${API_URL}/caja/estado`); 
@@ -247,23 +242,12 @@
                 if(!cajaAbierta) { 
                     if(btnAbrir) btnAbrir.classList.remove("hidden"); 
                     if(btnCerrar) btnCerrar.classList.add("hidden");
-                    
-                    // AQUÍ ESTÁ LA MAGIA: Agregamos showCloseButton: true
-                    Swal.fire({
-                        title: 'Modo Visualización', 
-                        text: 'La caja está cerrada. Debes abrir turno para poder cobrar.', 
-                        icon: 'info', 
-                        toast: true, 
-                        position: 'top-end', 
-                        timer: 5000, 
-                        showConfirmButton: false,
-                        showCloseButton: true // <-- Esto agrega la "X"
-                    });
+                    Swal.fire({title: 'Modo Visualización', text: 'La caja está cerrada. Debes abrir turno para poder cobrar.', icon: 'info', toast: true, position: 'top-end', timer: 5000, showConfirmButton: false, showCloseButton: true});
                 } else {
                     if(btnAbrir) btnAbrir.classList.add("hidden"); 
                     if(btnCerrar) btnCerrar.classList.remove("hidden");
                 }
-                updateCartUI(); // Fuerza la actualización del carrito para bloquear el botón
+                updateCartUI(); 
             } catch(e) {} 
         }
         
@@ -272,11 +256,8 @@
             if(isNaN(fondo) || fondo < 0) return Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning'); 
             try { 
                 const res = await fetchConToken(`${API_URL}/caja/abrir`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ fondo_inicial: fondo }) }); 
-                if(res.ok) { 
-                    document.getElementById("caja-overlay").classList.add("hidden"); 
-                    Swal.fire({title: 'Turno Abierto', text: `Iniciaste con Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); 
-                    fetchEstadoCaja(); 
-                } else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } 
+                if(res.ok) { document.getElementById("caja-overlay").classList.add("hidden"); Swal.fire({title: 'Turno Abierto', text: `Iniciaste con Q${fondo.toFixed(2)}`, icon: 'success', timer: 1500, showConfirmButton: false}); fetchEstadoCaja(); } 
+                else { const error = await res.json(); Swal.fire('Error', error.detail, 'error'); } 
             } catch(e) {} 
         }
         
@@ -286,22 +267,10 @@
                     try { 
                         const res = await fetchConToken(`${API_URL}/caja/cerrar`, { method: "POST" }); 
                         if(res.ok) { 
-                            try {
-                                const data = await res.json(); 
-                                try { imprimirTicketCorte(data); } catch(err) { console.error("Error al imprimir:", err); }
-                                Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); 
-                            } catch (parseError) {
-                                Swal.fire('Error de Datos', 'El servidor respondió, pero los datos están corruptos. Intenta de nuevo.', 'error');
-                            }
-                        } else { 
-                            const errorText = await res.text();
-                            let detail = "Error desconocido del servidor.";
-                            try { detail = JSON.parse(errorText).detail || errorText; } catch(e) { detail = errorText; }
-                            Swal.fire('Denegado por el Servidor', detail, 'error'); 
-                        } 
-                    } catch(e) { 
-                        Swal.fire('Fallo Crítico de Red', `Motivo técnico: ${e.message || String(e)}`, 'error'); 
-                    } 
+                            try { const data = await res.json(); try { imprimirTicketCorte(data); } catch(err) { console.error(err); } Swal.fire({title: 'Corte Z Exitoso', text: `Entregar: Q${data.total_esperado.toFixed(2)}`, icon: 'success'}).then(() => cerrarSesion()); } 
+                            catch (parseError) { Swal.fire('Error', 'Servidor respondió, pero datos corruptos.', 'error'); }
+                        } else { const errorText = await res.text(); let detail = "Error desconocido."; try { detail = JSON.parse(errorText).detail || errorText; } catch(e) { detail = errorText; } Swal.fire('Denegado', detail, 'error'); } 
+                    } catch(e) { Swal.fire('Red', `Error: ${e.message}`, 'error'); } 
                 } 
             }); 
         }
@@ -314,44 +283,34 @@
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        // --- 4. PRODUCTOS, VENTAS E INVENTARIO ---
         async function fetchPosProducts() { try { const res = await fetchConToken(`${API_URL}/productos`); posProducts = await res.json(); posFuse = new Fuse(posProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); } catch (e) {} }
         window.openCatalog = function() { fetchPosProducts().then(() => { renderCatalog(posProducts); document.getElementById("catalog-modal").classList.remove("hidden"); setTimeout(() => document.getElementById("catalog-search").focus(), 100); }); }
         window.closeCatalog = function() { document.getElementById("catalog-modal").classList.add("hidden"); document.getElementById("catalog-search").value = ""; }
         function renderCatalog(products) { const list = document.getElementById("catalog-list"); if (products.length === 0) { list.innerHTML = `<p class="text-center text-gray-400 py-4 font-bold">Sin productos.</p>`; return; } list.innerHTML = products.map(p => `<div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg ${p.stock < 1 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-blue-50 active:bg-blue-100 cursor-pointer shadow-sm bg-white'} transition"><div><p class="font-bold text-gray-800 text-sm">${p.nombre}</p><p class="text-xs text-gray-500">Stock: <span class="font-bold ${p.stock <= 5 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></p></div><div class="font-black text-blue-600 text-lg">Q${p.precio.toFixed(2)}</div></div>`).join(""); }
         document.getElementById("catalog-search").addEventListener("input", (e) => { const term = e.target.value.trim(); renderCatalog(term ? posFuse.search(term).map(r => r.item) : posProducts); });
-        window.addFromCatalog = function(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) { return Swal.fire('Agotado', 'No hay inventario.', 'warning'); } addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
+        window.addFromCatalog = function(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) return Swal.fire('Agotado', 'No hay inventario.', 'warning'); addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
 
         const manualInput = document.getElementById("manual-code"); const addManualBtn = document.getElementById("add-manual-btn"); const cartItemsContainer = document.getElementById("cart-items"); const cartTotalElement = document.getElementById("cart-total"); const checkoutBtn = document.getElementById("checkout-btn");
         async function fetchProduct(code) { try { const response = await fetchConToken(`${API_URL}/productos/${code}`); if (!response.ok) { Swal.fire('Oops...', "No encontrado", 'error'); manualInput.value = ""; return; } const product = await response.json(); addToCart(product); manualInput.value = ""; } catch (error) {} }
         
-        function addToCart(product) { if (product.stock < 1) { return Swal.fire('Agotado', 'Sin stock.', 'warning'); } const existingItem = cart.find(item => item.codigo === product.codigo); if (existingItem) { if (existingItem.cantidad < product.stock) { existingItem.cantidad++; } else { return Swal.fire('Límite', 'No hay más unidades.', 'warning'); } } else { cart.push({ ...product, cantidad: 1 }); } updateCartUI(); }
+        function addToCart(product) { if (product.stock < 1) return Swal.fire('Agotado', 'Sin stock.', 'warning'); const existingItem = cart.find(item => item.codigo === product.codigo); if (existingItem) { if (existingItem.cantidad < product.stock) existingItem.cantidad++; else return Swal.fire('Límite', 'No hay más unidades.', 'warning'); } else { cart.push({ ...product, cantidad: 1 }); } updateCartUI(); }
         
         function updateCartUI() { 
             if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Carrito vacío</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } 
-            
             cartItemsContainer.innerHTML = cart.map((item, index) => { const stockRestante = item.stock - item.cantidad; return `<div class="flex flex-col py-3 border-b border-gray-100 last:border-0"><div class="flex justify-between items-start mb-2"><div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button></div><div class="flex justify-between items-center mt-1"><div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm"><button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button><input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold border-none py-1"><button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button></div><div class="text-right"><span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span><span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span></div></div></div>` }).join(""); 
-            const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); 
-            cartTotalElement.innerText = `Q${total.toFixed(2)}`; 
-            
-            if(!cajaAbierta) {
-                checkoutBtn.disabled = true;
-                checkoutBtn.innerText = "🔒 Abre la Caja para cobrar";
-                checkoutBtn.className = "w-full bg-gray-400 text-white font-bold py-3 rounded-lg mt-4 cursor-not-allowed transition";
-            } else {
-                checkoutBtn.disabled = false;
-                checkoutBtn.innerText = "Confirmar y Cobrar";
-                checkoutBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-lg shadow-lg mt-4 transition transform hover:-translate-y-1";
-            }
+            const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); cartTotalElement.innerText = `Q${total.toFixed(2)}`; 
+            if(!cajaAbierta) { checkoutBtn.disabled = true; checkoutBtn.innerText = "🔒 Abre la Caja para cobrar"; checkoutBtn.className = "w-full bg-gray-400 text-white font-bold py-3 rounded-lg mt-4 cursor-not-allowed transition"; } 
+            else { checkoutBtn.disabled = false; checkoutBtn.innerText = "Confirmar y Cobrar"; checkoutBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-lg shadow-lg mt-4 transition transform hover:-translate-y-1"; }
         }
         
-        window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } }; window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } }; window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); }; window.setQuantity = function(index, value) { let val = parseInt(value); if (isNaN(val) || val < 1) { val = 1; } if (val > cart[index].stock) { Swal.fire('Límite', 'Stock superado.', 'warning'); val = cart[index].stock; } cart[index].cantidad = val; updateCartUI(); };
+        window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } }; window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } }; window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); }; window.setQuantity = function(index, value) { let val = parseInt(value); if (isNaN(val) || val < 1) val = 1; if (val > cart[index].stock) { Swal.fire('Límite', 'Stock superado.', 'warning'); val = cart[index].stock; } cart[index].cantidad = val; updateCartUI(); };
 
         checkoutBtn.addEventListener("click", async () => {
             if (cart.length === 0) return; const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) }; const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); const cartCopia = [...cart];
             try {
                 const response = await fetchConToken(`${API_URL}/ventas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-                if (response.ok) { cart = []; updateCartUI(); fetchPosProducts(); Swal.fire({ title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success', showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar' }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); }); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
+                if (response.ok) { cart = []; updateCartUI(); fetchPosProducts(); Swal.fire({ title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success', showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar' }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); }); } 
+                else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
             } catch (error) {} 
         });
 
@@ -362,7 +321,6 @@
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        // --- 5. CÁMARA Y ESCÁNER ---
         document.getElementById("native-cam-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto"); scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No legible.', 'error')).finally(() => scanner.clear()); });
         document.getElementById("start-btn").addEventListener("click", () => { document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden"); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { stopScanning(); fetchProduct(text); }).catch(e => { stopScanning(); Swal.fire('Error', 'Cámara no disponible', 'error'); }); });
         window.stopScanning = function() { if (html5QrcodeScanner) { try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }

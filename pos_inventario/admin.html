@@ -12,10 +12,15 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* MAGIA DEL MODO OSCURO */
+        html.dark-mode { filter: invert(1) hue-rotate(180deg); background-color: #111; min-height: 100vh; }
+        html.dark-mode img, html.dark-mode canvas, html.dark-mode video, html.dark-mode .no-invert { filter: invert(1) hue-rotate(180deg); }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
                 
-            <!-- NUEVO DISEÑO DE BARRA DE NAVEGACIÓN -->
+    <!-- NUEVO DISEÑO DE BARRA DE NAVEGACIÓN -->
     <nav class="bg-gray-900 text-white shadow-lg border-b-4 border-blue-600">
         <div class="max-w-screen-2xl mx-auto px-4">
             <div class="flex justify-between h-16">
@@ -32,7 +37,7 @@
                     <button onclick="switchTab('inventario')" id="btn-inv" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold transition">📦 Inventario</button>
                     <button onclick="switchTab('ventas')" id="btn-ven" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold transition">📈 Ventas</button>
                     <button onclick="switchTab('cajas')" id="btn-caj" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold transition">🗄️ Cortes Z</button>
-                    <button onclick="switchTab('ajustes')" id="btn-cfg" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold transition">⚙️ Ajustes</button>
+                    <button onclick="switchTab('ajustes')" id="btn-cfg" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold transition">🎨 Personalizar Tienda</button>
                     <button onclick="switchTab('usuarios')" id="btn-usr" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold transition hidden">👥 Personal</button>
                 </div>
 
@@ -52,7 +57,7 @@
             <button onclick="switchTab('inventario')" id="btn-inv-m" class="bg-gray-700 px-3 py-1 rounded text-xs font-bold whitespace-nowrap">📦 Inv.</button>
             <button onclick="switchTab('ventas')" id="btn-ven-m" class="bg-gray-700 px-3 py-1 rounded text-xs font-bold whitespace-nowrap">📈 Ventas</button>
             <button onclick="switchTab('cajas')" id="btn-caj-m" class="bg-gray-700 px-3 py-1 rounded text-xs font-bold whitespace-nowrap">🗄️ Cortes</button>
-            <button onclick="switchTab('ajustes')" id="btn-cfg-m" class="bg-gray-700 px-3 py-1 rounded text-xs font-bold whitespace-nowrap">⚙️ Ajustes</button>
+            <button onclick="switchTab('ajustes')" id="btn-cfg-m" class="bg-gray-700 px-3 py-1 rounded text-xs font-bold whitespace-nowrap">🎨 Personalizar Tienda</button>
             <button onclick="switchTab('usuarios')" id="btn-usr-m" class="bg-gray-700 px-3 py-1 rounded text-xs font-bold whitespace-nowrap hidden">👥 Personal</button>
         </div>
     </nav>
@@ -62,7 +67,7 @@
         <div id="tab-inventario" class="hidden">
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h2 class="text-lg font-bold mb-4">Registrar Nuevo Producto</h2>
-                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border"><div id="admin-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div>
+                <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border no-invert"><div id="admin-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div>
                 <div id="lector-oculto-admin" style="display:none;"></div>
                 <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div><label class="block text-sm mb-1">Código</label><div class="flex gap-2"><input type="text" id="add-codigo" required class="w-full border p-2 rounded"><button type="button" id="start-admin-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-admin-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-admin-input" accept="image/*" capture="environment" style="display:none"></div>
@@ -101,7 +106,7 @@
                 <button onclick="exportarVentasExcel()" class="bg-green-600 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center whitespace-nowrap">📊 Descargar Reporte</button>
             </div>
             
-            <div class="bg-white p-4 rounded-xl shadow-md"><div class="flex justify-between items-center mb-2"><h2 class="text-xl font-bold text-gray-800">Rendimiento</h2><h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3></div><div class="relative h-64 w-full"><canvas id="ventasChart"></canvas></div></div>
+            <div class="bg-white p-4 rounded-xl shadow-md"><div class="flex justify-between items-center mb-2"><h2 class="text-xl font-bold text-gray-800">Rendimiento</h2><h3 class="text-2xl font-black text-blue-600" id="gran-total-ventas">Q0.00</h3></div><div class="relative h-64 w-full no-invert"><canvas id="ventasChart"></canvas></div></div>
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-4 border-b">Fecha</th><th class="p-4 border-b">Hora</th><th class="p-4 border-b text-center">Cant.</th><th class="p-4 border-b min-w-[200px]">Producto</th><th class="p-4 border-b text-right">Precio U.</th><th class="p-4 border-b font-bold text-blue-600">Cajero</th><th class="p-4 border-b text-right">Total Venta</th></tr></thead><tbody id="ventas-list" class="divide-y divide-gray-100"></tbody><tfoot class="bg-blue-50 border-t-2 border-blue-200"><tr><td colspan="6" class="p-4 text-right font-bold text-gray-700 uppercase">Total Generado:</td><td id="tabla-total-footer" class="p-4 text-right font-black text-blue-700 text-xl">Q0.00</td></tr></tfoot></table></div></section>
         </div>
 
@@ -140,7 +145,7 @@
                         <div><label class="block text-sm font-bold text-gray-700">Teléfono</label><input type="text" id="cfg-telefono" maxlength="20" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none"></div>
                     </div>
                     <div><label class="block text-sm font-bold text-gray-700">Mensaje de pie de ticket</label><input type="text" id="cfg-footer" maxlength="100" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none"></div>
-                    <div class="flex justify-end pt-2"><button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow">Guardar Identidad</button></div>
+                    <div class="flex justify-end pt-2"><button type="submit" id="btn-guardar-ajustes" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow">Guardar Identidad</button></div>
                 </form>
             </section>
         </div>
@@ -162,10 +167,10 @@
     </main>
 
     <!-- MODALES VARIOS OCULTOS -->
-    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto"><h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2><form id="edit-form" class="space-y-4"><input type="hidden" id="edit-original-code"><div><label class="block text-sm font-bold text-purple-600">Código</label><div class="flex gap-2"><input type="text" id="edit-codigo" required class="w-full border-2 border-purple-200 rounded p-2 outline-none"><button type="button" id="start-edit-scan-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none"><div id="lector-oculto-edit" style="display:none;"></div></div><div id="edit-scanner-container" class="hidden bg-gray-50 p-4 rounded-lg border"><div id="edit-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-edit-scan-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div><div><label class="block text-sm">Nombre</label><input type="text" id="edit-nombre" required maxlength="80" class="w-full border rounded p-2 outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" min="0" id="edit-precio" required class="w-full border rounded p-2"></div><div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required min="0" class="w-full border-2 border-blue-300 rounded p-2"></div></div><div class="flex justify-end gap-2 mt-6"><button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Actualizar</button></div></form></div></div>
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto no-invert"><h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2><form id="edit-form" class="space-y-4"><input type="hidden" id="edit-original-code"><div><label class="block text-sm font-bold text-purple-600">Código</label><div class="flex gap-2"><input type="text" id="edit-codigo" required class="w-full border-2 border-purple-200 rounded p-2 outline-none"><button type="button" id="start-edit-scan-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none"><div id="lector-oculto-edit" style="display:none;"></div></div><div id="edit-scanner-container" class="hidden bg-gray-50 p-4 rounded-lg border"><div id="edit-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-edit-scan-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div><div><label class="block text-sm">Nombre</label><input type="text" id="edit-nombre" required maxlength="80" class="w-full border rounded p-2 outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" min="0" id="edit-precio" required class="w-full border rounded p-2"></div><div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required min="0" class="w-full border-2 border-blue-300 rounded p-2"></div></div><div class="flex justify-end gap-2 mt-6"><button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Actualizar</button></div></form></div></div>
     
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md no-invert">
             <h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2>
             <form id="form-editar-usuario" class="space-y-4">
                 <input type="hidden" id="edit-usr-id">
@@ -182,24 +187,52 @@
         </div>
     </div>
     
-    <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2><button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button></div><div class="max-h-96 overflow-y-auto"><table class="w-full text-left border-collapse text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead><tbody id="audit-list" class="divide-y divide-gray-100"></tbody></table></div></div></div>
+    <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl no-invert"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2><button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button></div><div class="max-h-96 overflow-y-auto"><table class="w-full text-left border-collapse text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead><tbody id="audit-list" class="divide-y divide-gray-100"></tbody></table></div></div></div>
+
+    <!-- Botón flotante Modo Oscuro -->
+    <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-2xl z-[100] hover:scale-110 transition border border-gray-600 no-invert">🌓</button>
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
         let miGrafico = null; let todasLasVentas = []; let allProducts = []; let fuse = null; let currentEditCode = null; let allUsers = []; let arrayVentasFiltradasExport = []; let todasLasCajas = []; let arrayCajasFiltradasExport = [];
+
+        // MODO OSCURO
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark-mode'));
+        }
+        if(localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark-mode');
 
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
             if (input.type === "password") { input.type = "text"; } else { input.type = "password"; }
         }
 
-        // EL BOTÓN SALIR AHORA SÍ TE MANDA AL INICIO
         function cerrarSesion() { sessionStorage.clear(); window.location.href = "index.html"; }
 
         window.solicitarSoporte = function() { Swal.fire({ title: 'Soporte Técnico', html: '<p>Comunícate con el Creador del Sistema.</p><p><b class="text-blue-600">Teléfono:</b> 4941-1913</p>', icon: 'info' }); };
 
-        async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); const data = await res.json(); document.getElementById("cfg-nombre").value = data.nombre || ""; document.getElementById("cfg-direccion").value = data.direccion || ""; document.getElementById("cfg-nit").value = data.nit || ""; document.getElementById("cfg-telefono").value = data.telefono || ""; document.getElementById("cfg-footer").value = data.footer || ""; } catch(e){} }
-        async function guardarBrandingCloud(e) { e.preventDefault(); const payload = { nombre: document.getElementById("cfg-nombre").value.trim(), direccion: document.getElementById("cfg-direccion").value.trim(), nit: document.getElementById("cfg-nit").value.trim(), telefono: document.getElementById("cfg-telefono").value.trim(), footer: document.getElementById("cfg-footer").value.trim() }; try { const res = await fetchConToken(`${API_URL}/ajustes`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if(res.ok) Swal.fire('¡Guardado en la Nube!', 'La configuración de tu tienda se aplicará en todos los dispositivos.', 'success'); } catch(e) {} }
+        async function fetchAjustesCloud() { 
+            try { 
+                const res = await fetchConToken(`${API_URL}/ajustes`); 
+                const data = await res.json(); 
+                document.getElementById("cfg-nombre").value = data.nombre || ""; 
+                document.getElementById("cfg-direccion").value = data.direccion || ""; 
+                document.getElementById("cfg-nit").value = data.nit || ""; 
+                document.getElementById("cfg-telefono").value = data.telefono || ""; 
+                document.getElementById("cfg-footer").value = data.footer || ""; 
+                
+                // CANDADO: Bloquea el botón si ya está configurado y el usuario es 'admin'
+                if (data.configurada && sessionStorage.getItem("rolUsuario") === "admin") {
+                    const btn = document.getElementById("btn-guardar-ajustes");
+                    btn.disabled = true;
+                    btn.innerText = "🔒 Tienda ya configurada";
+                    btn.className = "bg-gray-400 text-white font-bold px-6 py-3 rounded-xl shadow cursor-not-allowed";
+                }
+            } catch(e){} 
+        }
+
+        async function guardarBrandingCloud(e) { e.preventDefault(); const payload = { nombre: document.getElementById("cfg-nombre").value.trim(), direccion: document.getElementById("cfg-direccion").value.trim(), nit: document.getElementById("cfg-nit").value.trim(), telefono: document.getElementById("cfg-telefono").value.trim(), footer: document.getElementById("cfg-footer").value.trim() }; try { const res = await fetchConToken(`${API_URL}/ajustes`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if(res.ok) Swal.fire('¡Guardado en la Nube!', 'La configuración de tu tienda se aplicará en todos los dispositivos.', 'success'); else { const data = await res.json(); Swal.fire('Denegado', data.detail, 'error'); } } catch(e) {} }
 
         function exportarInventarioExcel() { if(allProducts.length === 0) return Swal.fire('Vacío', 'No hay productos.', 'info'); const ws = XLSX.utils.json_to_sheet(allProducts.map(p => ({"Código de Barras": p.codigo, "Nombre del Producto": p.nombre, "Precio Venta (Q)": p.precio, "Stock Disponible": p.stock}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Inventario"); XLSX.writeFile(wb, "Inventario_Tienda.xlsx"); }
         function exportarVentasExcel() { if(arrayVentasFiltradasExport.length === 0) return Swal.fire('Vacío', 'No hay ventas.', 'info'); const ws = XLSX.utils.json_to_sheet(arrayVentasFiltradasExport.map(v => ({"ID Venta": v.id, "Fecha y Hora": v.fecha, "Cajero": v.cajero, "Artículos": v.articulos.replace(/ \| /g, ", "), "Total (Q)": v.total}))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte_Ventas"); XLSX.writeFile(wb, "Reporte_Ventas_Filtrado.xlsx"); }
@@ -257,7 +290,6 @@
             fetchInventory(); fetchVentas(); fetchCajas(); fetchAjustesCloud(); 
             if(sessionStorage.getItem("rolUsuario") !== "cajero") fetchUsuarios(); 
         } else {
-            // SI INTENTAN ENTRAR AL ADMIN SIN SESIÓN, LOS PATEAMOS AL INICIO
             window.location.href = "index.html";
         }
 
@@ -288,7 +320,6 @@
             if (rolActual === "superadmin") { 
                 trClass = "bg-gray-50 border-b"; 
                 passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
-                // NUEVO: Si eres tu mismo (admin), te deja editar. Si es una llave de soporte, te deja editarla y borrarla.
                 if (u.usuario === 'admin') {
                     actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><span title="El Creador principal no se puede borrar" class="text-gray-400 cursor-not-allowed ml-1">🛡️ Intocable</span></td>`;
                 } else {
@@ -387,6 +418,7 @@
         function aplicarFiltros() { const filtroF = document.getElementById("filtro-fecha").value; const filtroC = document.getElementById("filtro-cajero").value; document.getElementById("controles-manuales").classList.toggle("hidden", filtroF !== "manual"); let filtradas = todasLasVentas; const ahora = new Date(); const dHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime(); if (filtroF === "hoy") filtradas = filtradas.filter(v => new Date(parseFecha(v.fecha).getFullYear(), parseFecha(v.fecha).getMonth(), parseFecha(v.fecha).getDate()).getTime() === dHoy); else if (filtroF === "semana") filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= ahora.getTime() - (7 * 86400000)); else if (filtroF === "mes") filtradas = filtradas.filter(v => parseFecha(v.fecha).getMonth() === ahora.getMonth() && parseFecha(v.fecha).getFullYear() === ahora.getFullYear()); else if (filtroF === "manual") { const fI = document.getElementById("fecha-inicio").value; const fF = document.getElementById("fecha-fin").value; if (fI && fF) { const tI = new Date(fI + "T00:00:00").getTime(); const tF = new Date(fF + "T23:59:59").getTime(); if(Math.ceil(Math.abs(tF - tI) / (1000 * 60 * 60 * 24)) > 180) { Swal.fire('Rango Excedido', 'Máximo 6 meses.', 'warning'); return; } filtradas = filtradas.filter(v => parseFecha(v.fecha).getTime() >= tI && parseFecha(v.fecha).getTime() <= tF); } } if (filtroC !== "todos") filtradas = filtradas.filter(v => (v.cajero || "Desconocido") === filtroC); arrayVentasFiltradasExport = filtradas; actualizarVistaVentas(filtradas); }
         function actualizarVistaVentas(ventas) { const list = document.getElementById("ventas-list"); const gTotal = document.getElementById("gran-total-ventas"); const fTotal = document.getElementById("tabla-total-footer"); const sum = ventas.reduce((acc, v) => acc + v.total, 0); gTotal.innerText = `Q${sum.toFixed(2)}`; if(fTotal) fTotal.innerText = `Q${sum.toFixed(2)}`; if(ventas.length === 0) { list.innerHTML = `<tr><td colspan="7" class="p-4 text-center">No hay ventas en este período.</td></tr>`; } else { list.innerHTML = ventas.map(v => { let items = v.articulos.split(/,|\n/).filter(i => i.trim() !== ""); let cantH = ""; let prodH = ""; let preH = ""; let single = items.length === 1; items.forEach(i => { let m = i.trim().match(/^(\d+)x\s*(.*)/); if (m) { let qty = parseInt(m[1]); let name = m[2].trim(); let price = 0; if (single && qty > 0) price = v.total / qty; else { let p = allProducts.find(x => x.nombre === name); if (p) price = p.precio; } cantH += `<div class="py-1">${qty}</div>`; prodH += `<div class="py-1">${name}</div>`; preH += `<div class="py-1">Q${price.toFixed(2)}</div>`; } else { cantH += `<div class="py-1">-</div>`; prodH += `<div class="py-1">${i}</div>`; preH += `<div class="py-1">-</div>`; } }); const fh = formatearFechaLocal(v.fecha).split(' '); const caj = v.cajero || "Desconocido"; return `<tr class="border-b"><td class="p-4">${fh[0]}</td><td class="p-4 text-gray-500">${fh[1] || ''}</td><td class="p-4 text-center font-bold">${cantH}</td><td class="p-4">${prodH}</td><td class="p-4 text-right">${preH}</td><td class="p-4 font-bold text-blue-600">${caj}</td><td class="p-4 font-bold text-green-600 text-right">Q${v.total.toFixed(2)}</td></tr>`; }).join(""); } dibujarGrafica(ventas); }
         function dibujarGrafica(ventas) { const ctx = document.getElementById('ventasChart').getContext('2d'); const ag = {}; ventas.forEach(v => { const fc = parseFecha(v.fecha).toLocaleDateString(); ag[fc] = (ag[fc] || 0) + v.total; }); if(miGrafico) miGrafico.destroy(); miGrafico = new Chart(ctx, { type: 'line', data: { labels: Object.keys(ag).reverse(), datasets: [{ label: 'Ingresos (Q)', data: Object.values(ag).reverse(), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); }
+        function formatearFechaLocal(fechaUTC) { const d = parseFecha(fechaUTC); if (isNaN(d.getTime())) return fechaUTC; const tOffset = d.getTimezoneOffset() * 60000; const localD = new Date(d.getTime() - tOffset); return localD.toLocaleString('es-GT', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''); }
     </script>
 </body>
 </html>
