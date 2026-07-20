@@ -133,10 +133,15 @@
         </div>
 
         <!-- PESTAÑA: AJUSTES -->
+        <!-- PESTAÑA: AJUSTES -->
         <div id="tab-ajustes" class="hidden">
             <section class="bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto border-t-4 border-blue-600">
                 <h2 class="text-xl font-bold mb-2 text-gray-800">⚙️ Configuración de la Tienda (Nube)</h2>
-                <p class="text-gray-500 text-xs mb-6">Los datos ingresados se guardan en el servidor para tu sucursal. Se mostrarán en los tickets físicos de todos tus cajeros.</p>
+                <p class="text-gray-500 text-xs mb-4">Los datos ingresados se guardan en el servidor para tu sucursal. Se mostrarán en los tickets físicos de todos tus cajeros.</p>
+                
+                <!-- NUEVO CONTENEDOR DE AVISO DINÁMICO -->
+                <div id="aviso-ajustes" class="mb-6 p-3 rounded-lg text-sm font-bold hidden"></div>
+
                 <form id="branding-form" class="space-y-4" onsubmit="guardarBrandingCloud(event)">
                     <div><label class="block text-sm font-bold text-gray-700">Nombre Comercial</label><input type="text" id="cfg-nombre" required maxlength="40" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none"></div>
                     <div><label class="block text-sm font-bold text-gray-700">Dirección Física</label><input type="text" id="cfg-direccion" maxlength="80" class="w-full border p-3 rounded-lg focus:border-blue-500 outline-none"></div>
@@ -222,12 +227,27 @@
                 document.getElementById("cfg-telefono").value = data.telefono || ""; 
                 document.getElementById("cfg-footer").value = data.footer || ""; 
                 
-                // CANDADO: Bloquea el botón si ya está configurado y el usuario es 'admin'
-                if (data.configurada && sessionStorage.getItem("rolUsuario") === "admin") {
-                    const btn = document.getElementById("btn-guardar-ajustes");
-                    btn.disabled = true;
-                    btn.innerText = "🔒 Tienda ya configurada";
-                    btn.className = "bg-gray-400 text-white font-bold px-6 py-3 rounded-xl shadow cursor-not-allowed";
+                const rol = sessionStorage.getItem("rolUsuario");
+                const avisoBox = document.getElementById("aviso-ajustes");
+                avisoBox.classList.remove("hidden");
+
+                // LÓGICA DE AVISOS Y CANDADOS SEGÚN EL ROL
+                if (rol === "superadmin") {
+                    avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-indigo-50 text-indigo-700 border border-indigo-200";
+                    avisoBox.innerText = "👑 Eres Súper Admin. Puedes modificar estos datos las veces que quieras.";
+                } else if (rol === "admin") {
+                    if (data.configurada) {
+                        const btn = document.getElementById("btn-guardar-ajustes");
+                        btn.disabled = true;
+                        btn.innerText = "🔒 Tienda ya configurada";
+                        btn.className = "bg-gray-400 text-white font-bold px-6 py-3 rounded-xl shadow cursor-not-allowed";
+                        
+                        avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-red-50 text-red-700 border border-red-200";
+                        avisoBox.innerText = "🔒 Identidad bloqueada. Para realizar cambios, contacta a Soporte Técnico.";
+                    } else {
+                        avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-yellow-50 text-yellow-700 border border-yellow-200 animate-pulse";
+                        avisoBox.innerText = "⚠️ AVISO IMPORTANTE: Solo podrás guardar la configuración de tu tienda 1 ÚNICA VEZ. Revisa bien los datos antes de confirmar.";
+                    }
                 }
             } catch(e){} 
         }
