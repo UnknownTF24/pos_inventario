@@ -29,6 +29,7 @@ def init_db():
     cursor = conn.cursor()
     cursor.execute("CREATE TABLE IF NOT EXISTS tiendas (id SERIAL PRIMARY KEY, nombre TEXT DEFAULT 'Mi Tienda', direccion TEXT DEFAULT 'Ciudad', nit TEXT DEFAULT 'C/F', telefono TEXT DEFAULT '---', mensaje_ticket TEXT DEFAULT '¡Gracias por su compra!')")
     cursor.execute("ALTER TABLE tiendas ADD COLUMN IF NOT EXISTS estado TEXT DEFAULT 'activo'")
+    cursor.execute("ALTER TABLE tiendas ADD COLUMN IF NOT EXISTS configurada BOOLEAN DEFAULT FALSE")
     cursor.execute("SELECT COUNT(*) FROM tiendas")
     if cursor.fetchone()[0] == 0: cursor.execute("INSERT INTO tiendas (nombre) VALUES ('Tienda Principal')")
     
@@ -108,14 +109,12 @@ def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(ve
     conn.commit(); conn.close()
     return {"status": "success"}
 
-# NUEVO: Ruta para borrar cliente por completo
 @app.delete("/api/saas/tiendas/{id_tienda}")
 def eliminar_tienda_saas(id_tienda: int, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     if id_tienda == 1: raise HTTPException(status_code=400, detail="No puedes borrar tu propia tienda maestra.")
     conn = get_db_connection(); cursor = conn.cursor()
     try:
-        # Borrar en cascada manual
         cursor.execute("DELETE FROM ventas WHERE tienda_id = %s", (id_tienda,))
         cursor.execute("DELETE FROM caja_sesiones WHERE tienda_id = %s", (id_tienda,))
         cursor.execute("DELETE FROM auditoria_usuarios WHERE tienda_id = %s", (id_tienda,))
@@ -126,7 +125,6 @@ def eliminar_tienda_saas(id_tienda: int, user_info: dict = Depends(verificar_tok
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
     finally: conn.close()
 
-# NUEVO: Generador de token de Visita (Impersonation)
 @app.post("/api/saas/impersonate/{id_tienda}")
 def visitar_tienda(id_tienda: int, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
@@ -135,12 +133,9 @@ def visitar_tienda(id_tienda: int, user_info: dict = Depends(verificar_token)):
     tienda = cursor.fetchone()
     conn.close()
     if not tienda: raise HTTPException(status_code=404, detail="La tienda no existe.")
-    
-    # Creamos un Token falso pero válido a tu nombre para esa tienda
     token = jwt.encode({"sub": "dios_creador", "rol": "superadmin", "nombre": "Soporte Central", "tienda_id": id_tienda, "exp": datetime.utcnow() + timedelta(hours=4)}, SECRET_KEY, algorithm=ALGORITHM)
     return {"token": token, "tienda_id": id_tienda}
 
-# DIRECTORIO GLOBAL DE USUARIOS (SaaS)
 @app.get("/api/saas/usuarios")
 def saas_listar_usuarios(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
@@ -171,8 +166,8 @@ def saas_eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_t
 @app.get("/api/ajustes")
 def obtener_ajustes(user_info: dict = Depends(verificar_token)):
     conn = get_db_connection(); cursor = conn.cursor()
-    # Ahora traemos también el estado 'configurada'
-    cursor.execute("SELECT nombre, direccion, nit, telefono, footer, configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
+    # SE CORRIGIÓ "footer" por "mensaje_ticket"
+    cursor.execute("SELECT nombre, direccion, nit, telefono, mensaje_ticket, configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
     row = cursor.fetchone(); conn.close()
     if row: return {"nombre": row[0], "direccion": row[1], "nit": row[2], "telefono": row[3], "footer": row[4], "configurada": row[5]}
     return {}
@@ -182,15 +177,14 @@ def actualizar_ajustes(req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     conn = get_db_connection(); cursor = conn.cursor()
     try:
-        # SEGURO: Verificamos si la tienda ya fue configurada
         cursor.execute("SELECT configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
         tienda = cursor.fetchone()
         
-        # Si ya está configurada y el usuario NO es el Súper Admin, lo bloqueamos.
         if tienda and tienda[0] and user_info["rol"] == "admin":
             raise HTTPException(status_code=403, detail="Tu tienda ya fue personalizada. Para cambiar la identidad nuevamente, contacta a Soporte Técnico.")
             
-        cursor.execute("UPDATE tiendas SET nombre=%s, direccion=%s, nit=%s, telefono=%s, footer=%s, configurada=TRUE WHERE id=%s", (req.get("nombre"), req.get("direccion"), req.get("nit"), req.get("telefono"), req.get("footer"), user_info["tienda_id"]))
+        # SE CORRIGIÓ "footer" por "mensaje_ticket"
+        cursor.execute("UPDATE tiendas SET nombre=%s, direccion=%s, nit=%s, telefono=%s, mensaje_ticket=%s, configurada=TRUE WHERE id=%s", (req.get("nombre"), req.get("direccion"), req.get("nit"), req.get("telefono"), req.get("footer"), user_info["tienda_id"]))
         conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
@@ -202,7 +196,6 @@ def estado_caja(user_info: dict = Depends(verificar_token)):
     cursor.execute("SELECT id, fondo_inicial FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
     row = cursor.fetchone()
     
-    # Súper Admins y Admins pueden ver si hay CUALQUIER caja abierta para gestionarla
     if not row and user_info["rol"] in ["superadmin", "admin"]:
         cursor.execute("SELECT id, fondo_inicial FROM caja_sesiones WHERE estado = 'abierta' AND tienda_id = %s LIMIT 1", (user_info["tienda_id"],))
         row = cursor.fetchone()
@@ -222,7 +215,7 @@ def abrir_caja(req: CajaAbrir, user_info: dict = Depends(verificar_token)):
         return {"status": "success"}
     except HTTPException: raise
     except Exception as e:
-        conn.rollback() # Revierte si la base de datos falla
+        conn.rollback() 
         raise HTTPException(status_code=500, detail=f"Error interno al abrir: {str(e)}")
     finally:
         conn.close()
@@ -234,7 +227,6 @@ def cerrar_caja(user_info: dict = Depends(verificar_token)):
         cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE cajero = %s AND estado = 'abierta' AND tienda_id = %s", (user_info["nombre_completo"], user_info["tienda_id"]))
         row = cursor.fetchone()
         
-        # Permiso Maestro: Forzar cierre si el cajero original no está
         if not row and user_info["rol"] in ["superadmin", "admin"]:
             cursor.execute("SELECT id, fondo_inicial, fecha_apertura, cajero FROM caja_sesiones WHERE estado = 'abierta' AND tienda_id = %s LIMIT 1", (user_info["tienda_id"],))
             row = cursor.fetchone()
@@ -244,15 +236,12 @@ def cerrar_caja(user_info: dict = Depends(verificar_token)):
         
         caja_id, fondo_inicial, fecha_apertura, cajero_turno = row
         
-        # Calcular ventas (garantizando formato)
         cursor.execute("SELECT COALESCE(SUM(total), 0) FROM ventas WHERE cajero = %s AND fecha >= %s AND tienda_id = %s", (cajero_turno, fecha_apertura, user_info["tienda_id"]))
         total_ventas = cursor.fetchone()[0]
         
-        # Cerrar en base de datos
         cursor.execute("UPDATE caja_sesiones SET estado = 'cerrada', fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s", (caja_id,))
         conn.commit()
         
-        # Formateo ultra seguro para evitar choques en el frontend
         fecha_str = fecha_apertura.strftime("%d/%m/%Y %H:%M") if hasattr(fecha_apertura, 'strftime') else str(fecha_apertura)
         
         return {
@@ -264,7 +253,7 @@ def cerrar_caja(user_info: dict = Depends(verificar_token)):
         }
     except HTTPException: raise
     except Exception as e:
-        conn.rollback() # Revierte cualquier daño en la tabla
+        conn.rollback() 
         raise HTTPException(status_code=500, detail=f"Error Crítico BD: {str(e)}")
     finally:
         conn.close()
@@ -309,7 +298,6 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
         if id_usuario == 1 and new_rol != "superadmin": new_rol = "superadmin"
         if user_info["rol"] == "admin" and (new_usuario != old_usuario or new_rol != old_rol): raise HTTPException(status_code=403, detail="Como Admin, solo puedes modificar Nombres y Contraseñas.")
         
-        # NUEVO SEGURO: Evitar que se quite el rol de admin si es el último
         if old_rol == "admin" and new_rol != "admin":
             cursor.execute("SELECT COUNT(*) FROM usuarios WHERE tienda_id = %s AND rol = 'admin'", (user_info["tienda_id"],))
             if cursor.fetchone()[0] <= 1:
@@ -340,7 +328,6 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
             if rol_target[1] == 'admin': raise HTTPException(status_code=403, detail="El Creador principal no se puede borrar.")
             elif user_info["rol"] != "superadmin": raise HTTPException(status_code=403, detail="Intocable.")
         
-        # NUEVO SEGURO: Evitar borrar al último Administrador
         if rol_target[0] == "admin":
             cursor.execute("SELECT COUNT(*) FROM usuarios WHERE tienda_id = %s AND rol = 'admin'", (user_info["tienda_id"],))
             if cursor.fetchone()[0] <= 1:
