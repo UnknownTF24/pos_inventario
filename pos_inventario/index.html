@@ -163,14 +163,31 @@
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
 
         async function fetchConToken(url, options = {}) {
-            const token = sessionStorage.getItem("adminToken"); 
-            if (!options.headers) options.headers = {}; 
-            if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
             try {
-                const res = await fetch(url, options);
-                if (res.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
-                return res;
-            } catch (err) { if(err.message !== "No autorizado") console.error("Error de red"); throw err; }
+                const response = await fetch(url, options);
+                if (response.status === 401) { 
+                    sessionStorage.clear(); 
+                    Swal.fire('Sesión Expirada', 'Tu sesión ha terminado.', 'warning').then(() => { window.location.href = "index.html"; });
+                    throw new Error("No autorizado"); 
+                }
+                return response;
+            } catch (err) { 
+                if(err.message !== "No autorizado") { 
+                    // Cambiamos la alerta gigante por un Toast amigable
+                    console.error("Fallo de red en:", url, err);
+                    Swal.fire({
+                        title: 'Despertando Servidor ⏳',
+                        text: 'El servidor estaba en reposo o la conexión falló. Intenta de nuevo en unos segundos.',
+                        icon: 'warning',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 5000,
+                        showConfirmButton: false
+                    });
+                } 
+                throw err; 
+            }
         }
 
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }

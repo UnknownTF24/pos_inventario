@@ -250,7 +250,22 @@
                     throw new Error("No autorizado"); 
                 }
                 return response;
-            } catch (err) { if(err.message !== "No autorizado") { Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); } throw err; }
+            } catch (err) { 
+                if(err.message !== "No autorizado") { 
+                    // Cambiamos la alerta gigante por un Toast amigable
+                    console.error("Fallo de red en:", url, err);
+                    Swal.fire({
+                        title: 'Despertando Servidor ⏳',
+                        text: 'El servidor estaba en reposo o la conexión falló. Intenta de nuevo en unos segundos.',
+                        icon: 'warning',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 5000,
+                        showConfirmButton: false
+                    });
+                } 
+                throw err; 
+            }
         }
 
         function aplicarPermisos() {
