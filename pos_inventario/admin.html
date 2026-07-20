@@ -162,7 +162,13 @@
                 <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     <div><label class="block text-xs font-bold mb-1 text-gray-600">Usuario Login <span class="text-red-500 font-normal">(Sin espacios)</span></label><input type="text" id="new-user-name" pattern="[^\s]+" title="El usuario no debe llevar espacios." required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero"></div>
                     <div><label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla</label><input type="text" id="new-user-fullname" required maxlength="50" class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. Pablo Perez"></div>
-                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label><input type="text" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. clave123"></div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label>
+                        <div class="relative">
+                            <input type="password" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none pr-8" placeholder="Ej. clave123">
+                            <button type="button" onclick="togglePassword('new-user-pass')" class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-purple-600 transition text-base no-invert">👁️</button>
+                        </div>
+                    </div>
                     <div><label class="block text-xs font-bold mb-1 text-gray-600">Nivel de Acceso</label><select id="new-user-rol" class="w-full border p-2 rounded focus:border-purple-500 outline-none bg-gray-50 font-semibold"><option value="cajero">🛒 Cajero (Solo Cobrar)</option><option value="admin">🏢 Admin de Tienda</option></select></div>
                     <div><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
                 </form>
@@ -183,7 +189,10 @@
                 <div><label class="block text-sm">Usuario Login</label><input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50"></div>
                 <div>
                     <label class="block text-sm">Contraseña</label>
-                    <input type="text" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50 font-mono">
+                    <div class="relative">
+                        <input type="password" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50 font-mono pr-10">
+                        <button type="button" onclick="togglePassword('edit-usr-pass')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-purple-600 transition text-lg no-invert">👁️</button>
+                    </div>
                     <p id="pass-warning" class="text-xs text-red-500 font-bold mt-1 hidden"></p>
                 </div>
                 <div><label class="block text-sm">Nivel de Acceso</label><select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50"><option value="cajero">🛒 Cajero</option><option value="admin">🏢 Admin de Tienda</option><option value="superadmin">👑 Súper Admin</option></select></div>
