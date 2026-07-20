@@ -9,9 +9,31 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
     <style>
-        /* MAGIA DEL MODO OSCURO */
-        html.dark-mode { filter: invert(1) hue-rotate(180deg); background-color: #111; min-height: 100vh; }
-        html.dark-mode img, html.dark-mode canvas, html.dark-mode video, html.dark-mode .no-invert { filter: invert(1) hue-rotate(180deg); }
+        /* MODO OSCURO ELEGANTE (Soft Dark Mode) */
+        html.dark-mode body { background-color: #0f172a; color: #cbd5e1; }
+        html.dark-mode .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
+        html.dark-mode .bg-gray-50, html.dark-mode .bg-gray-100, html.dark-mode .bg-gray-200 { background-color: #0f172a !important; }
+        
+        /* Textos suaves */
+        html.dark-mode .text-gray-800, html.dark-mode .text-gray-900, html.dark-mode .text-black { color: #f1f5f9 !important; }
+        html.dark-mode .text-gray-700, html.dark-mode .text-gray-600 { color: #cbd5e1 !important; }
+        html.dark-mode .text-gray-500, html.dark-mode .text-gray-400 { color: #94a3b8 !important; }
+        
+        /* Inputs y bordes */
+        html.dark-mode input, html.dark-mode select { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+        html.dark-mode input:focus, html.dark-mode select:focus { border-color: #3b82f6 !important; }
+        html.dark-mode .border, html.dark-mode .border-gray-200, html.dark-mode .border-gray-300, html.dark-mode .border-gray-100 { border-color: #334155 !important; }
+        html.dark-mode .divide-gray-100 > :not([hidden]) ~ :not([hidden]), html.dark-mode .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #334155 !important; }
+        
+        /* Tablas y Alertas (SweetAlert2) */
+        html.dark-mode thead, html.dark-mode tfoot { background-color: #0f172a !important; }
+        html.dark-mode tr.hover\:bg-gray-50:hover { background-color: #334155 !important; }
+        html.dark-mode .swal2-popup { background-color: #1e293b !important; color: #f1f5f9 !important; }
+        html.dark-mode .swal2-title { color: #f1f5f9 !important; }
+        html.dark-mode .swal2-html-container { color: #cbd5e1 !important; }
+        
+        /* Sombras más oscuras */
+        html.dark-mode .shadow-md, html.dark-mode .shadow-lg, html.dark-mode .shadow-xl, html.dark-mode .shadow-2xl { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
