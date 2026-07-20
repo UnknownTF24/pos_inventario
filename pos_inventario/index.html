@@ -174,16 +174,16 @@
                 return response;
             } catch (err) { 
                 if(err.message !== "No autorizado") { 
-                    // Cambiamos la alerta gigante por un Toast amigable
                     console.error("Fallo de red en:", url, err);
                     Swal.fire({
                         title: 'Despertando Servidor ⏳',
-                        text: 'El servidor estaba en reposo o la conexión falló. Intenta de nuevo en unos segundos.',
+                        text: 'El servidor estaba en reposo o la conexión falló. Intenta de nuevo.',
                         icon: 'warning',
                         toast: true,
                         position: 'top-end',
                         timer: 5000,
-                        showConfirmButton: false
+                        showConfirmButton: false,
+                        showCloseButton: true // <-- AQUÍ ESTÁ LA "X" PARA QUITARLO CUANDO QUIERAS
                     });
                 } 
                 throw err; 
@@ -191,6 +191,27 @@
         }
 
         async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
+
+        // AHORA ES ASYNC PARA QUE ESPERE EN FILA
+        async function checkSession() {
+            if(sessionStorage.getItem("adminToken")) {
+                document.getElementById("login-overlay").style.display = "none";
+                document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
+                if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById("btn-admin-link").classList.remove("hidden"); }
+                
+                try {
+                    // MAGIA: Peticiones en fila para cuidar la RAM de tu servidor en Render
+                    await fetchAjustesCloud();
+                    await fetchEstadoCaja();
+                    await fetchPosProducts();
+                } catch(e) {
+                    console.error("Error al cargar datos del POS:", e);
+                }
+            } else { 
+                document.getElementById("login-overlay").style.display = "flex"; 
+            }
+        }
+        checkSession();
 
         function checkSession() {
             if(sessionStorage.getItem("adminToken")) {

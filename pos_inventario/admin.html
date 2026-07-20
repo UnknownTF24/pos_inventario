@@ -252,16 +252,16 @@
                 return response;
             } catch (err) { 
                 if(err.message !== "No autorizado") { 
-                    // Cambiamos la alerta gigante por un Toast amigable
-                    console.error("Fallo de red en:", url, err);
+                    console.error("Error de red en:", url, err); 
                     Swal.fire({
                         title: 'Despertando Servidor ⏳',
-                        text: 'El servidor estaba en reposo o la conexión falló. Intenta de nuevo en unos segundos.',
+                        text: 'La conexión falló. Intenta de nuevo.',
                         icon: 'warning',
                         toast: true,
                         position: 'top-end',
-                        timer: 5000,
-                        showConfirmButton: false
+                        timer: 5000, 
+                        showConfirmButton: false,
+                        showCloseButton: true // <-- AQUÍ ESTÁ LA "X"
                     });
                 } 
                 throw err; 
