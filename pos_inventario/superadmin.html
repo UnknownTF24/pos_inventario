@@ -25,7 +25,7 @@
 <body class="bg-gray-100 font-sans min-h-screen">
     
     <nav class="bg-indigo-900 text-white shadow-lg p-4 flex justify-between items-center border-b-4 border-indigo-500">
-        <h1 class="text-xl md:text-2xl font-black">👑 Dios Creador (SaaS Control)</h1>
+        <h1 class="text-xl md:text-2xl font-black">⚙️ Panel Súper Admin (SaaS Control)</h1>
         <button onclick="cerrarSesion()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-bold shadow transition">Salir del Sistema</button>
     </nav>
 
@@ -136,6 +136,7 @@
             Swal.fire({
                 title: 'Registrar Nuevo Cliente',
                 html: `
+                    <p class="text-sm text-gray-500 mb-4">Se creará la tienda y una cuenta de Administrador para el dueño del negocio.</p>
                     <input id="swal-nombre" class="swal2-input" placeholder="Nombre Comercial de la Tienda">
                     <input id="swal-user" class="swal2-input" placeholder="Usuario Admin (Ej. carlos_admin)">
                     <input id="swal-pass" class="swal2-input" placeholder="Contraseña Inicial">
@@ -143,12 +144,13 @@
                 confirmButtonText: 'Crear Tienda (15 Días Gratis)',
                 confirmButtonColor: '#2563eb',
                 showCancelButton: true,
+                cancelButtonText: 'Cancelar',
                 preConfirm: () => {
                     return {
                         nombre: document.getElementById('swal-nombre').value,
                         admin_user: document.getElementById('swal-user').value,
                         admin_pass: document.getElementById('swal-pass').value,
-                        admin_nombre: "Administrador Principal"
+                        admin_nombre: "Administrador de Tienda"
                     }
                 }
             }).then(async (result) => {
@@ -160,7 +162,7 @@
                             body: JSON.stringify(result.value)
                         });
                         if (res.ok) {
-                            Swal.fire('¡Cliente Creado!', 'La tienda inicia hoy su prueba de 15 días.', 'success');
+                            Swal.fire('¡Cliente Creado!', 'La tienda se ha configurado correctamente con 15 días de prueba.', 'success');
                             cargarTiendas();
                         }
                     } catch(e) {}

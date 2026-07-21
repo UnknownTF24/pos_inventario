@@ -17,8 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ¡ENLACE REPARADO! Usando Connection Pooler (Puerto 6543)
-DATABASE_URL = "postgresql://postgres.vyukcvvzizubxdlximyy:u62sTgLkiRyEQvz1@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
+# ENLACE CORREGIDO: De vuelta a tu aws-1 original
+DATABASE_URL = "postgresql://postgres.vyukcvvzizubxdlximyy:u62sTgLkiRyEQvz1@aws-1-us-west-2.pooler.supabase.com:6543/postgres"
 SECRET_KEY = "mi_clave_super_secreta_y_larga_cambiala_luego"
 ALGORITHM = "HS256"
 
@@ -90,7 +90,6 @@ def login(req: LoginRequest):
         # Validaciones de Cobros: Bloqueamos si el tiempo se agotó
         if user[2] != 'superadmin':
             if vencimiento and vencimiento < datetime.utcnow():
-                # El sistema castiga a los morosos auto-suspendiendo la cuenta
                 cursor.execute("UPDATE tiendas SET estado = 'suspendido' WHERE id = %s", (user[4],))
                 conn.commit(); conn.close()
                 raise HTTPException(status_code=403, detail="🚨 Tu suscripción ha caducado. Por favor, comunícate al 4941-1913 para renovar tu acceso.")
@@ -112,7 +111,6 @@ def listar_tiendas(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     
-    # Actualización en vivo: Si alguna tienda venció mientras nadie se conectaba, suspenderla
     cursor.execute("UPDATE tiendas SET estado = 'suspendido' WHERE fecha_vencimiento < CURRENT_TIMESTAMP AND id != 1 AND estado != 'suspendido'")
     conn.commit()
 
@@ -170,7 +168,8 @@ def visitar_tienda(id_tienda: int, user_info: dict = Depends(verificar_token)):
     tienda = cursor.fetchone()
     conn.close()
     if not tienda: raise HTTPException(status_code=404, detail="La tienda no existe.")
-    token = jwt.encode({"sub": "dios_creador", "rol": "superadmin", "nombre": "Soporte Central", "tienda_id": id_tienda, "exp": datetime.utcnow() + timedelta(hours=4)}, SECRET_KEY, algorithm=ALGORITHM)
+    # CORREGIDO: Se quitó lo de "dios creador"
+    token = jwt.encode({"sub": "superadmin", "rol": "superadmin", "nombre": "Soporte Central", "tienda_id": id_tienda, "exp": datetime.utcnow() + timedelta(hours=4)}, SECRET_KEY, algorithm=ALGORITHM)
     return {"token": token, "tienda_id": id_tienda}
 
 @app.get("/api/saas/usuarios")
@@ -386,7 +385,7 @@ def listar_productos(user_info: dict = Depends(verificar_token)):
 
 @app.get("/api/productos/{codigo}")
 def obtener_producto(codigo: str, user_info: dict = Depends(verificar_token)):
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT codigo, nombre, precio, stock FROM productos WHERE codigo = %s AND tienda_id = %s", (codigo, user_info["tienda_id"])); row =fetchone(); conn.close()
+    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT codigo, nombre, precio, stock FROM productos WHERE codigo = %s AND tienda_id = %s", (codigo, user_info["tienda_id"])); row = cursor.fetchone(); conn.close()
     if not row: raise HTTPException(status_code=404, detail="Producto no registrado."); return {"codigo": row[0], "nombre": row[1], "precio": row[2], "stock": row[3]}
 
 @app.post("/api/productos")
