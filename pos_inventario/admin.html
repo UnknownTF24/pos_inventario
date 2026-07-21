@@ -95,13 +95,14 @@
             <section class="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h2 class="text-lg font-bold mb-4">Registrar Nuevo Producto</h2>
                 <div id="admin-scanner-container" class="hidden mb-4 bg-gray-50 p-4 rounded-lg border no-invert"><div id="admin-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-admin-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div>
+                <!-- CAJAS INVISIBLES DE LA CÁMARA (Inventario) -->
                 <div id="lector-oculto-admin" style="display:none;"></div>
-                <form id="add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div><label class="block text-sm mb-1">Código</label><div class="flex gap-2"><input type="text" id="add-codigo" required class="w-full border p-2 rounded"><button type="button" id="start-admin-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-admin-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-admin-input" accept="image/*" capture="environment" style="display:none"></div>
-                    <div><label class="block text-sm mb-1">Nombre</label><input type="text" id="add-nombre" required maxlength="80" class="w-full border p-2 rounded"></div>
-                    <div><label class="block text-sm mb-1">Precio (Q)</label><input type="number" step="0.01" min="0" id="add-precio" required class="w-full border p-2 rounded"></div>
-                    <div><label class="block text-sm mb-1">Stock</label><input type="number" id="add-stock" required min="0" class="w-full border p-2 rounded"></div>
-                    <div class="md:col-span-4 flex justify-end"><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Guardar Producto</button></div>
+                <div id="admin-scanner-container" class="hidden bg-gray-900 p-4 rounded-lg border border-gray-700 mt-4 md:col-span-4">
+                    <div id="admin-reader" class="max-w-sm mx-auto"></div>
+                    <div class="text-center mt-3">
+                        <button type="button" id="stop-admin-btn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded font-bold transition">Apagar Cámara</button>
+                    </div>
+                </div>
                 </form>
             </section>
             
@@ -158,7 +159,7 @@
             </div>
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-800 text-white"><tr><th class="p-4 border-b">ID</th><th class="p-4 border-b">Cajero</th><th class="p-4 border-b">Apertura</th><th class="p-4 border-b">Cierre</th><th class="p-4 border-b text-right text-gray-300">Fondo Inicial</th><th class="p-4 border-b text-right text-green-300">Ventas Turno</th><th class="p-4 border-b text-right font-bold text-yellow-300">Efectivo en Gaveta</th><th class="p-4 border-b text-center">Estado</th></tr></thead><tbody id="cajas-list" class="divide-y divide-gray-200"></tbody></table></div></section>
         </div>
-        
+
         <!-- PESTAÑA: AJUSTES -->
         <div id="tab-ajustes" class="hidden">
             <section class="bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto border-t-4 border-blue-600">
@@ -264,6 +265,92 @@
 
     <!-- Botón flotante Modo Oscuro Elegante -->
     <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 bg-gray-800 text-gray-200 p-3 rounded-full shadow-2xl z-[100] hover:scale-110 transition border border-gray-600">🌙</button>
+
+        <!-- ================= MODALES FLOTANTES (Pegar justo arriba de <script>) ================= -->
+    
+    <!-- MODAL EDITAR PRODUCTO -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-purple-500/30 w-full max-w-md max-h-screen overflow-y-auto">
+            <h2 class="text-xl font-bold text-white mb-4">Actualizar Producto</h2>
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-original-code">
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-1">Código</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="edit-codigo" required class="w-full bg-gray-900 border border-purple-500/50 rounded p-2 outline-none text-white font-mono">
+                        <button type="button" id="start-edit-scan-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded shadow transition">📷</button>
+                        <button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 rounded shadow transition">📸</button>
+                    </div>
+                    <input type="file" id="native-edit-input" accept="image/*" capture="camera" style="display:none">
+                    <div id="lector-oculto-edit" style="display:none;"></div>
+                </div>
+                
+                <div id="edit-scanner-container" class="hidden bg-gray-900 p-4 rounded-lg border border-gray-700">
+                    <div id="edit-reader" class="max-w-sm mx-auto"></div>
+                    <div class="text-center mt-3">
+                        <button type="button" id="stop-edit-scan-btn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded font-bold">Apagar Cámara</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-1">Nombre</label>
+                    <input type="text" id="edit-nombre" required maxlength="80" class="w-full bg-gray-900 border border-gray-700 rounded p-2 outline-none text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-400 mb-1">Precio (Q)</label>
+                        <input type="number" step="0.01" min="0" id="edit-precio" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-blue-400 mb-1">Stock</label>
+                        <input type="number" id="edit-stock" required min="0" class="w-full bg-gray-900 border-2 border-blue-500/50 rounded p-2 text-white font-bold">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded font-bold transition">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-bold shadow transition">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR USUARIO -->
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700 w-full max-w-md">
+            <h2 class="text-xl font-bold text-white mb-4">Editar Usuario</h2>
+            <form id="form-editar-usuario" class="space-y-4">
+                <input type="hidden" id="edit-usr-id">
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-1">Usuario (Login)</label>
+                    <input type="text" id="edit-usr-name" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white font-mono cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-1">Nombre en Pantalla</label>
+                    <input type="text" id="edit-usr-fullname" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white font-bold">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-1">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="edit-usr-pass" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white pr-8">
+                        <button type="button" onclick="togglePassword('edit-usr-pass')" class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-white">👁️</button>
+                    </div>
+                    <p id="pass-warning" class="hidden"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-1">Rol de Acceso</label>
+                    <select id="edit-usr-rol" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white appearance-none cursor-pointer">
+                        <option value="cajero">Cajero (Solo Cobrar)</option>
+                        <option value="admin">Admin de Tienda</option>
+                        <option value="superadmin">Soporte Maestro</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded font-bold transition">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-bold shadow transition">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
