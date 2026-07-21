@@ -117,15 +117,20 @@
                 <button id="btn-abrir-caja" onclick="document.getElementById('caja-overlay').classList.remove('hidden')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-black shadow-md hidden transition animate-pulse flex items-center gap-1">🔓 <span class="hidden sm:inline">Abrir Caja</span></button>
                 <button id="btn-cerrar-caja" onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-500 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-bold shadow-sm hidden transition flex items-center gap-1">🔒 <span class="hidden sm:inline">Cerrar Turno</span></button>
 
-                <!-- Menú de Opciones -->
-                <div class="relative group ml-1">
-                    <button class="bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded text-sm font-bold transition">⋮</button>
-                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-xl overflow-hidden hidden group-hover:block z-50 border border-gray-100 no-invert">
-                        <a href="https://wa.me/50249411913?text=Hola,%20necesito%20ayuda%20con%20la%20caja%20POS" target="_blank" class="block px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 font-bold border-b border-gray-100 transition">💬 Soporte Técnico</a>
-                        <button onclick="cerrarSesion()" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-bold transition">🚪 Cerrar Sesión</button>
-                    </div>
+                <!-- BOTON 3 PUNTOS Y MENÚ DESPLEGABLE -->
+        <div class="relative group inline-block">
+                <button class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded text-white font-bold transition flex items-center justify-center h-full">
+                    ⋮
+                </button>
+            
+            <!-- PUENTE INVISIBLE: El 'pt-2' conecta el botón con la caja negra para que el mouse no se caiga -->
+            <div class="absolute right-0 pt-2 w-48 hidden group-hover:block z-50">
+                <div class="bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden text-sm">
+                    <button class="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition">💬 Soporte Técnico</button>
+                    <button onclick="cerrarSesion()" class="w-full text-left px-4 py-3 text-red-400 font-bold hover:bg-gray-700 transition">🚪 Cerrar Sesión</button>
                 </div>
             </div>
+        </div>
         </div>
     </header>
 
