@@ -311,7 +311,7 @@ def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token
     
     conn = get_db_connection(); cursor = conn.cursor()
     
-    # NUEVO: Límite estricto de 5 usuarios por tienda (excepto si eres Super Admin)
+    # Límite estricto de 5 usuarios por tienda (excepto si eres Super Admin)
     if user_info["rol"] != "superadmin":
         cursor.execute("SELECT COUNT(*) FROM usuarios WHERE tienda_id = %s", (user_info["tienda_id"],))
         total_usuarios = cursor.fetchone()[0]
@@ -321,6 +321,8 @@ def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token
             
     try: 
         cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, %s, %s, %s)", (req.usuario, req.password, req.rol, req.nombre_completo, user_info["tienda_id"]))
+        # NUEVO: Guardar en el historial de auditoría
+        cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (req.usuario, f"Cuenta creada por {user_info['usuario']}", user_info["tienda_id"]))
         conn.commit()
         return {"status": "success"}
     except Exception: 
@@ -358,6 +360,8 @@ def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verific
             elif user_info["rol"] == "superadmin": nuevo_cambiada = False
                 
         cursor.execute("UPDATE usuarios SET usuario=%s, password=%s, rol=%s, nombre_completo=%s, password_cambiada=%s WHERE id=%s AND tienda_id=%s", (new_usuario, new_password, new_rol, new_nombre, nuevo_cambiada, id_usuario, user_info["tienda_id"]))
+        # NUEVO: Guardar en el historial de auditoría
+        cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (new_usuario, f"Cuenta modificada por {user_info['usuario']}", user_info["tienda_id"]))
         conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=400, detail=str(e))
@@ -380,7 +384,10 @@ def eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_token)
             if cursor.fetchone()[0] <= 1:
                 raise HTTPException(status_code=400, detail="Operación denegada. No puedes eliminar al último Administrador de la tienda.")
 
-        cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
+        cursor.execute("DELETE FROM usuarios WHERE id = %s AND tienda_id = %s", (id_usuario, user_info["tienda_id"]))
+        # NUEVO: Guardar en el historial de auditoría
+        cursor.execute("INSERT INTO auditoria_usuarios (usuario_modificado, detalle, tienda_id) VALUES (%s, %s, %s)", (rol_target[1], f"Cuenta eliminada por {user_info['usuario']}", user_info["tienda_id"]))
+        conn.commit(); return {"status": "success"}
     except HTTPException: raise
     except Exception as e: conn.rollback(); raise HTTPException(status_code=500, detail=str(e))
     finally: conn.close()
