@@ -67,6 +67,7 @@ class VentaRequest(BaseModel): items: List[ItemVenta]
 class LoginRequest(BaseModel): usuario: str; password: str
 class UsuarioRequest(BaseModel): usuario: str; password: str; rol: str; nombre_completo: str
 class CajaAbrir(BaseModel): fondo_inicial: float
+class RenovarRequest(BaseModel): nueva_fecha: str
 
 def verificar_token(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "): raise HTTPException(status_code=401, detail="No autorizado")
@@ -133,14 +134,10 @@ def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
     return {"status": "success"}
 
 @app.put("/api/saas/tiendas/{id_tienda}/renovar")
-def renovar_suscripcion(id_tienda: int, user_info: dict = Depends(verificar_token)):
+def renovar_suscripcion(id_tienda: int, req: RenovarRequest, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
-    
-    # Se renuevan 30 días exactos desde el momento de apretar el botón
-    nueva_fecha = datetime.utcnow() + timedelta(days=30)
-    
-    cursor.execute("UPDATE tiendas SET fecha_vencimiento = %s, estado = 'activo' WHERE id = %s", (nueva_fecha, id_tienda))
+    cursor.execute("UPDATE tiendas SET fecha_vencimiento = %s, estado = 'activo' WHERE id = %s", (req.nueva_fecha, id_tienda))
     conn.commit(); conn.close()
     return {"status": "success"}
 
@@ -202,9 +199,9 @@ def saas_eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_t
 @app.get("/api/ajustes")
 def obtener_ajustes(user_info: dict = Depends(verificar_token)):
     conn = get_db_connection(); cursor = conn.cursor()
-    cursor.execute("SELECT nombre, direccion, nit, telefono, mensaje_ticket, configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
+    cursor.execute("SELECT nombre, direccion, nit, telefono, mensaje_ticket, configurada, fecha_vencimiento FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
     row = cursor.fetchone(); conn.close()
-    if row: return {"nombre": row[0], "direccion": row[1], "nit": row[2], "telefono": row[3], "footer": row[4], "configurada": row[5]}
+    if row: return {"nombre": row[0], "direccion": row[1], "nit": row[2], "telefono": row[3], "footer": row[4], "configurada": row[5], "vencimiento": row[6].isoformat() if row[6] else None}
     return {}
 
 @app.put("/api/ajustes")

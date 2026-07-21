@@ -93,7 +93,7 @@
                     
                     let acciones = esMaestra ? '<span class="text-gray-400 font-bold text-sm italic">Tienda Maestra (Intocable)</span>' : `
                         <button onclick="visitarTienda(${t.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm shadow font-bold mr-2 transition">👀 Entrar al Panel</button>
-                        <button onclick="renovarMensualidad(${t.id})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm shadow font-bold transition">💳 Renovar 30 Días</button>
+                        <button onclick="renovarMensualidad(${t.id})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm shadow font-bold transition">📅 Ajustar Fecha</button>
                     `;
                     
                     return `
@@ -111,25 +111,33 @@
         }
 
         async function renovarMensualidad(id) {
-            Swal.fire({
-                title: '¿Confirmar Pago Recibido?',
-                text: "Se agregarán 30 días exactos a la suscripción y el cliente volverá a tener acceso total.",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, Pago Recibido',
+            const { value: fechaSeleccionada } = await Swal.fire({
+                title: 'Establecer Vencimiento',
+                html: `
+                    <p class="text-sm text-gray-500 mb-4">Elige hasta qué día tendrá acceso el cliente (Meses, semanas o días extra).</p>
+                    <input type="date" id="swal-date" class="swal2-input text-lg" min="${new Date().toISOString().split('T')[0]}">
+                `,
+                confirmButtonText: 'Guardar Fecha',
                 confirmButtonColor: '#10b981',
-                cancelButtonText: 'Cancelar'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    try {
-                        const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}/renovar`, { method: "PUT" });
-                        if(res.ok) {
-                            Swal.fire('¡Renovación Exitosa!', 'El cliente ahora tiene 30 días más.', 'success');
-                            cargarTiendas();
-                        }
-                    } catch (e) { Swal.fire('Error', 'Fallo de red', 'error'); }
-                }
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => document.getElementById('swal-date').value
             });
+
+            if (fechaSeleccionada) {
+                try {
+                    // Le agregamos la hora 23:59:59 para que caduque al último segundo de ese día
+                    const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}/renovar`, { 
+                        method: "PUT",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({ nueva_fecha: fechaSeleccionada + " 23:59:59" })
+                    });
+                    if(res.ok) {
+                        Swal.fire('¡Actualizado!', 'La fecha de acceso ha sido modificada exitosamente.', 'success');
+                        cargarTiendas();
+                    }
+                } catch (e) { Swal.fire('Error', 'Fallo de red', 'error'); }
+            }
         }
 
         async function crearNuevaTienda() {

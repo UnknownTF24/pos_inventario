@@ -48,10 +48,13 @@
             <div class="flex justify-between h-16">
                 <!-- Branding y Rol -->
                 <div class="flex items-center space-x-4">
-                    <div class="flex flex-col justify-center">
-                        <span class="text-xl font-black tracking-tight">Panel de Control</span>
-                        <span class="text-xs font-medium text-blue-400" id="rol-display">Modo: ---</span>
-                    </div>
+                   <div>
+                <h1 class="text-xl font-black tracking-wider flex items-center gap-2 flex-wrap">
+                    Panel de Control 
+                    <span class="text-xs bg-blue-600 px-2 py-1 rounded-full font-bold">Modo: Administrador</span>
+                    <span id="subs-badge" class="hidden text-xs font-bold px-3 py-1 rounded-full shadow-sm ml-2"></span>
+                </h1>
+            </div>
                 </div>
 
                 <!-- Botones Modulares (Pestañas) -->
@@ -278,6 +281,26 @@
                     } else {
                         avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-yellow-50 text-yellow-700 border border-yellow-200 animate-pulse";
                         avisoBox.innerText = "⚠️ AVISO IMPORTANTE: Solo podrás guardar la configuración de tu tienda 1 ÚNICA VEZ. Revisa bien los datos antes de confirmar.";
+                    }
+                }
+
+                // LÓGICA DEL CONTADOR DE DÍAS RESTANTES
+                if (data.vencimiento && rol === "admin") {
+                    const vDate = new Date(data.vencimiento);
+                    const today = new Date();
+                    const diffTime = vDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    const badge = document.getElementById("subs-badge");
+                    badge.classList.remove("hidden");
+                    
+                    if (diffDays > 5) {
+                        badge.className = "hidden md:block text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-300 shadow-sm ml-2 dark:bg-green-900 dark:text-green-300 dark:border-green-700";
+                        badge.innerText = `⏳ Acceso: ${diffDays} días restantes`;
+                    } else if (diffDays >= 0) {
+                        // Si le quedan 5 días o menos, se pone rojo y parpadea
+                        badge.className = "hidden md:block text-xs font-bold px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-300 animate-pulse shadow-sm ml-2 dark:bg-red-900 dark:text-red-300 dark:border-red-700";
+                        badge.innerText = `⚠️ ATENCIÓN: Vence en ${diffDays} días`;
                     }
                 }
             } catch(e){} 
