@@ -530,8 +530,29 @@
         }
         
         document.getElementById("add-user-form").addEventListener("submit", async (e) => { e.preventDefault(); const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value; try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {} });
-        window.eliminarUsuario = function(id) { Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } }); };
-        window.eliminarUsuarioConfirmado = function(id) { Swal.fire({title: '¡ADVERTENCIA!', text: "¿Estás absolutamente seguro de eliminar esta cuenta?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success');} } catch(e){} } }); };
+        window.eliminarUsuario = function(id) { 
+            Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { 
+                if(r.isConfirmed) { 
+                    try { 
+                        const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); 
+                        if(res.ok) { fetchUsuarios(); } 
+                        else { const data = await res.json(); Swal.fire('Error', data.detail, 'error'); }
+                    } catch(e){} 
+                } 
+            }); 
+        };
+        
+        window.eliminarUsuarioConfirmado = function(id) { 
+            Swal.fire({title: '¡ADVERTENCIA!', text: "¿Estás absolutamente seguro de eliminar esta cuenta?", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, borrar', confirmButtonColor: '#d33', cancelButtonText: 'Cancelar'}).then(async (r) => { 
+                if(r.isConfirmed) { 
+                    try { 
+                        const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); 
+                        if(res.ok) { fetchUsuarios(); Swal.fire('Borrado', 'Usuario eliminado', 'success'); } 
+                        else { const data = await res.json(); Swal.fire('Operación Denegada', data.detail, 'error'); }
+                    } catch(e){} 
+                } 
+            }); 
+        };
         
         window.openEditUser = function(id) { 
             const u = allUsers.find(x => x.id === id); 
