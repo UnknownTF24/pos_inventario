@@ -118,19 +118,19 @@
                 <button id="btn-cerrar-caja" onclick="cerrarCajaTurno()" class="bg-red-600 hover:bg-red-500 px-3 md:px-4 py-2 rounded text-xs md:text-sm font-bold shadow-sm hidden transition flex items-center gap-1">🔒 <span class="hidden sm:inline">Cerrar Turno</span></button>
 
                 <!-- BOTON 3 PUNTOS Y MENÚ DESPLEGABLE -->
-        <div class="relative group inline-block">
-                <button class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded text-white font-bold transition flex items-center justify-center h-full">
-                    ⋮
-                </button>
-            
-            <!-- PUENTE INVISIBLE: El 'pt-2' conecta el botón con la caja negra para que el mouse no se caiga -->
-            <div class="absolute right-0 pt-2 w-48 hidden group-hover:block z-50">
-                <div class="bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden text-sm">
-                    <button class="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition">💬 Soporte Técnico</button>
-                    <button onclick="cerrarSesion()" class="w-full text-left px-4 py-3 text-red-400 font-bold hover:bg-gray-700 transition">🚪 Cerrar Sesión</button>
+                <div class="relative group inline-block">
+                    <button class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded text-white font-bold transition flex items-center justify-center h-full">
+                        ⋮
+                    </button>
+                    <!-- PUENTE INVISIBLE -->
+                    <div class="absolute right-0 pt-2 w-48 hidden group-hover:block z-50">
+                        <div class="bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden text-sm">
+                            <button onclick="solicitarSoporte()" class="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition">💬 Soporte Técnico</button>
+                            <button onclick="cerrarSesion()" class="w-full text-left px-4 py-3 text-red-400 font-bold hover:bg-gray-700 transition border-t border-gray-700">🚪 Cerrar Sesión</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
     </header>
 
@@ -139,26 +139,28 @@
             <div id="reader" class="overflow-hidden rounded-lg border border-gray-300 bg-gray-50 no-invert"></div>
             <div id="lector-oculto" style="display: none;"></div>
             <div class="grid grid-cols-2 gap-2">
-                <button id="start-btn" class="bg-green-500 text-white py-2 rounded-lg font-medium shadow">📷 Cámara Vivo</button>
-                <button id="stop-btn" class="bg-red-500 text-white py-2 rounded-lg font-medium shadow hidden col-span-2">Apagar Cámara</button>
-                <button type="button" onclick="document.getElementById('native-cam-input').click()" class="bg-purple-600 text-white py-2 rounded-lg font-medium shadow">📸 Tomar Foto</button>
+                <button id="start-btn" class="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-bold shadow transition">📷 Escáner Web</button>
+                <button id="stop-btn" class="bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-bold shadow hidden col-span-2 transition">Apagar Cámara</button>
+                <button type="button" onclick="document.getElementById('native-cam-input').click()" class="bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-lg font-bold shadow transition">📸 Foto Celular</button>
             </div>
-            <input type="file" id="native-cam-input" accept="image/*" capture="environment" style="display:none">
+            <!-- FORZAR CÁMARA TRASERA EN MÓVILES -->
+            <input type="file" id="native-cam-input" accept="image/*" capture="camera" style="display:none">
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2">
             <div class="flex gap-2">
-                <input id="manual-code" type="text" placeholder="Cód. de barras / Físico" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
+                <!-- AUTOFOCUS AGREGADO PARA QUE LA PISTOLA LÁSER FUNCIONE DE INMEDIATO -->
+                <input id="manual-code" type="text" autofocus placeholder="Cód. de barras / Físico" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="add-manual-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Agregar</button>
             </div>
             <button onclick="openCatalog()" class="bg-gray-800 text-white py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition flex items-center justify-center gap-2">🔍 Buscar en Catálogo</button>
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
-            <div id="cart-items" class="space-y-2 max-h-64 overflow-y-auto pr-1"><p class="text-gray-400 text-center py-4">No hay productos</p></div>
+            <div id="cart-items" class="space-y-2 max-h-64 overflow-y-auto pr-1"><p class="text-gray-400 text-center py-4 font-bold">No hay productos en caja</p></div>
             <div class="flex justify-between items-center pt-4 border-t border-gray-200">
                 <span class="text-lg font-bold text-gray-800">Total:</span>
-                <span id="cart-total" class="text-2xl font-bold text-blue-600">Q0.00</span>
+                <span id="cart-total" class="text-3xl font-black text-blue-600">Q0.00</span>
             </div>
             <button id="checkout-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow disabled:opacity-50" disabled>Confirmar y Cobrar</button>
         </div>
@@ -166,7 +168,10 @@
 
     <div id="catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white p-4 rounded-xl shadow-lg w-full max-w-md flex flex-col h-[80vh] no-invert">
-            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Catálogo</h2><button onclick="closeCatalog()" class="text-red-500 font-bold text-xl">✕</button></div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Catálogo</h2>
+                <button onclick="closeCatalog()" class="text-gray-400 hover:text-red-500 font-bold text-2xl transition">✕</button>
+            </div>
             <input type="text" id="catalog-search" placeholder="Escribe el nombre del producto..." class="w-full p-3 border-2 border-blue-200 rounded-xl mb-4 focus:outline-none focus:border-blue-500 text-lg">
             <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="catalog-list"></div>
         </div>
@@ -180,6 +185,13 @@
         let cart = []; let html5QrcodeScanner = null; let posProducts = []; let posFuse = null; let cfgTienda = {};
         let cajaAbierta = false; 
 
+        // DOM ELEMENTS
+        const manualInput = document.getElementById("manual-code"); 
+        const addManualBtn = document.getElementById("add-manual-btn"); 
+        const cartItemsContainer = document.getElementById("cart-items"); 
+        const cartTotalElement = document.getElementById("cart-total"); 
+        const checkoutBtn = document.getElementById("checkout-btn");
+
         // MODO OSCURO
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark-mode');
@@ -188,6 +200,7 @@
         if(localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark-mode');
 
         function cerrarSesion() { sessionStorage.clear(); window.location.reload(); }
+        window.solicitarSoporte = function() { Swal.fire({ title: 'Soporte Técnico', html: '<p>Comunícate con el Creador del Sistema.</p><p><b class="text-blue-600">Teléfono:</b> 4941-1913</p>', icon: 'info' }); };
 
         async function fetchConToken(url, options = {}) {
             const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
@@ -210,16 +223,23 @@
                         position: 'top-end',
                         timer: 5000,
                         showConfirmButton: false,
-                        showCloseButton: true // <-- AQUÍ ESTÁ LA "X" PARA QUITARLO CUANDO QUIERAS
+                        showCloseButton: true
                     });
                 } 
                 throw err; 
             }
         }
 
-        async function fetchAjustesCloud() { try { const res = await fetchConToken(`${API_URL}/ajustes`); cfgTienda = await res.json(); document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; document.getElementById("header-brand-title").innerText = cfgTienda.nombre; } catch(e) {} }
+        async function fetchAjustesCloud() { 
+            try { 
+                const res = await fetchConToken(`${API_URL}/ajustes`); 
+                cfgTienda = await res.json(); 
+                document.getElementById("login-title-display").innerText = cfgTienda.nombre + " 🛒"; 
+                document.getElementById("header-brand-title").innerText = cfgTienda.nombre; 
+            } catch(e) {} 
+        }
 
-        // AHORA ES ASYNC PARA QUE ESPERE EN FILA
+        // MOTOR DE ARRANQUE LIMPIO Y ASINCRONO
         async function checkSession() {
             if(sessionStorage.getItem("adminToken")) {
                 document.getElementById("login-overlay").style.display = "none";
@@ -227,7 +247,6 @@
                 if (sessionStorage.getItem("rolUsuario") !== "cajero") { document.getElementById("btn-admin-link").classList.remove("hidden"); }
                 
                 try {
-                    // MAGIA: Peticiones en fila para cuidar la RAM de tu servidor en Render
                     await fetchAjustesCloud();
                     await fetchEstadoCaja();
                     await fetchPosProducts();
@@ -237,16 +256,6 @@
             } else { 
                 document.getElementById("login-overlay").style.display = "flex"; 
             }
-        }
-        checkSession();
-
-        function checkSession() {
-            if(sessionStorage.getItem("adminToken")) {
-                document.getElementById("login-overlay").style.display = "none";
-                document.getElementById("cajero-name-display").innerText = "Cajero: " + sessionStorage.getItem("nombreUsuario");
-                if (sessionStorage.getItem("rolUsuario") !== "cajero") document.getElementById("btn-admin-link").classList.remove("hidden");
-                fetchAjustesCloud(); fetchEstadoCaja(); fetchPosProducts();
-            } else { document.getElementById("login-overlay").style.display = "flex"; }
         }
         checkSession();
 
@@ -289,7 +298,7 @@
                     if(destino === 'admin') window.location.href = "admin.html";
                     else { document.getElementById("user-input").value = ""; document.getElementById("pass-input").value = ""; checkSession(); }
                 } else { const data = await res.json().catch(()=>({})); Swal.fire('Acceso Denegado', data.detail || 'Credenciales incorrectas', 'error'); }
-            } catch (error) { Swal.fire('Error', 'Fallo de red', 'error'); }
+            } catch (error) { Swal.fire('Error', 'Fallo de red al intentar conectar', 'error'); }
         }
         
         document.getElementById("pass-input").addEventListener("keypress", (e) => { if(e.key === "Enter") verificarLogin(); });
@@ -348,24 +357,77 @@
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        async function fetchPosProducts() { try { const res = await fetchConToken(`${API_URL}/productos`); posProducts = await res.json(); posFuse = new Fuse(posProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); } catch (e) {} }
+        // DESCARGAR INVENTARIO LOCAL (EVITA EL RETRASO AL ESCANEAR)
+        async function fetchPosProducts() { 
+            try { 
+                const res = await fetchConToken(`${API_URL}/productos`); 
+                posProducts = await res.json(); 
+                posFuse = new Fuse(posProducts, { keys: ['nombre', 'codigo'], threshold: 0.4 }); 
+            } catch (e) {
+                console.error("Error al descargar inventario", e);
+            } 
+        }
+
         window.openCatalog = function() { fetchPosProducts().then(() => { renderCatalog(posProducts); document.getElementById("catalog-modal").classList.remove("hidden"); setTimeout(() => document.getElementById("catalog-search").focus(), 100); }); }
         window.closeCatalog = function() { document.getElementById("catalog-modal").classList.add("hidden"); document.getElementById("catalog-search").value = ""; }
         function renderCatalog(products) { const list = document.getElementById("catalog-list"); if (products.length === 0) { list.innerHTML = `<p class="text-center text-gray-400 py-4 font-bold">Sin productos.</p>`; return; } list.innerHTML = products.map(p => `<div onclick="addFromCatalog('${p.codigo}')" class="flex justify-between items-center p-3 border rounded-lg ${p.stock < 1 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-blue-50 active:bg-blue-100 cursor-pointer shadow-sm bg-white'} transition"><div><p class="font-bold text-gray-800 text-sm">${p.nombre}</p><p class="text-xs text-gray-500">Stock: <span class="font-bold ${p.stock <= 5 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></p></div><div class="font-black text-blue-600 text-lg">Q${p.precio.toFixed(2)}</div></div>`).join(""); }
         document.getElementById("catalog-search").addEventListener("input", (e) => { const term = e.target.value.trim(); renderCatalog(term ? posFuse.search(term).map(r => r.item) : posProducts); });
-        window.addFromCatalog = function(code) { const prod = posProducts.find(p => p.codigo === code); if(prod) { if (prod.stock < 1) return Swal.fire('Agotado', 'No hay inventario.', 'warning'); addToCart(prod); closeCatalog(); Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); } }
-
-        const manualInput = document.getElementById("manual-code"); const addManualBtn = document.getElementById("add-manual-btn"); const cartItemsContainer = document.getElementById("cart-items"); const cartTotalElement = document.getElementById("cart-total"); const checkoutBtn = document.getElementById("checkout-btn");
-        async function fetchProduct(code) { try { const response = await fetchConToken(`${API_URL}/productos/${code}`); if (!response.ok) { Swal.fire('Oops...', "No encontrado", 'error'); manualInput.value = ""; return; } const product = await response.json(); addToCart(product); manualInput.value = ""; } catch (error) {} }
         
-        function addToCart(product) { if (product.stock < 1) return Swal.fire('Agotado', 'Sin stock.', 'warning'); const existingItem = cart.find(item => item.codigo === product.codigo); if (existingItem) { if (existingItem.cantidad < product.stock) existingItem.cantidad++; else return Swal.fire('Límite', 'No hay más unidades.', 'warning'); } else { cart.push({ ...product, cantidad: 1 }); } updateCartUI(); }
+        window.addFromCatalog = function(code) { 
+            const prod = posProducts.find(p => p.codigo === code); 
+            if(prod) { 
+                if (prod.stock < 1) return Swal.fire('Agotado', 'No hay inventario.', 'warning'); 
+                addToCart(prod); 
+                closeCatalog(); 
+                Swal.fire({title: '¡Agregado!', text: prod.nombre, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200}); 
+            } 
+        }
+
+        // LÓGICA DE ESCANEO INSTANTÁNEO Y MANUAL
+        function fetchProduct(code) { 
+            const cleanCode = code.trim();
+            if (!cleanCode) return;
+
+            // Poner el código en el input para que el usuario vea qué se leyó
+            manualInput.value = cleanCode;
+
+            // Búsqueda instantánea en el catálogo local (Sin retardo de servidor)
+            const product = posProducts.find(p => p.codigo === cleanCode);
+            
+            if (product) {
+                addToCart(product);
+                manualInput.value = ""; // Solo se limpia si fue exitoso
+                manualInput.focus(); // Retorna el cursor
+            } else {
+                Swal.fire({
+                    title: 'No Encontrado', 
+                    text: `El código "${cleanCode}" no existe en tu inventario.`, 
+                    icon: 'error',
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+                manualInput.focus();
+            }
+        }
+        
+        function addToCart(product) { 
+            if (product.stock < 1) return Swal.fire('Agotado', 'Sin stock.', 'warning'); 
+            const existingItem = cart.find(item => item.codigo === product.codigo); 
+            if (existingItem) { 
+                if (existingItem.cantidad < product.stock) existingItem.cantidad++; 
+                else return Swal.fire('Límite', 'No hay más unidades en el inventario.', 'warning'); 
+            } else { 
+                cart.push({ ...product, cantidad: 1 }); 
+            } 
+            updateCartUI(); 
+        }
         
         function updateCartUI() { 
-            if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Carrito vacío</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } 
+            if (cart.length === 0) { cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4 font-bold">No hay productos en caja</p>`; cartTotalElement.innerText = "Q0.00"; checkoutBtn.disabled = true; return; } 
             cartItemsContainer.innerHTML = cart.map((item, index) => { const stockRestante = item.stock - item.cantidad; return `<div class="flex flex-col py-3 border-b border-gray-100 last:border-0"><div class="flex justify-between items-start mb-2"><div><p class="font-medium text-gray-800">${item.nombre}</p><p class="text-xs text-blue-500">Stock disponible: ${stockRestante}</p></div><button onclick="removeFromCart(${index})" class="text-red-400 font-bold px-2 py-1">✕</button></div><div class="flex justify-between items-center mt-1"><div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm"><button onclick="decreaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold">-</button><input type="number" min="1" max="${item.stock}" value="${item.cantidad}" onchange="setQuantity(${index}, this.value)" class="w-14 text-center font-bold border-none py-1"><button onclick="increaseQuantity(${index})" class="bg-gray-100 px-3 py-1 font-bold" ${stockRestante === 0 ? 'disabled' : ''}>+</button></div><div class="text-right"><span class="text-xs text-gray-500 font-bold">${item.cantidad} x Q${item.precio.toFixed(2)}</span><span class="font-black text-gray-800 text-xl block">Q${(item.precio * item.cantidad).toFixed(2)}</span></div></div></div>` }).join(""); 
             const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); cartTotalElement.innerText = `Q${total.toFixed(2)}`; 
-            if(!cajaAbierta) { checkoutBtn.disabled = true; checkoutBtn.innerText = "🔒 Abre la Caja para cobrar"; checkoutBtn.className = "w-full bg-gray-400 text-white font-bold py-3 rounded-lg mt-4 cursor-not-allowed transition"; } 
-            else { checkoutBtn.disabled = false; checkoutBtn.innerText = "Confirmar y Cobrar"; checkoutBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-lg shadow-lg mt-4 transition transform hover:-translate-y-1"; }
+            if(!cajaAbierta) { checkoutBtn.disabled = true; checkoutBtn.innerText = "🔒 Abre la Caja para cobrar"; checkoutBtn.className = "w-full bg-gray-400 text-white font-bold py-3 rounded-xl shadow mt-4 cursor-not-allowed transition"; } 
+            else { checkoutBtn.disabled = false; checkoutBtn.innerText = "Confirmar y Cobrar"; checkoutBtn.className = "w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-3 rounded-xl shadow-lg mt-4 transition transform"; }
         }
         
         window.increaseQuantity = function(index) { if (cart[index].cantidad < cart[index].stock) { cart[index].cantidad++; updateCartUI(); } }; window.decreaseQuantity = function(index) { if (cart[index].cantidad > 1) { cart[index].cantidad--; updateCartUI(); } else { removeFromCart(index); } }; window.removeFromCart = function(index) { cart.splice(index, 1); updateCartUI(); }; window.setQuantity = function(index, value) { let val = parseInt(value); if (isNaN(val) || val < 1) val = 1; if (val > cart[index].stock) { Swal.fire('Límite', 'Stock superado.', 'warning'); val = cart[index].stock; } cart[index].cantidad = val; updateCartUI(); };
@@ -374,7 +436,12 @@
             if (cart.length === 0) return; const payload = { items: cart.map(item => ({ codigo: item.codigo, cantidad: item.cantidad })) }; const totalVenta = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0); const cartCopia = [...cart];
             try {
                 const response = await fetchConToken(`${API_URL}/ventas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-                if (response.ok) { cart = []; updateCartUI(); fetchPosProducts(); Swal.fire({ title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success', showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar' }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); }); } 
+                if (response.ok) { 
+                    cart = []; 
+                    updateCartUI(); 
+                    fetchPosProducts(); // Actualizar el stock local para la siguiente venta
+                    Swal.fire({ title: '¡Venta Exitosa!', text: `Cobrado: Q${totalVenta.toFixed(2)}`, icon: 'success', showCancelButton: true, confirmButtonText: '🖨️ Imprimir Recibo', cancelButtonText: 'Cerrar' }).then((r) => { if (r.isConfirmed) imprimirTicket(cartCopia, totalVenta); }); 
+                } 
                 else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); }
             } catch (error) {} 
         });
@@ -386,10 +453,59 @@
             ventana.document.write(html); ventana.document.close(); ventana.focus(); setTimeout(() => { ventana.print(); ventana.close(); }, 500);
         }
 
-        document.getElementById("native-cam-input").addEventListener("change", e => { if (e.target.files.length == 0) return; const scanner = new Html5Qrcode("lector-oculto"); scanner.scanFile(e.target.files[0], true).then(t => { fetchProduct(t); }).catch(err => Swal.fire('Error', 'No legible.', 'error')).finally(() => scanner.clear()); });
-        document.getElementById("start-btn").addEventListener("click", () => { document.getElementById("start-btn").classList.add("hidden"); document.getElementById("stop-btn").classList.remove("hidden"); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { stopScanning(); fetchProduct(text); }).catch(e => { stopScanning(); Swal.fire('Error', 'Cámara no disponible', 'error'); }); });
-        window.stopScanning = function() { if (html5QrcodeScanner) { try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} document.getElementById("start-btn").classList.remove("hidden"); document.getElementById("stop-btn").classList.add("hidden"); } }
-        document.getElementById("stop-btn").addEventListener("click", stopScanning); addManualBtn.addEventListener("click", () => { const c = manualInput.value.trim(); if (c) fetchProduct(c); }); manualInput.addEventListener("keypress", (e) => { if (e.key === "Enter") addManualBtn.click(); });
+        // EVENTOS PARA EL INPUT Y EL BOTÓN "AGREGAR"
+        addManualBtn.addEventListener("click", () => { 
+            const c = manualInput.value.trim(); 
+            if (c) fetchProduct(c); 
+        }); 
+
+        manualInput.addEventListener("keypress", (e) => { 
+            if (e.key === "Enter") {
+                e.preventDefault(); // Evita recargas si el sistema creyera que es un formulario
+                addManualBtn.click(); 
+            }
+        });
+
+        // MAGNETISMO PARA PISTOLAS LÁSER FÍSICAS (El cursor vuelve al input automáticamente)
+        document.addEventListener("click", (e) => {
+            const forbiddenTags = ['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA'];
+            if (!forbiddenTags.includes(e.target.tagName)) {
+                manualInput.focus();
+            }
+        });
+
+        // FUNCIONES DE LAS CÁMARAS
+        document.getElementById("native-cam-input").addEventListener("change", e => { 
+            if (e.target.files.length == 0) return; 
+            const scanner = new Html5Qrcode("lector-oculto"); 
+            scanner.scanFile(e.target.files[0], true).then(t => { 
+                fetchProduct(t); 
+            }).catch(err => {
+                Swal.fire('Error', 'No se detectó ningún código de barras en la foto.', 'error');
+            }).finally(() => scanner.clear()); 
+        });
+
+        document.getElementById("start-btn").addEventListener("click", () => { 
+            document.getElementById("start-btn").classList.add("hidden"); 
+            document.getElementById("stop-btn").classList.remove("hidden"); 
+            html5QrcodeScanner = new Html5Qrcode("reader"); 
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (text) => { 
+                stopScanning(); 
+                fetchProduct(text); 
+            }).catch(e => { 
+                stopScanning(); 
+                Swal.fire('Error', 'Cámara no disponible o permisos denegados.', 'error'); 
+            }); 
+        });
+
+        window.stopScanning = function() { 
+            if (html5QrcodeScanner) { 
+                try { html5QrcodeScanner.stop().catch(e=>{}); } catch(e){} 
+                document.getElementById("start-btn").classList.remove("hidden"); 
+                document.getElementById("stop-btn").classList.add("hidden"); 
+            } 
+        }
+        document.getElementById("stop-btn").addEventListener("click", stopScanning); 
     </script>
 </body>
 </html>
