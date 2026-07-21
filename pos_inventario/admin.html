@@ -255,36 +255,43 @@
             try { 
                 const res = await fetchConToken(`${API_URL}/ajustes`); 
                 const data = await res.json(); 
-                document.getElementById("cfg-nombre").value = data.nombre || ""; 
-                document.getElementById("cfg-direccion").value = data.direccion || ""; 
-                document.getElementById("cfg-nit").value = data.nit || ""; 
-                document.getElementById("cfg-telefono").value = data.telefono || ""; 
-                document.getElementById("cfg-footer").value = data.footer || ""; 
+                
+                // Seguros en los inputs
+                if(document.getElementById("cfg-nombre")) document.getElementById("cfg-nombre").value = data.nombre || ""; 
+                if(document.getElementById("cfg-direccion")) document.getElementById("cfg-direccion").value = data.direccion || ""; 
+                if(document.getElementById("cfg-nit")) document.getElementById("cfg-nit").value = data.nit || ""; 
+                if(document.getElementById("cfg-telefono")) document.getElementById("cfg-telefono").value = data.telefono || ""; 
+                if(document.getElementById("cfg-footer")) document.getElementById("cfg-footer").value = data.footer || ""; 
                 
                 const rol = sessionStorage.getItem("rolUsuario");
+                
+                // SEGURO 1: Caja de Avisos
                 const avisoBox = document.getElementById("aviso-ajustes");
-                avisoBox.classList.remove("hidden");
+                if (avisoBox) {
+                    avisoBox.classList.remove("hidden");
 
-                // LÓGICA DE AVISOS Y CANDADOS SEGÚN EL ROL
-                if (rol === "superadmin") {
-                    avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-indigo-50 text-indigo-700 border border-indigo-200";
-                    avisoBox.innerText = "👑 Eres Súper Admin. Puedes modificar estos datos las veces que quieras.";
-                } else if (rol === "admin") {
-                    if (data.configurada) {
-                        const btn = document.getElementById("btn-guardar-ajustes");
-                        btn.disabled = true;
-                        btn.innerText = "🔒 Tienda ya configurada";
-                        btn.className = "bg-gray-400 text-white font-bold px-6 py-3 rounded-xl shadow cursor-not-allowed";
-                        
-                        avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-red-50 text-red-700 border border-red-200";
-                        avisoBox.innerText = "🔒 Identidad bloqueada. Para realizar cambios, contacta a Soporte Técnico.";
-                    } else {
-                        avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-yellow-50 text-yellow-700 border border-yellow-200 animate-pulse";
-                        avisoBox.innerText = "⚠️ AVISO IMPORTANTE: Solo podrás guardar la configuración de tu tienda 1 ÚNICA VEZ. Revisa bien los datos antes de confirmar.";
+                    if (rol === "superadmin") {
+                        avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-indigo-50 text-indigo-700 border border-indigo-200";
+                        avisoBox.innerText = "👑 Eres Súper Admin. Puedes modificar estos datos las veces que quieras.";
+                    } else if (rol === "admin") {
+                        if (data.configurada) {
+                            const btn = document.getElementById("btn-guardar-ajustes");
+                            if (btn) {
+                                btn.disabled = true;
+                                btn.innerText = "🔒 Tienda ya configurada";
+                                btn.className = "bg-gray-400 text-white font-bold px-6 py-3 rounded-xl shadow cursor-not-allowed";
+                            }
+                            
+                            avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-red-50 text-red-700 border border-red-200";
+                            avisoBox.innerText = "🔒 Identidad bloqueada. Para realizar cambios, contacta a Soporte Técnico.";
+                        } else {
+                            avisoBox.className = "mb-6 p-3 rounded-lg text-sm font-bold bg-yellow-50 text-yellow-700 border border-yellow-200 animate-pulse";
+                            avisoBox.innerText = "⚠️ AVISO IMPORTANTE: Solo podrás guardar la configuración de tu tienda 1 ÚNICA VEZ. Revisa bien los datos antes de confirmar.";
+                        }
                     }
                 }
 
-                // LÓGICA DEL CONTADOR DE DÍAS RESTANTES
+                // SEGURO 2: Contador de Días
                 if (data.vencimiento && rol === "admin") {
                     const vDate = new Date(data.vencimiento);
                     const today = new Date();
@@ -292,18 +299,21 @@
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     
                     const badge = document.getElementById("subs-badge");
-                    badge.classList.remove("hidden");
-                    
-                    if (diffDays > 5) {
-                        badge.className = "hidden md:block text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-300 shadow-sm ml-2 dark:bg-green-900 dark:text-green-300 dark:border-green-700";
-                        badge.innerText = `⏳ Acceso: ${diffDays} días restantes`;
-                    } else if (diffDays >= 0) {
-                        // Si le quedan 5 días o menos, se pone rojo y parpadea
-                        badge.className = "hidden md:block text-xs font-bold px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-300 animate-pulse shadow-sm ml-2 dark:bg-red-900 dark:text-red-300 dark:border-red-700";
-                        badge.innerText = `⚠️ ATENCIÓN: Vence en ${diffDays} días`;
+                    if (badge) {
+                        badge.classList.remove("hidden");
+                        
+                        if (diffDays > 5) {
+                            badge.className = "hidden md:block text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-300 shadow-sm ml-2 dark:bg-green-900 dark:text-green-300 dark:border-green-700";
+                            badge.innerText = `⏳ Acceso: ${diffDays} días restantes`;
+                        } else if (diffDays >= 0) {
+                            badge.className = "hidden md:block text-xs font-bold px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-300 animate-pulse shadow-sm ml-2 dark:bg-red-900 dark:text-red-300 dark:border-red-700";
+                            badge.innerText = `⚠️ ATENCIÓN: Vence en ${diffDays} días`;
+                        }
                     }
                 }
-            } catch(e){} 
+            } catch(e) {
+                console.error("Error silencioso interceptado en Ajustes:", e);
+            } 
         }
 
         async function guardarBrandingCloud(e) { e.preventDefault(); const payload = { nombre: document.getElementById("cfg-nombre").value.trim(), direccion: document.getElementById("cfg-direccion").value.trim(), nit: document.getElementById("cfg-nit").value.trim(), telefono: document.getElementById("cfg-telefono").value.trim(), footer: document.getElementById("cfg-footer").value.trim() }; try { const res = await fetchConToken(`${API_URL}/ajustes`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if(res.ok) Swal.fire('¡Guardado en la Nube!', 'La configuración de tu tienda se aplicará en todos los dispositivos.', 'success'); else { const data = await res.json(); Swal.fire('Denegado', data.detail, 'error'); } } catch(e) {} }
