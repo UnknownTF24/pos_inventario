@@ -17,7 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DATABASE_URL = "postgresql://postgres.vyukcvvzizubxdlximyy:u62sTgLkiRyEQvz1@aws-1-us-west-2.pooler.supabase.com:6543/postgres"
+# ¡ENLACE REPARADO! Usando Connection Pooler (Puerto 6543)
+DATABASE_URL = "postgresql://postgres.vyukcvvzizubxdlximyy:u62sTgLkiRyEQvz1@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
 SECRET_KEY = "mi_clave_super_secreta_y_larga_cambiala_luego"
 ALGORITHM = "HS256"
 
@@ -30,6 +31,10 @@ def init_db():
     cursor.execute("CREATE TABLE IF NOT EXISTS tiendas (id SERIAL PRIMARY KEY, nombre TEXT DEFAULT 'Mi Tienda', direccion TEXT DEFAULT 'Ciudad', nit TEXT DEFAULT 'C/F', telefono TEXT DEFAULT '---', mensaje_ticket TEXT DEFAULT '¡Gracias por su compra!')")
     cursor.execute("ALTER TABLE tiendas ADD COLUMN IF NOT EXISTS estado TEXT DEFAULT 'activo'")
     cursor.execute("ALTER TABLE tiendas ADD COLUMN IF NOT EXISTS configurada BOOLEAN DEFAULT FALSE")
+    
+    # NUEVO: Columna para controlar las fechas de pago
+    cursor.execute("ALTER TABLE tiendas ADD COLUMN IF NOT EXISTS fecha_vencimiento TIMESTAMP")
+    
     cursor.execute("SELECT COUNT(*) FROM tiendas")
     if cursor.fetchone()[0] == 0: cursor.execute("INSERT INTO tiendas (nombre) VALUES ('Tienda Principal')")
     
@@ -82,19 +87,17 @@ def login(req: LoginRequest):
         estado_tienda = user[5]
         vencimiento = user[6]
         
-        # Validación de Bloqueo por falta de pago o suspensión manual
-        # Si no eres tú (superadmin), verificamos que la tienda esté activa y vigente.
+        # Validaciones de Cobros: Bloqueamos si el tiempo se agotó
         if user[2] != 'superadmin':
             if vencimiento and vencimiento < datetime.utcnow():
-                # Auto-suspender en la BD al intentar loguearse
+                # El sistema castiga a los morosos auto-suspendiendo la cuenta
                 cursor.execute("UPDATE tiendas SET estado = 'suspendido' WHERE id = %s", (user[4],))
-                conn.commit()
-                conn.close()
-                raise HTTPException(status_code=403, detail="🚨 La suscripción de tu tienda ha caducado. Por favor contacta a soporte al 4941-1913 para renovarla.")
+                conn.commit(); conn.close()
+                raise HTTPException(status_code=403, detail="🚨 Tu suscripción ha caducado. Por favor, comunícate al 4941-1913 para renovar tu acceso.")
             
             if estado_tienda != 'activo':
                 conn.close()
-                raise HTTPException(status_code=403, detail="🚨 Tu cuenta está suspendida por falta de pago. Por favor comunícate con Soporte Técnico al 4941-1913.")
+                raise HTTPException(status_code=403, detail="🚨 Tu cuenta está suspendida por falta de pago. Por favor comunícate con Soporte al 4941-1913.")
                 
         conn.close()
         token = jwt.encode({"sub": user[0], "rol": user[2], "nombre": user[3], "tienda_id": user[4], "exp": datetime.utcnow() + timedelta(hours=12)}, SECRET_KEY, algorithm=ALGORITHM)
@@ -102,28 +105,27 @@ def login(req: LoginRequest):
         
     conn.close()
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    
+
 # ---- NUEVAS RUTAS SAAS GLOBALES ----
 @app.get("/api/saas/tiendas")
 def listar_tiendas(user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     
-    # NUEVO: Auto-Suspender tiendas vencidas antes de listarlas (excepto la tienda Maestra)
+    # Actualización en vivo: Si alguna tienda venció mientras nadie se conectaba, suspenderla
     cursor.execute("UPDATE tiendas SET estado = 'suspendido' WHERE fecha_vencimiento < CURRENT_TIMESTAMP AND id != 1 AND estado != 'suspendido'")
     conn.commit()
 
-    # Traemos las tiendas incluyendo la fecha de vencimiento
     cursor.execute("SELECT id, nombre, estado, fecha_vencimiento FROM tiendas ORDER BY id ASC")
     rows = cursor.fetchall(); conn.close()
-    return [{"id": r[0], "nombre": r[1], "estado": r[2], "vencimiento": r[3].strftime("%Y-%m-%d") if r[3] else None} for r in rows]
+    return [{"id": r[0], "nombre": r[1], "estado": r[2], "vencimiento": r[3].strftime("%d/%m/%Y") if r[3] else None} for r in rows]
 
 @app.post("/api/saas/tiendas")
 def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
     conn = get_db_connection(); cursor = conn.cursor()
     
-    # NUEVO: Damos 15 días gratis por defecto al crear una tienda
+    # 15 Días Gratis automatizados para los nuevos
     fecha_prueba = datetime.utcnow() + timedelta(days=15)
     
     cursor.execute("INSERT INTO tiendas (nombre, fecha_vencimiento) VALUES (%s, %s) RETURNING id", (req["nombre"], fecha_prueba))
@@ -132,27 +134,15 @@ def crear_tienda(req: dict, user_info: dict = Depends(verificar_token)):
     conn.commit(); conn.close()
     return {"status": "success"}
 
-    # NUEVO: Ruta para extender suscripción
-@app.put("/api/saas/tiendas/{id_tienda}/suscripcion")
-def renovar_suscripcion(id_tienda: int, req: dict, user_info: dict = Depends(verificar_token)):
+@app.put("/api/saas/tiendas/{id_tienda}/renovar")
+def renovar_suscripcion(id_tienda: int, user_info: dict = Depends(verificar_token)):
     if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
+    conn = get_db_connection(); cursor = conn.cursor()
     
-    try:
-        nueva_fecha = datetime.strptime(req["fecha"], "%Y-%m-%d")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Formato de fecha inválido.")
-        
-    conn = get_db_connection(); cursor = conn.cursor()
-    # Si la renovamos, le quitamos la suspensión
+    # Se renuevan 30 días exactos desde el momento de apretar el botón
+    nueva_fecha = datetime.utcnow() + timedelta(days=30)
+    
     cursor.execute("UPDATE tiendas SET fecha_vencimiento = %s, estado = 'activo' WHERE id = %s", (nueva_fecha, id_tienda))
-    conn.commit(); conn.close()
-    return {"status": "success"}
-
-@app.put("/api/saas/tiendas/{id_tienda}/estado")
-def toggle_estado_tienda(id_tienda: int, req: dict, user_info: dict = Depends(verificar_token)):
-    if user_info["rol"] != "superadmin" or user_info["tienda_id"] != 1: raise HTTPException(status_code=403, detail="Denegado")
-    conn = get_db_connection(); cursor = conn.cursor()
-    cursor.execute("UPDATE tiendas SET estado = %s WHERE id = %s", (req["estado"], id_tienda))
     conn.commit(); conn.close()
     return {"status": "success"}
 
@@ -213,7 +203,6 @@ def saas_eliminar_usuario(id_usuario: int, user_info: dict = Depends(verificar_t
 @app.get("/api/ajustes")
 def obtener_ajustes(user_info: dict = Depends(verificar_token)):
     conn = get_db_connection(); cursor = conn.cursor()
-    # SE CORRIGIÓ "footer" por "mensaje_ticket"
     cursor.execute("SELECT nombre, direccion, nit, telefono, mensaje_ticket, configurada FROM tiendas WHERE id = %s", (user_info["tienda_id"],))
     row = cursor.fetchone(); conn.close()
     if row: return {"nombre": row[0], "direccion": row[1], "nit": row[2], "telefono": row[3], "footer": row[4], "configurada": row[5]}
@@ -230,7 +219,6 @@ def actualizar_ajustes(req: dict, user_info: dict = Depends(verificar_token)):
         if tienda and tienda[0] and user_info["rol"] == "admin":
             raise HTTPException(status_code=403, detail="Tu tienda ya fue personalizada. Para cambiar la identidad nuevamente, contacta a Soporte Técnico.")
             
-        # SE CORRIGIÓ "footer" por "mensaje_ticket"
         cursor.execute("UPDATE tiendas SET nombre=%s, direccion=%s, nit=%s, telefono=%s, mensaje_ticket=%s, configurada=TRUE WHERE id=%s", (req.get("nombre"), req.get("direccion"), req.get("nit"), req.get("telefono"), req.get("footer"), user_info["tienda_id"]))
         conn.commit(); return {"status": "success"}
     except HTTPException: raise
@@ -398,7 +386,7 @@ def listar_productos(user_info: dict = Depends(verificar_token)):
 
 @app.get("/api/productos/{codigo}")
 def obtener_producto(codigo: str, user_info: dict = Depends(verificar_token)):
-    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT codigo, nombre, precio, stock FROM productos WHERE codigo = %s AND tienda_id = %s", (codigo, user_info["tienda_id"])); row = cursor.fetchone(); conn.close()
+    conn = get_db_connection(); cursor = conn.cursor(); cursor.execute("SELECT codigo, nombre, precio, stock FROM productos WHERE codigo = %s AND tienda_id = %s", (codigo, user_info["tienda_id"])); row =fetchone(); conn.close()
     if not row: raise HTTPException(status_code=404, detail="Producto no registrado."); return {"codigo": row[0], "nombre": row[1], "precio": row[2], "stock": row[3]}
 
 @app.post("/api/productos")

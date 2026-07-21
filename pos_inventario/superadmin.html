@@ -3,318 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SaaS Maestro - Control Global</title>
+    <title>Súper Admin - SaaS Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* MODO OSCURO ELEGANTE (Soft Dark Mode) */
         html.dark-mode body { background-color: #0f172a; color: #cbd5e1; }
         html.dark-mode .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
-        html.dark-mode .bg-gray-50, html.dark-mode .bg-gray-100, html.dark-mode .bg-gray-200 { background-color: #0f172a !important; }
-        
-        /* Textos suaves */
-        html.dark-mode .text-gray-800, html.dark-mode .text-gray-900, html.dark-mode .text-black { color: #f1f5f9 !important; }
+        html.dark-mode .bg-gray-50, html.dark-mode .bg-gray-100 { background-color: #0f172a !important; }
+        html.dark-mode .text-gray-800, html.dark-mode .text-gray-900 { color: #f1f5f9 !important; }
         html.dark-mode .text-gray-700, html.dark-mode .text-gray-600 { color: #cbd5e1 !important; }
-        html.dark-mode .text-gray-500, html.dark-mode .text-gray-400 { color: #94a3b8 !important; }
-        
-        /* Inputs y bordes */
-        html.dark-mode input, html.dark-mode select { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
-        html.dark-mode input:focus, html.dark-mode select:focus { border-color: #3b82f6 !important; }
-        html.dark-mode .border, html.dark-mode .border-gray-200, html.dark-mode .border-gray-300, html.dark-mode .border-gray-100 { border-color: #334155 !important; }
-        html.dark-mode .divide-gray-100 > :not([hidden]) ~ :not([hidden]), html.dark-mode .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #334155 !important; }
-        
-        /* Tablas y Alertas (SweetAlert2) */
-        html.dark-mode thead, html.dark-mode tfoot { background-color: #0f172a !important; }
+        html.dark-mode .text-gray-500 { color: #94a3b8 !important; }
+        html.dark-mode thead { background-color: #0f172a !important; }
         html.dark-mode tr.hover\:bg-gray-50:hover { background-color: #334155 !important; }
         html.dark-mode .swal2-popup { background-color: #1e293b !important; color: #f1f5f9 !important; }
         html.dark-mode .swal2-title { color: #f1f5f9 !important; }
         html.dark-mode .swal2-html-container { color: #cbd5e1 !important; }
-        
-        /* Sombras más oscuras */
-        html.dark-mode .shadow-md, html.dark-mode .shadow-lg, html.dark-mode .shadow-xl, html.dark-mode .shadow-2xl { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important; }
+        html.dark-mode input.swal2-input { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+<body class="bg-gray-100 font-sans min-h-screen">
     
-    <nav class="bg-indigo-900 text-white shadow-lg border-b-4 border-indigo-500 p-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-black tracking-tight">SaaS Central</h1>
-            <p class="text-xs text-indigo-300">Modo: Creador Maestro</p>
-        </div>
-        <div class="flex space-x-3">
-            <a href="https://wa.me/50249411913?text=Hola,%20necesito%20ayuda%20urgente%20con%20el%20servidor" target="_blank" class="text-indigo-300 hover:text-white text-sm font-bold flex items-center hidden sm:flex">💬 Mi WhatsApp</a>
-            <div class="w-px h-6 bg-indigo-700 mx-1 hidden sm:block"></div>
-            <a href="admin.html" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm font-bold shadow">Volver al Admin</a>
-            <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded text-sm font-bold shadow">Salir</button>
-        </div>
+    <nav class="bg-indigo-900 text-white shadow-lg p-4 flex justify-between items-center border-b-4 border-indigo-500">
+        <h1 class="text-xl md:text-2xl font-black">👑 Dios Creador (SaaS Control)</h1>
+        <button onclick="cerrarSesion()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-bold shadow transition">Salir del Sistema</button>
     </nav>
 
-    <main class="max-w-7xl mx-auto p-4 mt-4 w-full space-y-8">
-        
-        <!-- CARD: CREAR CLIENTE -->
-        <section class="bg-white p-8 rounded-2xl shadow-xl border-t-8 border-indigo-600">
-            <h2 class="text-2xl font-black text-gray-800 mb-2">🏢 Alta de Nuevo Cliente (Tienda)</h2>
-            <p class="text-sm text-gray-500 mb-6">Genera un entorno completamente aislado para un nuevo negocio.</p>
-            
-            <form id="add-tienda-form" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end" onsubmit="crearTiendaSaaS(event)">
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Nombre Público del Negocio</label>
-                    <input type="text" id="saas-nombre" required class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-indigo-500 outline-none transition" placeholder="Ej. Abarrotería Don Juan">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Usuario del Dueño</label>
-                    <input type="text" id="saas-admin-user" required pattern="[^\s]+" title="Sin espacios" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-indigo-500 outline-none transition" placeholder="Ej. juan_admin">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Contraseña Inicial</label>
-                    <input type="text" id="saas-admin-pass" required class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-indigo-500 outline-none transition font-mono" placeholder="Ej. 12345">
-                </div>
-                <div class="md:col-span-4 flex justify-end mt-2">
-                    <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-lg hover:bg-indigo-700 shadow-lg transition transform hover:-translate-y-1">🚀 Crear Entorno</button>
-                </div>
-            </form>
-        </section>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- COLUMNA IZQUIERDA: LISTA DE TIENDAS -->
-            <div class="lg:col-span-1">
-                <section class="bg-white rounded-2xl shadow-xl overflow-hidden h-full">
-                    <div class="bg-gray-800 p-5 text-white">
-                        <h2 class="font-black text-lg">Cartera de Suscripciones</h2>
-                    </div>
-                    <div class="overflow-x-auto p-2">
-                        <table class="w-full text-left border-collapse">
-                            <tbody id="saas-list" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </section>
+    <main class="max-w-6xl mx-auto p-4 mt-6">
+        <div class="bg-white rounded-xl shadow-xl p-6">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">🏢 Tiendas y Suscripciones</h2>
+                <button onclick="crearNuevaTienda()" class="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-lg shadow-lg transition w-full md:w-auto">+ Registrar Nuevo Cliente</button>
             </div>
-
-            <!-- COLUMNA DERECHA: DIRECTORIO GLOBAL DE USUARIOS -->
-            <div class="lg:col-span-2">
-                <section class="bg-white rounded-2xl shadow-xl overflow-hidden h-full flex flex-col">
-                    <div class="bg-indigo-900 p-5 text-white flex justify-between items-center">
-                        <h2 class="font-black text-lg">🌎 Directorio Global de Personal</h2>
-                        <button onclick="fetchSaaSUsuarios()" class="bg-indigo-700 hover:bg-indigo-600 px-3 py-1 rounded text-sm font-bold shadow">↻ Refrescar</button>
-                    </div>
-                    
-                    <!-- NUEVOS FILTROS -->
-                    <div class="bg-indigo-50 p-4 border-b border-indigo-200 flex flex-wrap gap-4 items-center">
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="block text-xs font-bold text-indigo-900 mb-1">Filtrar por Tienda</label>
-                            <select id="filter-store" class="w-full p-2 rounded-lg border-2 border-indigo-200 outline-none focus:border-indigo-500" onchange="aplicarFiltrosUsuarios()">
-                                <option value="todas">🏠 Todas las tiendas</option>
-                            </select>
-                        </div>
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="block text-xs font-bold text-indigo-900 mb-1">Buscar por Tienda, Nombre o Login</label>
-                            <input type="text" id="filter-search" placeholder="Escribe aquí..." class="w-full p-2 rounded-lg border-2 border-indigo-200 outline-none focus:border-indigo-500" oninput="aplicarFiltrosUsuarios()">
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto flex-1">
-                        <table class="w-full text-left border-collapse min-w-[700px]">
-                            <thead class="bg-white text-indigo-900 sticky top-0 border-b-2 border-indigo-100 shadow-sm z-10">
-                                <tr>
-                                    <th class="p-3">Tienda</th>
-                                    <th class="p-3">Login</th>
-                                    <th class="p-3">Clave Actual</th>
-                                    <th class="p-3">Rol</th>
-                                    <th class="p-3 text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="saas-usuarios-list" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </section>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[800px]">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th class="p-3 border-b">ID</th>
+                            <th class="p-3 border-b">Nombre del Negocio</th>
+                            <th class="p-3 border-b text-center">Estado</th>
+                            <th class="p-3 border-b font-bold text-blue-600">Vencimiento</th>
+                            <th class="p-3 border-b text-center">Control y Pagos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-tiendas" class="divide-y divide-gray-200"></tbody>
+                </table>
             </div>
         </div>
     </main>
 
-    <!-- MODAL EDITAR USUARIO GLOBAL -->
-    <div id="saas-edit-user-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex justify-center items-center p-4 z-50">
-        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm">
-            <h2 class="text-xl font-black text-indigo-900 mb-4">Editar Empleado Global</h2>
-            <form id="saas-form-editar-usuario" class="space-y-4">
-                <input type="hidden" id="saas-edit-id">
-                <div><label class="block text-sm font-bold text-gray-700">Nombre en Pantalla</label><input type="text" id="saas-edit-fullname" required maxlength="50" class="w-full border-2 border-gray-200 rounded-lg p-2 outline-none focus:border-indigo-500"></div>
-                <div><label class="block text-sm font-bold text-gray-700">Usuario Login</label><input type="text" id="saas-edit-user" pattern="[^\s]+" required class="w-full border-2 border-gray-200 rounded-lg p-2 outline-none focus:border-indigo-500"></div>
-                <div><label class="block text-sm font-bold text-gray-700">Contraseña (Forzar Cambio)</label><input type="text" id="saas-edit-pass" required class="w-full border-2 border-gray-200 rounded-lg p-2 outline-none focus:border-indigo-500 font-mono"></div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700">Rol</label>
-                    <select id="saas-edit-rol" class="w-full border-2 border-gray-200 p-2 rounded-lg focus:border-indigo-500">
-                        <option value="cajero">🛒 Cajero</option>
-                        <option value="admin">🏢 Admin de Tienda</option>
-                        <option value="superadmin">👑 Súper Admin (Creador)</option>
-                    </select>
-                </div>
-                <div class="flex justify-end gap-2 mt-6">
-                    <button type="button" onclick="document.getElementById('saas-edit-user-modal').classList.add('hidden')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-4 py-2 rounded-lg">Cancelar</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Botón flotante Modo Oscuro Elegante -->
+    <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 bg-gray-800 text-gray-200 p-3 rounded-full shadow-2xl z-[100] hover:scale-110 transition border border-gray-600">🌙</button>
 
     <script>
         const API_URL = "https://backend-pos-tienda.onrender.com/api";
-        let usuariosGlobales = [];
 
-        function cerrarSesion() { sessionStorage.clear(); window.location.href = "admin.html"; }
-
-        if(sessionStorage.getItem("rolUsuario") !== "superadmin" || sessionStorage.getItem("tienda_id") != "1") {
-            Swal.fire({title: 'Acceso Restringido', text: 'Solo el Creador Maestro puede entrar aquí.', icon: 'error', showConfirmButton: false, timer: 2000})
-            .then(() => { window.location.href = "admin.html"; });
-        } else {
-            fetchSaaS();
-            fetchSaaSUsuarios();
-        }
-
-        // MODO OSCURO ELEGANTE
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', document.documentElement.classList.contains('dark-mode'));
         }
         if(localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark-mode');
 
+        function cerrarSesion() { sessionStorage.clear(); window.location.href = "index.html"; }
+
         async function fetchConToken(url, options = {}) {
-            const token = sessionStorage.getItem("adminToken"); if (!options.headers) options.headers = {}; if (token) options.headers["Authorization"] = `Bearer ${token}`;
+            const token = sessionStorage.getItem("adminToken"); 
+            if (!options.headers) options.headers = {}; 
+            if (token) options.headers["Authorization"] = `Bearer ${token}`;
             try {
-                const response = await fetch(url, options);
-                if (response.status === 401 || response.status === 403) { cerrarSesion(); throw new Error("No autorizado"); }
-                return response;
-            } catch (err) { if(err.message !== "No autorizado") Swal.fire('Error de Conexión', 'Revisa tu internet.', 'error'); throw err; }
+                const res = await fetch(url, options);
+                if (res.status === 401) { cerrarSesion(); throw new Error("No autorizado"); }
+                return res;
+            } catch (err) { throw err; }
         }
 
-        // CARGAR TIENDAS
-        async function fetchSaaS() { try { const res = await fetchConToken(`${API_URL}/saas/tiendas`); const data = await res.json(); renderSaaS(data); } catch(e){} }
-        function renderSaaS(tiendas) {
-            const list = document.getElementById("saas-list"); if(tiendas.length === 0) return list.innerHTML = `<tr><td class="p-8 text-center text-gray-500 font-bold">No hay clientes.</td></tr>`;
-            
-            // Actualizar Select de Filtros
-            const selectStore = document.getElementById("filter-store");
-            selectStore.innerHTML = `<option value="todas">🏠 Todas las tiendas</option>` + tiendas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("");
-
-            list.innerHTML = tiendas.map(t => {
-                const isActive = t.estado === 'activo';
-                const estadoHtml = isActive ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold text-xs">ACTIVO</span>` : `<span class="bg-red-100 text-red-700 px-2 py-1 rounded font-bold text-xs">SUSPENDIDO</span>`;
-                const toggleBtn = isActive ? `<button onclick="toggleEstadoTienda(${t.id}, 'suspendido')" class="bg-gray-100 text-red-600 border border-gray-200 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition text-xs font-bold w-full mt-1">🚫 Cortar Servicio</button>` : `<button onclick="toggleEstadoTienda(${t.id}, 'activo')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition text-xs font-bold w-full mt-1">✅ Reactivar</button>`;
+        async function cargarTiendas() {
+            try {
+                const res = await fetchConToken(`${API_URL}/saas/tiendas`);
+                const tiendas = await res.json();
+                const list = document.getElementById("lista-tiendas");
                 
-                // NUEVO BOTÓN VISITAR Y BORRAR
-                const btnBorrar = t.id !== 1 ? `<button onclick="eliminarTiendaCompleta(${t.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded font-bold text-xs" title="Borrar Tienda">🗑️</button>` : '';
-                const btnVisitar = `<button onclick="visitarTiendaComoAdmin(${t.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded shadow-md font-bold text-xs flex-1">👁️ Ver Stats</button>`;
-
-                return `<tr class="hover:bg-indigo-50 border-b transition">
-                    <td class="p-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <div><div class="font-black text-gray-800 text-lg leading-tight">${t.nombre}</div><span class="text-xs text-gray-400 font-bold">ID #${t.id}</span></div>
-                            ${estadoHtml}
-                        </div>
-                        <div class="flex gap-2 w-full mt-2">
-                            ${btnVisitar}
-                            ${btnBorrar}
-                        </div>
-                        ${toggleBtn}
-                    </td>
-                </tr>`;
-            }).join("");
-        }
-
-        // CARGAR USUARIOS GLOBALES Y FILTRARLOS
-        async function fetchSaaSUsuarios() { try { const res = await fetchConToken(`${API_URL}/saas/usuarios`); usuariosGlobales = await res.json(); aplicarFiltrosUsuarios(); } catch(e){} }
-        
-       function aplicarFiltrosUsuarios() {
-            const tiendaId = document.getElementById("filter-store").value;
-            const search = document.getElementById("filter-search").value.toLowerCase();
-            
-            let filtrados = usuariosGlobales;
-            
-            // Filtro por menú desplegable
-            if(tiendaId !== "todas") filtrados = filtrados.filter(u => u.tienda_id.toString() === tiendaId);
-            
-            // Filtro por texto (AQUÍ AGREGAMOS LA BÚSQUEDA POR TIENDA)
-            if(search) {
-                filtrados = filtrados.filter(u => 
-                    u.nombre_completo.toLowerCase().includes(search) || 
-                    u.usuario.toLowerCase().includes(search) || 
-                    u.tienda_nombre.toLowerCase().includes(search)
-                );
+                list.innerHTML = tiendas.map(t => {
+                    const esMaestra = t.id === 1;
+                    
+                    let estadoBadge = t.estado === 'activo' 
+                        ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-black tracking-wide">ACTIVO</span>' 
+                        : '<span class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-black tracking-wide">SUSPENDIDO</span>';
+                    
+                    let acciones = esMaestra ? '<span class="text-gray-400 font-bold text-sm italic">Tienda Maestra (Intocable)</span>' : `
+                        <button onclick="visitarTienda(${t.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm shadow font-bold mr-2 transition">👀 Entrar al Panel</button>
+                        <button onclick="renovarMensualidad(${t.id})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm shadow font-bold transition">💳 Renovar 30 Días</button>
+                    `;
+                    
+                    return `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-3 font-mono text-gray-500">${t.id}</td>
+                        <td class="p-3 font-bold text-gray-800 text-lg">${t.nombre}</td>
+                        <td class="p-3 text-center">${estadoBadge}</td>
+                        <td class="p-3 font-black ${t.vencimiento ? 'text-blue-600' : 'text-gray-400'}">${t.vencimiento || 'Acceso Vitalicio'}</td>
+                        <td class="p-3 text-center">${acciones}</td>
+                    </tr>`;
+                }).join("");
+            } catch (e) {
+                Swal.fire("Error", "No se pudieron cargar las tiendas", "error");
             }
-            
-            renderSaaSUsuarios(filtrados);
         }
 
-        function renderSaaSUsuarios(usuarios) {
-    const list = document.getElementById("saas-usuarios-list"); 
-    if(usuarios.length === 0) return list.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 font-bold">No se encontraron resultados.</td></tr>`;
-    
-    list.innerHTML = usuarios.map(u => {
-        let actionHtml = '';
-        
-        // CONSISTENCIA VISUAL: Si es el Creador Maestro (ID 1), ocultamos el basurero y ponemos el escudo
-        if (u.id === 1) {
-            actionHtml = `<button onclick="abrirModalSaaSUser(${u.id})" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded shadow hover:bg-yellow-500 font-bold text-xs mr-1">✏️ Editar</button><span title="El Creador principal no se puede borrar" class="text-gray-400 cursor-not-allowed ml-1 text-xs font-bold">🛡️ Intocable</span>`;
-        } else {
-            actionHtml = `<button onclick="abrirModalSaaSUser(${u.id})" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded shadow hover:bg-yellow-500 font-bold text-xs mr-1">✏️ Editar</button><button onclick="eliminarSaaSUser(${u.id})" class="bg-red-500 text-white px-3 py-1 rounded shadow hover:bg-red-600 font-bold text-xs">🗑️</button>`;
-        }
-
-        return `<tr class="hover:bg-indigo-50 border-b transition">
-            <td class="p-3"><div class="font-bold text-gray-700">${u.tienda_nombre}</div><div class="text-xs text-gray-400">ID #${u.tienda_id}</div></td>
-            <td class="p-3"><div class="font-mono text-gray-800 font-bold">${u.usuario}</div><div class="text-xs text-gray-500">${u.nombre_completo}</div></td>
-            <td class="p-3 font-mono text-blue-600 bg-blue-50 px-2 rounded tracking-wider text-sm">${u.password}</td>
-            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>
-            <td class="p-3 text-center whitespace-nowrap">
-                ${actionHtml}
-            </td>
-        </tr>`;
-    }).join("");
-}
-
-        // ACCIONES PRINCIPALES
-        async function crearTiendaSaaS(e) {
-            e.preventDefault(); const nombre = document.getElementById("saas-nombre").value.trim(); const payload = { nombre: nombre, admin_user: document.getElementById("saas-admin-user").value.trim(), admin_pass: document.getElementById("saas-admin-pass").value.trim(), admin_nombre: "Dueño de " + nombre };
-            try { const res = await fetchConToken(`${API_URL}/saas/tiendas`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) }); if(res.ok) { document.getElementById("add-tienda-form").reset(); fetchSaaS(); fetchSaaSUsuarios(); Swal.fire('¡Tienda Creada!', 'El entorno ha sido generado.', 'success'); } } catch(e){}
-        }
-
-        async function toggleEstadoTienda(id, estadoNuevo) { 
-            Swal.fire({title: '¿Estás seguro?', text: `¿Pasar esta tienda a estado: ${estadoNuevo.toUpperCase()}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: estadoNuevo === 'activo' ? '#22c55e' : '#ef4444' }).then(async r => { 
-                if(r.isConfirmed) { try { await fetchConToken(`${API_URL}/saas/tiendas/${id}/estado`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify({estado: estadoNuevo}) }); fetchSaaS(); Swal.fire('Actualizado', `Servicio ${estadoNuevo}`, 'success'); } catch(e){} } 
-            }); 
-        }
-
-        // LA NUEVA MAGIA: ELIMINAR Y VISITAR
-        function eliminarTiendaCompleta(id) {
-            Swal.fire({title: '¡PELIGRO! 🚨', html: "Estás a punto de borrar esta tienda y <b>TODO SU INVENTARIO, VENTAS Y USUARIOS</b> para siempre.<br><br>Para confirmar, escribe <b>borrar</b>", input: 'text', icon: 'error', showCancelButton: true, confirmButtonText: 'Aniquilar', confirmButtonColor: '#d33'}).then(async (r) => { 
-                if(r.isConfirmed) { 
-                    if(r.value === 'borrar') {
-                        try { const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}`, { method: "DELETE" }); if(res.ok){ fetchSaaS(); fetchSaaSUsuarios(); Swal.fire('Borrada', 'Tienda eliminada.', 'success');} else { const err = await res.json(); Swal.fire('Aviso', err.detail, 'error'); } } catch(e){} 
-                    } else { Swal.fire('Cancelado', 'La palabra no coincide.', 'info'); }
-                } 
+        async function renovarMensualidad(id) {
+            Swal.fire({
+                title: '¿Confirmar Pago Recibido?',
+                text: "Se agregarán 30 días exactos a la suscripción y el cliente volverá a tener acceso total.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, Pago Recibido',
+                confirmButtonColor: '#10b981',
+                cancelButtonText: 'Cancelar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetchConToken(`${API_URL}/saas/tiendas/${id}/renovar`, { method: "PUT" });
+                        if(res.ok) {
+                            Swal.fire('¡Renovación Exitosa!', 'El cliente ahora tiene 30 días más.', 'success');
+                            cargarTiendas();
+                        }
+                    } catch (e) { Swal.fire('Error', 'Fallo de red', 'error'); }
+                }
             });
         }
 
-        async function visitarTiendaComoAdmin(id) { 
-            try { 
-                const res = await fetchConToken(`${API_URL}/saas/impersonate/${id}`, { method: "POST" }); 
-                if(res.ok){ 
-                    const data = await res.json(); 
-                    // Guardamos tu token de Súper Admin real en el bolsillo (masterToken)
-                    sessionStorage.setItem("masterToken", sessionStorage.getItem("adminToken"));
-                    // Sobreescribimos el actual con el falso
-                    sessionStorage.setItem("adminToken", data.token);
-                    sessionStorage.setItem("tienda_id", data.tienda_id);
-                    // Viajamos al panel
-                    window.location.href = "admin.html";
-                } else { const err = await res.json(); Swal.fire('Aviso', err.detail, 'error'); } 
-            } catch(e){} 
+        async function crearNuevaTienda() {
+            Swal.fire({
+                title: 'Registrar Nuevo Cliente',
+                html: `
+                    <input id="swal-nombre" class="swal2-input" placeholder="Nombre Comercial de la Tienda">
+                    <input id="swal-user" class="swal2-input" placeholder="Usuario Admin (Ej. carlos_admin)">
+                    <input id="swal-pass" class="swal2-input" placeholder="Contraseña Inicial">
+                `,
+                confirmButtonText: 'Crear Tienda (15 Días Gratis)',
+                confirmButtonColor: '#2563eb',
+                showCancelButton: true,
+                preConfirm: () => {
+                    return {
+                        nombre: document.getElementById('swal-nombre').value,
+                        admin_user: document.getElementById('swal-user').value,
+                        admin_pass: document.getElementById('swal-pass').value,
+                        admin_nombre: "Administrador Principal"
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed && result.value.nombre) {
+                    try {
+                        const res = await fetchConToken(`${API_URL}/saas/tiendas`, {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify(result.value)
+                        });
+                        if (res.ok) {
+                            Swal.fire('¡Cliente Creado!', 'La tienda inicia hoy su prueba de 15 días.', 'success');
+                            cargarTiendas();
+                        }
+                    } catch(e) {}
+                }
+            });
         }
 
-        // MANEJO DE USUARIOS (Igual que antes)
-        function abrirModalSaaSUser(id) { const u = usuariosGlobales.find(x => x.id === id); document.getElementById("saas-edit-id").value = u.id; document.getElementById("saas-edit-fullname").value = u.nombre_completo; document.getElementById("saas-edit-user").value = u.usuario; document.getElementById("saas-edit-pass").value = u.password; document.getElementById("saas-edit-rol").value = u.rol; document.getElementById("saas-edit-user-modal").classList.remove("hidden"); }
-        document.getElementById("saas-form-editar-usuario").addEventListener("submit", async (e) => { e.preventDefault(); const id = document.getElementById("saas-edit-id").value; const payload = { nombre_completo: document.getElementById("saas-edit-fullname").value.trim(), usuario: document.getElementById("saas-edit-user").value.trim(), password: document.getElementById("saas-edit-pass").value.trim(), rol: document.getElementById("saas-edit-rol").value }; try { const res = await fetchConToken(`${API_URL}/saas/usuarios/${id}`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }); if (res.ok) { document.getElementById("saas-edit-user-modal").classList.add("hidden"); fetchSaaSUsuarios(); Swal.fire('Guardado', 'Empleado actualizado con poder global.', 'success'); } else { const data = await res.json(); Swal.fire('Error', data.detail, 'error'); } } catch (e) {} });
-        function eliminarSaaSUser(id) { Swal.fire({title: '¡ADVERTENCIA DE CREADOR!', text: "Eliminarás a este usuario de su base de datos. Es irreversible.", icon: 'error', showCancelButton: true, confirmButtonText: 'Sí, aniquilar', confirmButtonColor: '#d33'}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/saas/usuarios/${id}`, { method: "DELETE" }); if(res.ok){ fetchSaaSUsuarios(); Swal.fire('Borrado', 'Usuario eliminado globalmente', 'success');} else { const err = await res.json(); Swal.fire('Aviso', err.detail, 'error'); } } catch(e){} } }); }
+        async function visitarTienda(id) {
+            try {
+                const res = await fetchConToken(`${API_URL}/saas/impersonate/${id}`, { method: "POST" });
+                if(res.ok) {
+                    const data = await res.json();
+                    sessionStorage.setItem("masterToken", sessionStorage.getItem("adminToken"));
+                    sessionStorage.setItem("adminToken", data.token);
+                    sessionStorage.setItem("tienda_id", data.tienda_id);
+                    window.location.href = "admin.html";
+                }
+            } catch(e) {}
+        }
+
+        if(sessionStorage.getItem("adminToken") && sessionStorage.getItem("rolUsuario") === "superadmin") {
+            cargarTiendas();
+        } else {
+            window.location.href = "index.html";
+        }
     </script>
-    <!-- Botón flotante Modo Oscuro Elegante -->
-    <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 bg-gray-800 text-gray-200 p-3 rounded-full shadow-2xl z-[100] hover:scale-110 transition border border-gray-600">🌙</button>
 </body>
 </html>
