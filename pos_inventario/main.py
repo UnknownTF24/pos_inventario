@@ -308,10 +308,26 @@ def crear_usuario(req: UsuarioRequest, user_info: dict = Depends(verificar_token
     if user_info["rol"] not in ["superadmin", "admin"]: raise HTTPException(status_code=403, detail="Sin permisos.")
     if bool(re.search(r"\s", req.usuario)): raise HTTPException(status_code=400, detail="Sin espacios en el Login.")
     if user_info["rol"] == "admin" and req.rol != "cajero": raise HTTPException(status_code=403, detail="Solo el Súper Admin puede asignar nuevos Administradores.")
+    
     conn = get_db_connection(); cursor = conn.cursor()
-    try: cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, %s, %s, %s)", (req.usuario, req.password, req.rol, req.nombre_completo, user_info["tienda_id"])); conn.commit(); return {"status": "success"}
-    except Exception: conn.rollback(); raise HTTPException(status_code=400, detail="Usuario en uso."); 
-    finally: conn.close()
+    
+    # NUEVO: Límite estricto de 5 usuarios por tienda (excepto si eres Super Admin)
+    if user_info["rol"] != "superadmin":
+        cursor.execute("SELECT COUNT(*) FROM usuarios WHERE tienda_id = %s", (user_info["tienda_id"],))
+        total_usuarios = cursor.fetchone()[0]
+        if total_usuarios >= 5:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Tu tienda ha alcanzado el límite de 5 usuarios permitidos. Para expandir el límite, contacta al Súper Admin al 4941-1913.")
+            
+    try: 
+        cursor.execute("INSERT INTO usuarios (usuario, password, rol, nombre_completo, tienda_id) VALUES (%s, %s, %s, %s, %s)", (req.usuario, req.password, req.rol, req.nombre_completo, user_info["tienda_id"]))
+        conn.commit()
+        return {"status": "success"}
+    except Exception: 
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="Usuario en uso.") 
+    finally: 
+        conn.close()
 
 @app.put("/api/usuarios/{id_usuario}")
 def editar_usuario(id_usuario: int, req: dict, user_info: dict = Depends(verificar_token)):

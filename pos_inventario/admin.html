@@ -182,25 +182,55 @@
             </section>
         </div>
 
-        <!-- PESTAÑA: USUARIOS -->
-        <div id="tab-usuarios" class="hidden space-y-4">
-            <section id="seccion-crear-usuario" class="bg-white p-6 rounded-xl shadow-md mb-6 border-l-4 border-purple-600">
-                <h2 class="text-lg font-bold mb-4 text-gray-800">Registrar Nuevo Personal</h2>
-                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Usuario Login <span class="text-red-500 font-normal">(Sin espacios)</span></label><input type="text" id="new-user-name" pattern="[^\s]+" title="El usuario no debe llevar espacios." required class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. pablo_cajero"></div>
-                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Nombre en Pantalla</label><input type="text" id="new-user-fullname" required maxlength="50" class="w-full border p-2 rounded focus:border-purple-500 outline-none" placeholder="Ej. Pablo Perez"></div>
-                    <div>
-                        <label class="block text-xs font-bold mb-1 text-gray-600">Contraseña Inicial</label>
-                        <div class="relative">
-                            <input type="password" id="new-user-pass" required class="w-full border p-2 rounded focus:border-purple-500 outline-none pr-8" placeholder="Ej. clave123">
-                            <button type="button" onclick="togglePassword('new-user-pass')" class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-purple-600 transition text-base no-invert">👁️</button>
-                        </div>
+        <!-- REGISTRAR NUEVO PERSONAL -->
+        <div id="seccion-crear-usuario" class="bg-gray-800 rounded-xl p-6 shadow-2xl border border-purple-500/30 hidden mb-8 relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent pointer-events-none group-hover:opacity-100 opacity-50 transition-opacity"></div>
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 relative z-10 gap-2">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <span class="mr-2">Registrar Nuevo Personal</span>
+                </h3>
+                <!-- NUEVO: Indicador de Límite -->
+                <div id="limite-usuarios-badge" class="bg-blue-900/50 text-blue-200 border border-blue-500/30 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center">
+                    Cargando límite...
+                </div>
+            </div>
+
+            <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end relative z-10">
+                <!-- Inputs del Formulario -->
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-gray-400">Usuario Login <span class="text-red-400 text-[10px] font-normal">(Sin espacios)</span></label>
+                    <input type="text" id="new-user-name" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white font-mono placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. pablo_cajero" oninput="this.value = this.value.replace(/\s/g, '')">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-gray-400">Nombre en Pantalla</label>
+                    <input type="text" id="new-user-fullname" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white font-bold placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. Pablo Perez">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-gray-400">Contraseña Inicial</label>
+                    <div class="relative">
+                        <input type="password" id="new-user-pass" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white pr-8 placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. clave123">
+                        <button type="button" onclick="togglePassword('new-user-pass')" class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-purple-400 transition text-base">👁️</button>
                     </div>
-                    <div><label class="block text-xs font-bold mb-1 text-gray-600">Nivel de Acceso</label><select id="new-user-rol" class="w-full border p-2 rounded focus:border-purple-500 outline-none bg-gray-50 font-semibold"><option value="cajero">🛒 Cajero (Solo Cobrar)</option><option value="admin">🏢 Admin de Tienda</option></select></div>
-                    <div><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold w-full hover:bg-purple-700 shadow">Crear Cuenta</button></div>
-                </form>
-            </section>
-            <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="bg-gray-800 p-4 text-white flex justify-between items-center"><h2 class="font-bold text-lg" id="titulo-tabla-usuarios">Personal Registrado</h2><button onclick="verAuditoria()" class="bg-gray-600 hover:bg-gray-500 text-sm px-3 py-1 rounded shadow">📜 Ver Historial de Cambios</button></div><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[800px]"><thead class="bg-gray-50 text-gray-700 border-b-2 border-gray-200"><tr><th class="p-4 w-16">No.</th><th class="p-4">Usuario (Login)</th><th class="p-4 text-blue-600 font-bold">Nombre en Pantalla</th><th class="p-4">Rol</th><th class="p-4 text-yellow-600" id="header-clave">Clave Secreta</th><th class="p-4 text-center">Acción</th></tr></thead><tbody id="usuarios-list" class="divide-y divide-gray-200"></tbody></table></div></section>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-gray-400">Nivel de Acceso</label>
+                    <select id="new-user-rol" class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white appearance-none cursor-pointer">
+                        <option value="cajero">🛒 Cajero (Solo Cobrar)</option>
+                        <option value="admin">💼 Admin de Tienda</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="btn-crear-personal" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black p-2 rounded h-[42px] shadow-lg shadow-purple-500/20 transition transform active:scale-95 text-sm whitespace-nowrap">
+                    Crear Cuenta
+                </button>
+            </form>
+            <div id="aviso-limite-usuarios" class="hidden mt-4 p-3 bg-red-900/40 border border-red-500/30 rounded text-red-200 text-sm font-bold">
+                ⚠️ Has alcanzado el límite de 5 usuarios. Contacta al Súper Admin (4941-1913) para aumentar el plan.
+            </div>
         </div>
     </main>
 
@@ -438,33 +468,66 @@
 
         async function fetchUsuarios() { try { const res = await fetchConToken(`${API_URL}/usuarios`); allUsers = await res.json(); renderUsuarios(allUsers); } catch (e) {} }
         function renderUsuarios(usuarios) { 
-    const list = document.getElementById("usuarios-list"); const rolActual = sessionStorage.getItem("rolUsuario"); 
-    if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; 
-    list.innerHTML = usuarios.map((u, index) => { 
-        let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; 
-        if (u.rol === 'superadmin') { 
-            if (rolActual === "superadmin") { 
-                trClass = "bg-gray-50 border-b"; 
-                passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
-                if (u.usuario === 'admin') {
-                    actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><span title="El Creador principal no se puede borrar" class="text-gray-400 cursor-not-allowed ml-1">🛡️ Intocable</span></td>`;
+            const list = document.getElementById("usuarios-list"); 
+            const rolActual = sessionStorage.getItem("rolUsuario"); 
+            
+            // --- NUEVA LÓGICA DE CONTROL DE LÍMITES ---
+            const limiteBadge = document.getElementById("limite-usuarios-badge");
+            const btnCrear = document.getElementById("btn-crear-personal");
+            const avisoLimite = document.getElementById("aviso-limite-usuarios");
+            
+            if (limiteBadge) {
+                if (rolActual === "superadmin") {
+                    limiteBadge.innerHTML = `👑 Modo Dios: Ilimitado (Actual: ${usuarios.length})`;
+                    limiteBadge.className = "bg-purple-900/50 text-purple-200 border border-purple-500/30 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center";
+                    if(btnCrear) { btnCrear.disabled = false; btnCrear.classList.remove("opacity-50", "cursor-not-allowed"); }
+                    if(avisoLimite) avisoLimite.classList.add("hidden");
                 } else {
-                    actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
+                    const ocupados = usuarios.length;
+                    const quedan = 5 - ocupados;
+                    
+                    if (quedan <= 0) {
+                        limiteBadge.innerHTML = `❌ Límite Alcanzado (5/5)`;
+                        limiteBadge.className = "bg-red-900/50 text-red-200 border border-red-500/30 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center animate-pulse";
+                        if(btnCrear) { btnCrear.disabled = true; btnCrear.classList.add("opacity-50", "cursor-not-allowed"); btnCrear.innerText = "Límite Excedido"; }
+                        if(avisoLimite) avisoLimite.classList.remove("hidden");
+                    } else {
+                        limiteBadge.innerHTML = `👥 Usuarios: ${ocupados}/5 (Disponibles: ${quedan})`;
+                        limiteBadge.className = "bg-blue-900/50 text-blue-200 border border-blue-500/30 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center";
+                        if(btnCrear) { btnCrear.disabled = false; btnCrear.classList.remove("opacity-50", "cursor-not-allowed"); btnCrear.innerText = "Crear Cuenta"; }
+                        if(avisoLimite) avisoLimite.classList.add("hidden");
+                    }
                 }
-            } 
-            else { return ""; } 
-        } else { 
-            if (rolActual === "superadmin") { 
-                passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
-                actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; 
-            } else { 
-                passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; 
-                actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; 
-            } 
-        } 
-        return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` 
-    }).join(""); 
-}
+            }
+            // --- FIN NUEVA LÓGICA ---
+
+            if (usuarios.length === 0) return list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay personal.</td></tr>`; 
+            
+            list.innerHTML = usuarios.map((u, index) => { 
+                let passwordHtml = ''; let actionHtml = ''; let idVisual = index + 1; let trClass = "hover:bg-gray-50 border-b"; 
+                if (u.rol === 'superadmin') { 
+                    if (rolActual === "superadmin") { 
+                        trClass = "bg-gray-50 border-b"; 
+                        passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
+                        if (u.usuario === 'admin') {
+                            actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><span title="El Creador principal no se puede borrar" class="text-gray-400 cursor-not-allowed ml-1">🛡️ Intocable</span></td>`;
+                        } else {
+                            actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`;
+                        }
+                    } 
+                    else { return ""; } 
+                } else { 
+                    if (rolActual === "superadmin") { 
+                        passwordHtml = `<td class="p-4 font-mono text-blue-600 bg-blue-50 tracking-wider">${u.password}</td>`; 
+                        actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; 
+                    } else { 
+                        passwordHtml = `<td class="p-4 text-gray-400 italic">Oculta por seguridad</td>`; 
+                        actionHtml = `<td class="p-4 text-center whitespace-nowrap"><button onclick="openEditUser(${u.id})" class="bg-yellow-400 text-gray-800 px-2 py-1 rounded shadow hover:bg-yellow-500 mr-1">✏️ Editar</button><button onclick="eliminarUsuarioConfirmado(${u.id})" class="bg-red-500 text-white px-2 py-1 rounded shadow hover:bg-red-600">🗑️</button></td>`; 
+                    } 
+                } 
+                return `<tr class="${trClass}"><td class="p-4 font-bold text-gray-500">${idVisual}</td><td class="p-4 font-mono text-gray-600">${u.usuario}</td><td class="p-4 font-bold text-blue-700">${u.nombre_completo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.rol==='superadmin'?'bg-red-100 text-red-700':u.rol==='admin'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.rol.toUpperCase()}</span></td>${passwordHtml}${actionHtml}</tr>` 
+            }).join(""); 
+        }
         
         document.getElementById("add-user-form").addEventListener("submit", async (e) => { e.preventDefault(); const usr = document.getElementById("new-user-name").value.trim(); const fName = document.getElementById("new-user-fullname").value.trim(); const pwd = document.getElementById("new-user-pass").value.trim(); const rol = document.getElementById("new-user-rol").value; try { const response = await fetchConToken(`${API_URL}/usuarios`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ usuario: usr, nombre_completo: fName, password: pwd, rol: rol }) }); if (response.ok) { document.getElementById("add-user-form").reset(); fetchUsuarios(); Swal.fire('Éxito', 'Cuenta creada', 'success'); } else { const data = await response.json(); Swal.fire('Error', data.detail, 'error'); } } catch (error) {} });
         window.eliminarUsuario = function(id) { Swal.fire({title: '¿Eliminar usuario?', icon: 'warning', showCancelButton: true}).then(async (r) => { if(r.isConfirmed) { try { const res = await fetchConToken(`${API_URL}/usuarios/${id}`, { method: "DELETE" }); if(res.ok) fetchUsuarios(); } catch(e){} } }); };
