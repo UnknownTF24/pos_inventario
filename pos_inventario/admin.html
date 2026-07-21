@@ -158,8 +158,7 @@
             </div>
             <section class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[900px]"><thead class="bg-gray-800 text-white"><tr><th class="p-4 border-b">ID</th><th class="p-4 border-b">Cajero</th><th class="p-4 border-b">Apertura</th><th class="p-4 border-b">Cierre</th><th class="p-4 border-b text-right text-gray-300">Fondo Inicial</th><th class="p-4 border-b text-right text-green-300">Ventas Turno</th><th class="p-4 border-b text-right font-bold text-yellow-300">Efectivo en Gaveta</th><th class="p-4 border-b text-center">Estado</th></tr></thead><tbody id="cajas-list" class="divide-y divide-gray-200"></tbody></table></div></section>
         </div>
-
-        <!-- PESTAÑA: AJUSTES -->
+        
         <!-- PESTAÑA: AJUSTES -->
         <div id="tab-ajustes" class="hidden">
             <section class="bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto border-t-4 border-blue-600">
@@ -185,75 +184,83 @@
         <!-- PESTAÑA: PERSONAL (USUARIOS) -->
         <section id="tab-usuarios" class="hidden">
             
-            <!-- PEGA EL FORMULARIO AQUÍ ADENTRO -->
             <!-- REGISTRAR NUEVO PERSONAL -->
             <div id="seccion-crear-usuario" class="bg-gray-800 rounded-xl p-6 shadow-2xl border border-purple-500/30 hidden mb-8 relative overflow-hidden group">
-                <!-- ... (todo el contenido del formulario que ya tienes) ... -->
-            </div>
-
-            <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end relative z-10">
-                <!-- Inputs del Formulario -->
-                <div>
-                    <label class="block text-xs font-bold mb-1 text-gray-400">Usuario Login <span class="text-red-400 text-[10px] font-normal">(Sin espacios)</span></label>
-                    <input type="text" id="new-user-name" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white font-mono placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. pablo_cajero" oninput="this.value = this.value.replace(/\s/g, '')">
-                </div>
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent pointer-events-none group-hover:opacity-100 opacity-50 transition-opacity"></div>
                 
-                <div>
-                    <label class="block text-xs font-bold mb-1 text-gray-400">Nombre en Pantalla</label>
-                    <input type="text" id="new-user-fullname" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white font-bold placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. Pablo Perez">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold mb-1 text-gray-400">Contraseña Inicial</label>
-                    <div class="relative">
-                        <input type="password" id="new-user-pass" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white pr-8 placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. clave123">
-                        <button type="button" onclick="togglePassword('new-user-pass')" class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-purple-400 transition text-base">👁️</button>
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 relative z-10 gap-2">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <span class="mr-2">Registrar Nuevo Personal</span>
+                    </h3>
+                    <!-- Indicador de Límite -->
+                    <div id="limite-usuarios-badge" class="bg-blue-900/50 text-blue-200 border border-blue-500/30 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center">
+                        Cargando límite...
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold mb-1 text-gray-400">Nivel de Acceso</label>
-                    <select id="new-user-rol" class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white appearance-none cursor-pointer">
-                        <option value="cajero">🛒 Cajero (Solo Cobrar)</option>
-                        <option value="admin">💼 Admin de Tienda</option>
-                    </select>
-                </div>
+                <form id="add-user-form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end relative z-10">
+                    <div>
+                        <label class="block text-xs font-bold mb-1 text-gray-400">Usuario Login <span class="text-red-400 text-[10px] font-normal">(Sin espacios)</span></label>
+                        <input type="text" id="new-user-name" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white font-mono placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. pablo_cajero" oninput="this.value = this.value.replace(/\s/g, '')">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1 text-gray-400">Nombre en Pantalla</label>
+                        <input type="text" id="new-user-fullname" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white font-bold placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. Pablo Perez">
+                    </div>
 
-                <button type="submit" id="btn-crear-personal" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black p-2 rounded h-[42px] shadow-lg shadow-purple-500/20 transition transform active:scale-95 text-sm whitespace-nowrap">
-                    Crear Cuenta
-                </button>
-            </form>
-            <div id="aviso-limite-usuarios" class="hidden mt-4 p-3 bg-red-900/40 border border-red-500/30 rounded text-red-200 text-sm font-bold">
-                ⚠️ Has alcanzado el límite de 5 usuarios. Contacta al Súper Admin (4941-1913) para aumentar el plan.
+                    <div>
+                        <label class="block text-xs font-bold mb-1 text-gray-400">Contraseña Inicial</label>
+                        <div class="relative">
+                            <input type="password" id="new-user-pass" required class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white pr-8 placeholder-gray-600 focus:bg-gray-800 transition" placeholder="Ej. clave123">
+                            <button type="button" onclick="togglePassword('new-user-pass')" class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-purple-400 transition text-base">👁️</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold mb-1 text-gray-400">Nivel de Acceso</label>
+                        <select id="new-user-rol" class="w-full bg-gray-900 border border-gray-700 p-2 rounded focus:border-purple-500 outline-none text-white appearance-none cursor-pointer">
+                            <option value="cajero">🛒 Cajero (Solo Cobrar)</option>
+                            <option value="admin">💼 Admin de Tienda</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="btn-crear-personal" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black p-2 rounded h-[42px] shadow-lg shadow-purple-500/20 transition transform active:scale-95 text-sm whitespace-nowrap">
+                        Crear Cuenta
+                    </button>
+                </form>
+                <div id="aviso-limite-usuarios" class="hidden mt-4 p-3 bg-red-900/40 border border-red-500/30 rounded text-red-200 text-sm font-bold">
+                    ⚠️ Has alcanzado el límite de 5 usuarios. Contacta al Súper Admin (4941-1913) para aumentar el plan.
+                </div>
             </div>
-        </div>
-    </main>
-
-    <!-- MODALES VARIOS OCULTOS -->
-    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-screen overflow-y-auto no-invert"><h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Inventario</h2><form id="edit-form" class="space-y-4"><input type="hidden" id="edit-original-code"><div><label class="block text-sm font-bold text-purple-600">Código</label><div class="flex gap-2"><input type="text" id="edit-codigo" required class="w-full border-2 border-purple-200 rounded p-2 outline-none"><button type="button" id="start-edit-scan-btn" class="bg-green-500 text-white px-3 rounded">📷</button><button type="button" onclick="document.getElementById('native-edit-input').click()" class="bg-purple-600 text-white px-3 rounded">📸</button></div><input type="file" id="native-edit-input" accept="image/*" capture="environment" style="display:none"><div id="lector-oculto-edit" style="display:none;"></div></div><div id="edit-scanner-container" class="hidden bg-gray-50 p-4 rounded-lg border"><div id="edit-reader" class="max-w-sm mx-auto"></div><div class="text-center mt-3"><button type="button" id="stop-edit-scan-btn" class="bg-red-500 text-white px-6 py-2 rounded">Apagar Cámara</button></div></div><div><label class="block text-sm">Nombre</label><input type="text" id="edit-nombre" required maxlength="80" class="w-full border rounded p-2 outline-none"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm">Precio (Q)</label><input type="number" step="0.01" min="0" id="edit-precio" required class="w-full border rounded p-2"></div><div><label class="block text-sm font-bold text-blue-600">Stock</label><input type="number" id="edit-stock" required min="0" class="w-full border-2 border-blue-300 rounded p-2"></div></div><div class="flex justify-end gap-2 mt-6"><button type="button" onclick="closeEditModal()" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Actualizar</button></div></form></div></div>
-    
-    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md no-invert">
-            <h2 class="text-xl font-bold text-purple-800 mb-4">Editar Empleado</h2>
-            <form id="form-editar-usuario" class="space-y-4">
-                <input type="hidden" id="edit-usr-id">
-                <div><label class="block text-sm font-bold text-blue-600">Nombre en Pantalla</label><input type="text" id="edit-usr-fullname" required maxlength="50" class="w-full border-2 border-blue-200 rounded p-2 outline-none"></div>
-                <div><label class="block text-sm">Usuario Login</label><input type="text" id="edit-usr-name" pattern="[^\s]+" class="w-full border rounded p-2 bg-gray-50"></div>
-                <div>
-                    <label class="block text-sm">Contraseña</label>
-                    <div class="relative">
-                        <input type="password" id="edit-usr-pass" class="w-full border rounded p-2 bg-gray-50 font-mono pr-10">
-                        <button type="button" onclick="togglePassword('edit-usr-pass')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-purple-600 transition text-lg no-invert">👁️</button>
-                    </div>
-                    <p id="pass-warning" class="text-xs text-red-500 font-bold mt-1 hidden"></p>
+            
+            <!-- TABLA DE PERSONAL REGISTRADO -->
+            <div class="bg-gray-800 rounded-xl shadow-xl overflow-hidden text-sm">
+                <div class="bg-gray-900 p-4 border-b border-gray-700 flex justify-between items-center">
+                    <h2 id="titulo-tabla-usuarios" class="font-bold text-white text-lg">Personal Registrado</h2>
+                    <button onclick="verAuditoria()" class="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded shadow transition flex items-center gap-2">
+                        📄 Ver Historial de Cambios
+                    </button>
                 </div>
-                <div><label class="block text-sm">Nivel de Acceso</label><select id="edit-usr-rol" class="w-full border p-2 rounded bg-gray-50"><option value="cajero">🛒 Cajero</option><option value="admin">🏢 Admin de Tienda</option><option value="superadmin">👑 Súper Admin</option></select></div>
-                <div class="flex justify-end gap-2 mt-6"><button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded font-bold">Guardar Cambios</button></div>
-            </form>
-        </div>
-    </div>
-    
-    <div id="audit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50"><div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-3xl no-invert"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">📜 Historial de Cambios</h2><button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-red-500 font-bold text-xl">✕</button></div><div class="max-h-96 overflow-y-auto"><table class="w-full text-left border-collapse text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border-b">Fecha y Hora</th><th class="p-2 border-b">Usuario Base</th><th class="p-2 border-b">Detalle de la Modificación</th></tr></thead><tbody id="audit-list" class="divide-y divide-gray-100"></tbody></table></div></div></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead class="bg-gray-900 text-gray-400">
+                            <tr>
+                                <th class="p-4 border-b border-gray-700">No.</th>
+                                <th class="p-4 border-b border-gray-700">Usuario (Login)</th>
+                                <th class="p-4 border-b border-gray-700 font-bold text-blue-500">Nombre en Pantalla</th>
+                                <th class="p-4 border-b border-gray-700">Rol</th>
+                                <th class="p-4 border-b border-gray-700 font-bold text-yellow-500">Clave Secreta</th>
+                                <th class="p-4 border-b border-gray-700 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuarios-list" class="divide-y divide-gray-700 bg-gray-800 text-gray-200">
+                            <!-- Los usuarios se cargarán aquí por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
     <!-- Botón flotante Modo Oscuro Elegante -->
     <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 bg-gray-800 text-gray-200 p-3 rounded-full shadow-2xl z-[100] hover:scale-110 transition border border-gray-600">🌙</button>
